@@ -307,9 +307,9 @@ export const subscribeToContactMessages = (callback) => {
 export const getRecentContent = async () => {
   try {
     const [sermonsRes, songsRes, videosRes] = await Promise.all([
-      apiClient.get('sermons', { limit: 5 }),
-      apiClient.get('songs', { limit: 5 }),
-      apiClient.get('videos', { limit: 5 }),
+      apiClient.get('sermons', { limit: 3 }),
+      apiClient.get('songs', { limit: 3 }),
+      apiClient.get('videos', { limit: 3 }),
     ]);
 
     // FILTER: Only text sermons (client-side, safe)

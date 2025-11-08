@@ -14,69 +14,54 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../components/TopNavigation';
 import { getRecentContent } from '../../services/dataService';
-import { ChevronRight, Play, BookOpen, Video } from 'lucide-react-native'; // Changed Clock to BookOpen for sermons
+import {
+  ChevronRight,
+  Play,
+  Clock,
+  Sparkles,
+  Music2,
+  Music,
+  Music2Icon,
+  BookAIcon,
+} from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-
-// --- NEW REUSABLE CARD WRAPPER COMPONENT ---
-const ContentCardWrapper = ({ children, style, onPress, colors }) => (
-  <TouchableOpacity
-    style={[styles.cardWrapper, { backgroundColor: colors.card }, style]}
-    onPress={onPress}
-    activeOpacity={0.8}
-  >
-    {children}
-  </TouchableOpacity>
-);
+import { Book, Music3Icon } from 'lucide-react';
 
 const SkeletonCard = ({ type }) => {
   const { colors } = useTheme();
-  const isVideo = type === 'video';
-
-  // Use a modern shimmer effect for richness
-  const shimmerColors = [
-    colors.skeleton,
-    colors.skeletonHighlight,
-    colors.skeleton,
-  ];
-
   return (
-    <ContentCardWrapper
-      colors={colors}
-      style={isVideo ? styles.videoCard : styles.sermonSongCard}
+    <View
+      style={[
+        styles.card,
+        type === 'video' ? styles.videoCard : {},
+        { backgroundColor: colors.card },
+      ]}
     >
-      {isVideo && (
+      {type === 'video' && (
         <LinearGradient
-          colors={shimmerColors}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
+          colors={[colors.skeleton, colors.skeletonHighlight]}
           style={styles.videoThumbnail}
         />
       )}
-      <View style={isVideo ? styles.videoInfo : styles.sermonSongInfo}>
+      <View style={type === 'video' ? styles.videoInfo : {}}>
         <LinearGradient
-          colors={shimmerColors}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
+          colors={[colors.skeleton, colors.skeletonHighlight]}
           style={styles.skeletonTitle}
         />
         <LinearGradient
-          colors={shimmerColors}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
+          colors={[colors.skeleton, colors.skeletonHighlight]}
           style={styles.skeletonSubtitle}
         />
-        {!isVideo && (
+        {type !== 'video' && (
           <View style={styles.cardFooter}>
             <LinearGradient
-              colors={shimmerColors}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
+              colors={[colors.skeleton, colors.skeletonHighlight]}
               style={styles.skeletonAction}
             />
           </View>
         )}
       </View>
-    </ContentCardWrapper>
+    </View>
   );
 };
 
@@ -113,106 +98,140 @@ export default function HomeScreen() {
     );
   };
 
-  // --- REFACTORED RENDER FUNCTIONS ---
-
   const renderSermonCard = (sermon) => {
     const content = getTranslatedContent(sermon);
     return (
-      <ContentCardWrapper
+      <TouchableOpacity
         key={sermon.id}
-        colors={colors}
-        style={styles.sermonSongCard}
+        style={[styles.card, { backgroundColor: colors.card }]}
         onPress={() => router.push(`/(tabs)/sermons/${sermon.id}`)}
+        activeOpacity={0.7}
       >
-        <Text
-          style={[styles.cardTitle, { color: colors.text }]}
-          numberOfLines={1}
-        >
-          {content.title}
-        </Text>
-        <Text
-          style={[styles.cardSubtitle, { color: colors.textSecondary }]}
-          numberOfLines={2}
-        >
-          {content.content || translations.noContent}
-        </Text>
-        <View style={styles.cardFooter}>
-          <BookOpen size={18} color={colors.primary} />
-          <Text style={[styles.cardAction, { color: colors.primary }]}>
-            Start studying
+        <LinearGradient
+          colors={[colors.primary + '15', 'transparent']}
+          style={styles.cardGradient}
+        />
+        <View style={styles.cardContent}>
+          <View style={[styles.iconBadge, { backgroundColor: colors.primary }]}>
+            <BookAIcon size={18} color="#fff" />
+          </View>
+          <Text
+            style={[styles.cardTitle, { color: colors.text }]}
+            numberOfLines={2}
+          >
+            {content.title}
           </Text>
+          <Text
+            style={[styles.cardSubtitle, { color: colors.textSecondary }]}
+            numberOfLines={2}
+          >
+            {content.content || translations.noContent}
+          </Text>
+          <View style={styles.cardFooter}>
+            <View
+              style={[
+                styles.actionButton,
+                { backgroundColor: colors.primary + '15' },
+              ]}
+            >
+              <Text style={[styles.cardAction, { color: colors.primary }]}>
+                Start studying
+              </Text>
+              <ChevronRight size={14} color={colors.primary} />
+            </View>
+          </View>
         </View>
-      </ContentCardWrapper>
+      </TouchableOpacity>
     );
   };
 
   const renderSongCard = (song) => (
-    <ContentCardWrapper
+    <TouchableOpacity
       key={song.id}
-      colors={colors}
-      style={styles.sermonSongCard}
+      style={[styles.card, { backgroundColor: colors.card }]}
       onPress={() => router.push(`/(tabs)/songs/music/${song.id}`)}
+      activeOpacity={0.7}
     >
-      <Text
-        style={[styles.cardTitle, { color: colors.text }]}
-        numberOfLines={1}
-      >
-        {song.title}
-      </Text>
-      <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-        Category: {song.category || translations.unknownCategory}
-      </Text>
-      <View style={styles.cardFooter}>
-        <Play size={18} color={colors.primary} />
-        <Text style={[styles.cardAction, { color: colors.primary }]}>
-          Play now
+      <LinearGradient
+        colors={[colors.primary + '15', 'transparent']}
+        style={styles.cardGradient}
+      />
+      <View style={styles.cardContent}>
+        <View style={[styles.iconBadge, { backgroundColor: colors.primary }]}>
+          <Music2 size={18} color="#fff" fill={colors.primary} />
+        </View>
+        <Text
+          style={[styles.cardTitle, { color: colors.text }]}
+          numberOfLines={2}
+        >
+          {song.title}
         </Text>
+        <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
+          {song.category || translations.unknownCategory}
+        </Text>
+        <View style={styles.cardFooter}>
+          <View
+            style={[
+              styles.actionButton,
+              { backgroundColor: colors.primary + '15' },
+            ]}
+          >
+            <Text style={[styles.cardAction, { color: colors.primary }]}>
+              Play now
+            </Text>
+            <ChevronRight size={14} color={colors.primary} />
+          </View>
+        </View>
       </View>
-    </ContentCardWrapper>
+    </TouchableOpacity>
   );
 
   const renderVideoCard = (video) => (
-    <ContentCardWrapper
+    <TouchableOpacity
       key={video.id}
-      colors={colors}
-      style={styles.videoCard}
+      style={[styles.videoCard, { backgroundColor: colors.card }]}
       onPress={() => router.push(`/(tabs)/animations/${video.id}`)}
+      activeOpacity={0.7}
     >
       <View style={styles.videoThumbnailContainer}>
         <Image
           source={{ uri: video.thumbnailUrl }}
           style={styles.videoThumbnail}
         />
-        {/* Richness: Gradient overlay for a professional video player look */}
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.5)']}
+          colors={['transparent', 'rgba(0,0,0,0.7)']}
           style={styles.videoGradientOverlay}
         />
-        {/* Richness: Center Play icon */}
         <View style={styles.playButtonOverlay}>
-          <Play size={30} color="#FFFFFF" fill="rgba(0, 0, 0, 0.4)" />
+          <View
+            style={[styles.playButton, { backgroundColor: colors.primary }]}
+          >
+            <Play size={24} color="#fff" fill="#fff" />
+          </View>
         </View>
       </View>
       <View style={styles.videoInfo}>
         <Text
-          style={[styles.cardTitle, { color: colors.text, marginBottom: 4 }]}
-          numberOfLines={1}
+          style={[styles.cardTitle, { color: colors.text }]}
+          numberOfLines={2}
         >
           {video.title}
         </Text>
         <View style={styles.cardFooter}>
-          <Video size={16} color={colors.textSecondary} />
-          <Text
+          <View
             style={[
-              styles.cardAction,
-              { color: colors.textSecondary, fontWeight: '500' },
+              styles.actionButton,
+              { backgroundColor: colors.primary + '15' },
             ]}
           >
-            Watch Now
-          </Text>
+            <Text style={[styles.cardAction, { color: colors.primary }]}>
+              Watch Now
+            </Text>
+            <ChevronRight size={14} color={colors.primary} />
+          </View>
         </View>
       </View>
-    </ContentCardWrapper>
+    </TouchableOpacity>
   );
 
   const renderSkeletonCards = (type) => (
@@ -225,35 +244,47 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaWrapper>
-      {/* Updated Top Navigation for a modern feel */}
       <TopNavigation title="Grace" />
       <ScrollView
         style={[styles.content, { backgroundColor: colors.background }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Richer Welcome Section */}
         <View style={styles.welcomeSection}>
-          <Text style={[styles.userGreeting, { color: colors.text }]}>
-            {user?.email
-              ? `Welcome back, ${user.email.split('@')[0]}`
-              : 'Welcome, Guest'}
+          <LinearGradient
+            colors={[colors.primary + '10', 'transparent']}
+            style={styles.welcomeGradient}
+          />
+          <Text style={[styles.welcomeTitle, { color: colors.text }]}>
+            Welcome back
+          </Text>
+          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
+            {user?.email || translations.guest}
           </Text>
         </View>
-
-        {/* --- Content Sections --- */}
 
         {/* Sermons section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {translations.latestSermons || 'Latest Sermons'}
-            </Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/sermons')}>
+            <View>
+              <Text style={[styles.sectionTitle, { color: colors.primary }]}>
+                {translations.latestSermons}
+              </Text>
+              <View
+                style={[
+                  styles.sectionUnderline,
+                  { backgroundColor: colors.primary },
+                ]}
+              />
+            </View>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/sermons')}
+              style={styles.seeAllButton}
+            >
               <View style={styles.seeAllContainer}>
                 <Text style={[styles.seeAll, { color: colors.primary }]}>
-                  {translations.seeAll || 'See All'}
+                  {translations.seeAll}
                 </Text>
-                <ChevronRight size={16} color={colors.primary} />
+                <ChevronRight size={18} color={colors.primary} />
               </View>
             </TouchableOpacity>
           </View>
@@ -261,6 +292,7 @@ export default function HomeScreen() {
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.horizontalScroll}
+            contentContainerStyle={styles.scrollContent}
           >
             {loading || content.sermons.length === 0
               ? renderSkeletonCards('sermon')
@@ -271,17 +303,26 @@ export default function HomeScreen() {
         {/* Recent Music section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {translations.recentMusic || 'Recent Music'}
-            </Text>
+            <View>
+              <Text style={[styles.sectionTitle, { color: colors.primary }]}>
+                {translations.recentMusic}
+              </Text>
+              <View
+                style={[
+                  styles.sectionUnderline,
+                  { backgroundColor: colors.primary },
+                ]}
+              />
+            </View>
             <TouchableOpacity
-              onPress={() => router.push('/(tabs)/songs/music')}
+              onPress={() => router.push('/(tabs)/songs')}
+              style={styles.seeAllButton}
             >
               <View style={styles.seeAllContainer}>
                 <Text style={[styles.seeAll, { color: colors.primary }]}>
-                  {translations.seeAll || 'See All'}
+                  {translations.seeAll}
                 </Text>
-                <ChevronRight size={16} color={colors.primary} />
+                <ChevronRight size={18} color={colors.primary} />
               </View>
             </TouchableOpacity>
           </View>
@@ -289,6 +330,7 @@ export default function HomeScreen() {
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.horizontalScroll}
+            contentContainerStyle={styles.scrollContent}
           >
             {loading || content.songs.length === 0
               ? renderSkeletonCards('song')
@@ -299,15 +341,26 @@ export default function HomeScreen() {
         {/* Animations section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {translations.recentAnimations || 'Recent Animations'}
-            </Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/animations')}>
+            <View>
+              <Text style={[styles.sectionTitle, { color: colors.primary }]}>
+                {translations.recentAnimations}
+              </Text>
+              <View
+                style={[
+                  styles.sectionUnderline,
+                  { backgroundColor: colors.primary },
+                ]}
+              />
+            </View>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/animations')}
+              style={styles.seeAllButton}
+            >
               <View style={styles.seeAllContainer}>
                 <Text style={[styles.seeAll, { color: colors.primary }]}>
-                  {translations.seeAll || 'See All'}
+                  {translations.seeAll}
                 </Text>
-                <ChevronRight size={16} color={colors.primary} />
+                <ChevronRight size={18} color={colors.primary} />
               </View>
             </TouchableOpacity>
           </View>
@@ -315,6 +368,7 @@ export default function HomeScreen() {
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.horizontalScroll}
+            contentContainerStyle={styles.scrollContent}
           >
             {loading || content.videos.length === 0
               ? renderSkeletonCards('video')
@@ -327,111 +381,164 @@ export default function HomeScreen() {
   );
 }
 
-// --- UPDATED STYLES ---
-
 const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  // Richer Welcome Section Styles
   welcomeSection: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 20,
+    position: 'relative',
   },
-  userGreeting: {
-    fontSize: 24, // Larger greeting
-    fontWeight: '700', // Bolder
+  welcomeGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+    borderRadius: 24,
+  },
+  welcomeTitle: {
+    fontSize: 28,
+    fontWeight: '700',
     letterSpacing: -0.5,
+    marginBottom: 4,
   },
-  // Section Header Styles
+  userEmail: {
+    fontSize: 15,
+    opacity: 0.7,
+    fontWeight: '500',
+  },
   section: {
-    marginBottom: 32, // More vertical space between sections
+    marginBottom: 32,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 16,
+    paddingHorizontal: 20,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 22, // Larger, more impactful title
-    fontWeight: '700', // Bolder
+    fontSize: 22,
+    fontWeight: '700',
     letterSpacing: -0.5,
+  },
+  sectionUnderline: {
+    height: 3,
+    width: 40,
+    borderRadius: 2,
+    marginTop: 6,
+  },
+  seeAllButton: {
+    padding: 4,
   },
   seeAllContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
   seeAll: {
     fontSize: 15,
     fontWeight: '600',
   },
   horizontalScroll: {
-    paddingHorizontal: 16,
+    paddingLeft: 20,
   },
-  // General Card Styles (used by ContentCardWrapper)
-  cardWrapper: {
-    borderRadius: 12, // Slightly reduced radius for a modern feel
+  scrollContent: {
+    paddingRight: 20,
+  },
+  card: {
+    borderRadius: 20,
     marginRight: 16,
-    marginVertical: 4, // Reduce vertical margin and rely on shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 }, // Deeper shadow for "floating" effect
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
+    marginVertical: 4,
+    width: 240,
+
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 8 },
+    // shadowOpacity: 0.12,
+    // shadowRadius: 16,
     elevation: 8,
-    width: 240, // Slightly wider cards
+    overflow: 'hidden',
   },
-  // Sermon and Song Specific Card Styles
-  sermonSongCard: {
-    padding: 16,
-    height: 150, // Fixed height for consistency
-    justifyContent: 'space-between',
+  cardGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '100%',
+    borderRadius: 20,
   },
-  sermonSongInfo: {
-    // Styling for skeleton info inside sermon/song card
+  cardContent: {
+    padding: 20,
+    flexGrow: 1,
+  },
+  iconBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
   },
   cardTitle: {
-    fontSize: 17, // Slightly larger title
+    fontSize: 17,
     fontWeight: '700',
-    marginBottom: 6,
-    letterSpacing: 0.1,
+    letterSpacing: -0.3,
+    marginBottom: 8,
+    lineHeight: 24,
   },
   cardSubtitle: {
-    fontSize: 13,
-    lineHeight: 18,
-    opacity: 0.8,
+    fontSize: 14,
+    lineHeight: 20,
+    opacity: 0.75,
+    marginBottom: 16,
+    fontWeight: '500',
+    flexGrow: 1,
   },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 12,
     gap: 6,
   },
   cardAction: {
     fontSize: 14,
     fontWeight: '600',
+    letterSpacing: -0.2,
   },
-  // Video Card Styles (overrides)
   videoCard: {
+    borderRadius: 20,
+    marginRight: 16,
+    marginVertical: 4,
+    width: 260,
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 8 },
+    // shadowOpacity: 0.12,
+    // shadowRadius: 16,
+    elevation: 8,
     overflow: 'hidden',
   },
   videoThumbnailContainer: {
-    width: '100%',
-    height: 140,
     position: 'relative',
   },
   videoThumbnail: {
     width: '100%',
-    height: '100%',
+    height: 160,
   },
   videoGradientOverlay: {
     position: 'absolute',
-    top: 0,
+    bottom: 0,
     left: 0,
     right: 0,
-    bottom: 0,
+    height: 80,
   },
   playButtonOverlay: {
     position: 'absolute',
@@ -439,31 +546,42 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   videoInfo: {
-    padding: 12,
+    padding: 16,
   },
-  // Skeleton Styles (Adjusted for new layout)
   skeletonTitle: {
     height: 20,
-    width: '70%',
-    borderRadius: 4,
+    width: '80%',
+    borderRadius: 6,
     marginBottom: 8,
   },
   skeletonSubtitle: {
     height: 16,
-    width: '50%',
-    borderRadius: 4,
-    marginBottom: 10,
+    width: '60%',
+    borderRadius: 6,
+    marginBottom: 12,
   },
   skeletonAction: {
     height: 16,
-    width: 80,
-    borderRadius: 4,
+    width: 60,
+    borderRadius: 6,
   },
   bottomSpacer: {
-    height: 48,
+    height: 32,
   },
 });

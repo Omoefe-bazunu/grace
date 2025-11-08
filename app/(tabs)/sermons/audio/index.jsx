@@ -150,7 +150,9 @@ const styles = StyleSheet.create({
   },
   searchIcon: { marginRight: 8 },
   searchInput: { flex: 1, paddingVertical: 12, fontSize: 16 },
+
   listContainer: { paddingHorizontal: 20, paddingBottom: 20 },
+
   item: {
     flexDirection: 'row',
     padding: 16,

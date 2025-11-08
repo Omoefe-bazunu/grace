@@ -10,7 +10,14 @@ import {
   Image,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Search, Play, Clock } from 'lucide-react-native';
+import {
+  Search,
+  Play,
+  Clock,
+  Film,
+  Sparkles,
+  PlayIcon,
+} from 'lucide-react-native';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { LanguageSwitcher } from '../../../components/LanguageSwitcher';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -95,11 +102,20 @@ export default function AnimationsScreen() {
     <TouchableOpacity
       style={[styles.videoCard, { backgroundColor: colors.card }]}
       onPress={() => router.push(`/(tabs)/animations/${item.id}`)}
+      activeOpacity={0.7}
     >
       <View style={styles.thumbnailContainer}>
         <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnail} />
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.75)']}
+          style={styles.thumbnailGradient}
+        />
         <View style={styles.playOverlay}>
-          <Play size={32} color="#FFFFFF" />
+          <View
+            style={[styles.playButton, { backgroundColor: colors.primary }]}
+          >
+            <Play size={28} color="#fff" fill="#fff" />
+          </View>
         </View>
       </View>
 
@@ -110,18 +126,17 @@ export default function AnimationsScreen() {
         >
           {item.title}
         </Text>
-        {/* <View style={styles.videoMeta}>
-          <Clock size={14} color={colors.textSecondary} />
-          <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-            {item.duration || translations.unknownDuration}
+        <View
+          style={[
+            styles.videoBadge,
+            { backgroundColor: colors.primary + '15' },
+          ]}
+        >
+          <PlayIcon size={12} color={colors.primary} />
+          <Text style={[styles.badgeText, { color: colors.primary }]}>
+            Watch Now
           </Text>
-          <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-            •
-          </Text>
-          <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-            {item.languageCategory || translations.unknownCategory}
-          </Text>
-        </View> */}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -135,28 +150,80 @@ export default function AnimationsScreen() {
     </>
   );
 
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <View
+        style={[
+          styles.emptyIconContainer,
+          { backgroundColor: colors.primary + '15' },
+        ]}
+      >
+        <Film size={48} color={colors.primary} />
+      </View>
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>
+        {searchQuery ? 'No videos found' : 'No animations available'}
+      </Text>
+      <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+        {searchQuery
+          ? 'Try adjusting your search terms'
+          : 'Check back later for new content'}
+      </Text>
+    </View>
+  );
+
   return (
     <SafeAreaWrapper>
       <TopNavigation title={translations.animations} />
-      <View
-        style={[styles.searchContainer, { backgroundColor: colors.surface }]}
-      >
-        <Search
-          size={20}
-          color={colors.textSecondary}
-          style={styles.searchIcon}
+
+      {/* Enhanced Search Bar */}
+      <View style={styles.searchWrapper}>
+        <LinearGradient
+          colors={[colors.primary + '08', 'transparent']}
+          style={styles.searchGradient}
         />
-        <TextInput
-          placeholder={translations.search}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor={colors.textSecondary}
-          style={[styles.searchInput, { color: colors.text }]}
-        />
+        <View
+          style={[styles.searchContainer, { backgroundColor: colors.surface }]}
+        >
+          <View
+            style={[
+              styles.searchIconContainer,
+              { backgroundColor: colors.primary + '15' },
+            ]}
+          >
+            <Search size={18} color={colors.primary} />
+          </View>
+          <TextInput
+            placeholder={translations.search || 'Search animations...'}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor={colors.textSecondary}
+            style={[styles.searchInput, { color: colors.text }]}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setSearchQuery('')}
+              style={styles.clearButton}
+            >
+              <Text style={[styles.clearText, { color: colors.primary }]}>
+                Clear
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
+      {/* Results Count */}
+      {!loading && videos.length > 0 && (
+        <View style={styles.resultsHeader}>
+          <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>
+            {videos.length} {videos.length === 1 ? 'video' : 'videos'}
+            {searchQuery ? ' found' : ' available'}
+          </Text>
+        </View>
+      )}
+
       <FlatList
-        data={loading || videos.length === 0 ? [] : videos}
+        data={loading ? [] : videos}
         renderItem={renderVideoItem}
         keyExtractor={(item) => item.id}
         numColumns={2}
@@ -164,34 +231,71 @@ export default function AnimationsScreen() {
         columnWrapperStyle={styles.row}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={<View style={styles.headerSpacer} />}
-        ListEmptyComponent={renderSkeletonCards}
+        ListEmptyComponent={
+          loading ? renderSkeletonCards() : renderEmptyState()
+        }
       />
     </SafeAreaWrapper>
   );
 }
 
 const styles = StyleSheet.create({
+  searchWrapper: {
+    position: 'relative',
+    marginHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  searchGradient: {
+    position: 'absolute',
+    top: -20,
+    left: -20,
+    right: -20,
+    height: 100,
+    borderRadius: 24,
+  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginHorizontal: 20,
-    marginVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  searchIcon: {
-    position: 'absolute',
-    left: 30,
-    zIndex: 1,
+  searchIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    paddingLeft: 40,
-    paddingVertical: 8,
-    height: 40,
-    marginBottom: 0,
+    fontWeight: '500',
+    paddingVertical: 0,
+  },
+  clearButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  clearText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  resultsHeader: {
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  resultsCount: {
+    fontSize: 14,
+    fontWeight: '600',
+    opacity: 0.8,
   },
   listContainer: {
     paddingHorizontal: 20,
@@ -201,22 +305,30 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   videoCard: {
-    borderRadius: 12,
+    borderRadius: 18,
     overflow: 'hidden',
     marginBottom: 16,
     width: '48%',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
   },
   thumbnailContainer: {
     position: 'relative',
+    height: 140,
   },
   thumbnail: {
     width: '100%',
-    height: 120,
+    height: '100%',
+  },
+  thumbnailGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '60%',
   },
   playOverlay: {
     position: 'absolute',
@@ -224,53 +336,87 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  durationBadge: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  durationText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
+  playButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   videoInfo: {
-    padding: 12,
+    padding: 14,
   },
   videoTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    marginBottom: 10,
+    lineHeight: 20,
+    minHeight: 40,
   },
-  videoMeta: {
+  videoBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
     gap: 4,
   },
-  metaText: {
+  badgeText: {
     fontSize: 12,
-    opacity: 0.9,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+  },
+  emptyIconContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 15,
+    fontWeight: '500',
+    textAlign: 'center',
+    opacity: 0.7,
+    lineHeight: 22,
   },
   skeletonTitle: {
     height: 20,
     width: '80%',
-    borderRadius: 4,
-    marginBottom: 8,
+    borderRadius: 6,
+    marginBottom: 10,
   },
   skeletonMeta: {
-    height: 16,
-    width: '60%',
-    borderRadius: 4,
+    height: 24,
+    width: 80,
+    borderRadius: 8,
   },
   headerSpacer: {
-    height: 8,
+    height: 4,
   },
 });
