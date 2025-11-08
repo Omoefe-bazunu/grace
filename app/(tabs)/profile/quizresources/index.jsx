@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Search, Book } from 'lucide-react-native';
+import { Search, ArrowLeft, Book } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
@@ -37,8 +37,13 @@ const QuizCard = ({ item, translations, colors }) => {
       <Text style={[styles.quizMeta, { color: colors.textSecondary }]}>
         {category}
       </Text>
-      <TouchableOpacity style={styles.studyButton}>
-        <Text style={styles.studyButtonText}>{translations.study}</Text>
+      <TouchableOpacity
+        style={styles.studyButton}
+        onPress={() => router.push(`/(tabs)/profile/quizresources/${item.id}`)}
+      >
+        <Text style={[styles.studyButtonText, { color: '#fff' }]}>
+          {translations.study || 'Start Study'}
+        </Text>
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -162,6 +167,12 @@ export default function QuizResourcesScreen() {
           />
         )}
       </View>
+      <TouchableOpacity
+        onPress={() => router.push(`/(tabs)/profile`)}
+        style={styles.backButton}
+      >
+        <Text style={styles.backText}>Return Back</Text>
+      </TouchableOpacity>
 
       <FlatList
         data={quizzes}
@@ -186,7 +197,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     marginHorizontal: 20,
-    marginBottom: 10,
+    marginVertical: 10,
   },
   searchIcon: {
     position: 'absolute',
@@ -205,6 +216,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 30,
     zIndex: 1,
+  },
+  backText: {
+    color: '#1E3A8A',
+    fontSize: 16,
+    marginHorizontal: 'auto',
+    marginVertical: 10,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   listContainer: {
     padding: 20,

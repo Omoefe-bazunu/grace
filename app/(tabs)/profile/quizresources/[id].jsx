@@ -127,7 +127,10 @@ export default function QuizDetailScreen() {
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
-      <TopNavigation />
+      <TopNavigation
+        showBackButton={true}
+        onPress={() => router.push(`/(tabs)/profile`)}
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={[styles.title, { color: colors.text }]}>
@@ -312,11 +315,21 @@ const styles = StyleSheet.create({
     width: 80,
     borderRadius: 4,
   },
+
   skeletonResource: {
     height: 60,
     width: '100%',
     borderRadius: 4,
     marginBottom: 12,
+  },
+
+  backText: {
+    color: '#1E3A8A',
+    fontSize: 16,
+    marginHorizontal: 'auto',
+    marginVertical: 10,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   modalOverlay: {
     flex: 1,

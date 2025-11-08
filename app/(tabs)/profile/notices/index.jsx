@@ -139,10 +139,13 @@ export default function NoticesScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation
-        title={translations.notices}
-        onPress={() => router.back()}
-      />
+      <TopNavigation title={translations.notices} />
+      <TouchableOpacity
+        onPress={() => router.push(`/(tabs)/profile`)}
+        style={styles.backButton}
+      >
+        <Text style={styles.backText}>Return Back</Text>
+      </TouchableOpacity>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {loading ? (
           <View style={styles.listContainer}>{renderSkeletonCards()}</View>
@@ -164,7 +167,7 @@ export default function NoticesScreen() {
 
 const styles = StyleSheet.create({
   listContainer: {
-    padding: 20,
+    padding: 12,
   },
   noticeCard: {
     borderRadius: 12,
@@ -172,11 +175,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
     elevation: 5,
+  },
+  backText: {
+    color: '#1E3A8A',
+    fontSize: 16,
+    marginHorizontal: 'auto',
+    marginVertical: 10,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   unreadCard: {
     borderWidth: 2,

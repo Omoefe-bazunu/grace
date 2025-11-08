@@ -1,683 +1,436 @@
-import {
-  collection,
-  getDocs,
-  doc,
-  getDoc,
-  query,
-  orderBy,
-  limit,
-  where,
-  onSnapshot,
-  setDoc,
-  addDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { db } from './firebaseConfig';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiClient from '../utils/api';
 
+const API_BASE_URL = 'https://grace-backend-tp3h.onrender.com';
+
+// Auto-attach JWT to all requests
+axios.interceptors.request.use(async (config) => {
+  const token = await AsyncStorage.getItem('jwt');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+// Helper: GET with query params
+const get = (path, params = {}) => {
+  return axios
+    .get(`${API_BASE_URL}${path}`, { params })
+    .then((res) => res.data);
+};
+
+// Helper: POST
+const post = (path, data) => {
+  return axios.post(`${API_BASE_URL}${path}`, data).then((res) => res.data);
+};
+
+// === SERMONS ===
 export const getSermons = async () => {
   try {
-    const sermonsRef = collection(db, 'sermons');
-    const q = query(sermonsRef, orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
-
-    const sermons = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      sermons.push({
-        id: doc.id,
-        title: data.title,
-        content: data.content || '',
-        audioUrl: data.audioUrl || null,
-        date:
-          data.createdAt?.toDate()?.toISOString()?.split('T')[0] ||
-          new Date().toISOString().split('T')[0],
-        duration: data.duration || null,
-        uploadedBy: data.uploadedBy,
-        createdAt: data.createdAt,
-      });
-    });
-
-    return sermons;
+    const sermons = await get('/api/sermons');
+    return sermons.map(formatSermon);
   } catch (error) {
     console.error('Error fetching sermons:', error);
     return [];
   }
 };
 
-export const subscribeToSermons = (callback) => {
-  const sermonsRef = collection(db, 'sermons');
-  const q = query(sermonsRef, orderBy('createdAt', 'desc'));
-
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const sermons = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        sermons.push({
-          id: doc.id,
-          title: data.title,
-          content: data.content || '',
-          audioUrl: data.audioUrl || null,
-          date:
-            data.createdAt?.toDate()?.toISOString()?.split('T')[0] ||
-            new Date().toISOString().split('T')[0],
-          duration: data.duration || null,
-          uploadedBy: data.uploadedBy,
-          createdAt: data.createdAt,
-        });
-      });
-      callback(sermons);
-    },
-    (error) => {
-      console.error('Error listening to sermons:', error);
-      callback([]);
-    }
-  );
+export const getSermonsByCategory = async (category, limit = null) => {
+  try {
+    const params = { category };
+    if (limit) params.limit = limit;
+    const sermons = await get('/api/sermons', params);
+    return sermons.map(formatSermon);
+  } catch (error) {
+    console.error('Error fetching sermons by category:', error);
+    return [];
+  }
 };
 
 export const getSermon = async (sermonId) => {
   try {
-    const sermonRef = doc(db, 'sermons', sermonId);
-    const sermonSnap = await getDoc(sermonRef);
-
-    if (sermonSnap.exists()) {
-      const data = sermonSnap.data();
-      return {
-        id: sermonSnap.id,
-        title: data.title,
-        content: data.content || '',
-        audioUrl: data.audioUrl || null,
-        date:
-          data.createdAt?.toDate()?.toISOString()?.split('T')[0] ||
-          new Date().toISOString().split('T')[0],
-        duration: data.duration || null,
-        uploadedBy: data.uploadedBy,
-        createdAt: data.createdAt,
-      };
-    }
-    return null;
-  } catch (error) {
-    console.error('Error fetching sermon:', error);
+    const sermon = await get(`/api/sermons/${sermonId}`);
+    return sermon ? formatSermon(sermon) : null;
+  } catch {
     return null;
   }
 };
 
+export const subscribeToSermons = (callback) => {
+  const fetchData = async () => {
+    try {
+      const sermons = await get('/api/sermons');
+      callback(sermons.map(formatSermon));
+    } catch {
+      callback([]);
+    }
+  };
+
+  fetchData();
+  const interval = setInterval(fetchData, 10000);
+  return () => clearInterval(interval);
+};
+
+// === SONGS ===
 export const getSongs = async () => {
   try {
-    const songsRef = collection(db, 'songs');
-    const q = query(songsRef, orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
-
-    const songs = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      songs.push({
-        id: doc.id,
-        title: data.title,
-        category: data.category,
-        audioUrl: data.audioUrl,
-        duration: data.duration || null,
-        style: data.style || getStyleByCategory(data.category),
-        uploadedBy: data.uploadedBy,
-        createdAt: data.createdAt,
-      });
-    });
-
-    return songs;
-  } catch (error) {
-    console.error('Error fetching songs:', error);
+    const songs = await get('/api/songs');
+    return songs.map(formatSong);
+  } catch {
     return [];
   }
 };
 
 export const getSongsByCategory = async (category) => {
   try {
-    const songsRef = collection(db, 'songs');
-    const q = query(
-      songsRef,
-      where('category', '==', category),
-      orderBy('createdAt', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-
-    const songs = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      songs.push({
-        id: doc.id,
-        title: data.title,
-        category: data.category,
-        audioUrl: data.audioUrl,
-        duration: data.duration || null,
-        style: data.style || getStyleByCategory(data.category),
-        uploadedBy: data.uploadedBy,
-        createdAt: data.createdAt,
-      });
-    });
-
-    return songs;
-  } catch (error) {
-    console.error('Error fetching songs by category:', error);
+    const songs = await get('/api/songs', { category });
+    return songs.map(formatSong);
+  } catch {
     return [];
   }
 };
 
-const getStyleByCategory = (category) => {
-  switch (category) {
-    case 'acapella':
-      return 'A Cappella Gospel';
-    case 'native':
-      return 'Contemporary Gospel';
-    case 'english':
-      return 'English Gospel';
-    default:
-      return 'Gospel';
+export const getSong = async (songId) => {
+  try {
+    const song = await get(`/api/songs/${songId}`);
+    return song ? formatSong(song) : null;
+  } catch {
+    return null;
   }
 };
 
 export const subscribeToSongs = (callback) => {
-  const songsRef = collection(db, 'songs');
-  const q = query(songsRef, orderBy('createdAt', 'desc'));
-
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const songs = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        songs.push({
-          id: doc.id,
-          title: data.title,
-          category: data.category,
-          audioUrl: data.audioUrl,
-          duration: data.duration || null,
-          style: data.style || getStyleByCategory(data.category),
-          uploadedBy: data.uploadedBy,
-          createdAt: data.createdAt,
-        });
-      });
-      callback(songs);
-    },
-    (error) => {
-      console.error('Error listening to songs:', error);
+  const fetchData = async () => {
+    try {
+      const songs = await get('/api/songs');
+      callback(songs.map(formatSong));
+    } catch {
       callback([]);
     }
-  );
+  };
+
+  fetchData();
+  const interval = setInterval(fetchData, 10000);
+  return () => clearInterval(interval);
 };
 
-export const getSong = async (songId) => {
-  try {
-    const songRef = doc(db, 'songs', songId);
-    const songSnap = await getDoc(songRef);
-
-    if (songSnap.exists()) {
-      const data = songSnap.data();
-      return {
-        id: songSnap.id,
-        title: data.title,
-        category: data.category,
-        audioUrl: data.audioUrl,
-        duration: data.duration || null,
-        style: data.style || getStyleByCategory(data.category),
-        uploadedBy: data.uploadedBy,
-        createdAt: data.createdAt,
-      };
-    }
-    return null;
-  } catch (error) {
-    console.error('Error fetching song:', error);
-    return null;
-  }
-};
-
+// === VIDEOS ===
 export const getVideos = async () => {
   try {
-    const videosRef = collection(db, 'videos');
-    const q = query(videosRef, orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
-
-    const videos = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      videos.push({
-        id: doc.id,
-        title: data.title,
-        duration: data.duration || null,
-        languageCategory: data.languageCategory || 'Multi-language',
-        videoUrl: data.videoUrl,
-        thumbnailUrl: data.thumbnailUrl || getDefaultThumbnail(),
-        uploadedBy: data.uploadedBy,
-        createdAt: data.createdAt,
-      });
-    });
-
-    return videos;
-  } catch (error) {
-    console.error('Error fetching videos:', error);
+    const videos = await get('/api/videos');
+    return videos.map(formatVideo);
+  } catch {
     return [];
   }
 };
 
 export const getVideo = async (videoId) => {
   try {
-    const videoRef = doc(db, 'videos', videoId);
-    const videoSnap = await getDoc(videoRef);
-
-    if (videoSnap.exists()) {
-      const data = videoSnap.data();
-      return {
-        id: videoSnap.id,
-        title: data.title,
-        duration: data.duration || null,
-        languageCategory: data.languageCategory || 'Multi-language',
-        videoUrl: data.videoUrl,
-        thumbnailUrl: data.thumbnailUrl || getDefaultThumbnail(),
-        uploadedBy: data.uploadedBy,
-        createdAt: data.createdAt,
-      };
-    }
-    return null;
-  } catch (error) {
-    console.error('Error fetching video:', error);
+    const video = await get(`/api/videos/${videoId}`);
+    return video ? formatVideo(video) : null;
+  } catch {
     return null;
   }
 };
 
 export const subscribeToVideos = (callback) => {
-  const videosRef = collection(db, 'videos');
-  const q = query(videosRef, orderBy('createdAt', 'desc'));
-
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const videos = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        videos.push({
-          id: doc.id,
-          title: data.title,
-          duration: data.duration || null,
-          languageCategory: data.languageCategory || 'Multi-language',
-          videoUrl: data.videoUrl,
-          thumbnailUrl: data.thumbnailUrl || getDefaultThumbnail(),
-          uploadedBy: data.uploadedBy,
-          createdAt: data.createdAt,
-        });
-      });
-      callback(videos);
-    },
-    (error) => {
-      console.error('Error listening to videos:', error);
+  const fetchData = async () => {
+    try {
+      const videos = await get('/api/videos');
+      callback(videos.map(formatVideo));
+    } catch {
       callback([]);
     }
-  );
+  };
+
+  fetchData();
+  const interval = setInterval(fetchData, 10000);
+  return () => clearInterval(interval);
 };
 
-const getDefaultThumbnail = () => {
-  return 'https://images.pexels.com/photos/8879724/pexels-photo-8879724.jpeg?auto=compress&cs=tinysrgb&w=800';
-};
-
+// === NOTICES ===
 export const getNotices = async () => {
   try {
-    const noticesRef = collection(db, 'notices');
-    const q = query(noticesRef, orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
-
-    const notices = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      notices.push({
-        id: doc.id,
-        title: data.title,
-        message: data.message,
-        date:
-          data.createdAt?.toDate()?.toISOString()?.split('T')[0] ||
-          new Date().toISOString().split('T')[0],
-        uploadedBy: data.uploadedBy,
-        createdAt: data.createdAt,
-      });
-    });
-
-    return notices;
-  } catch (error) {
-    console.error('Error fetching notices:', error);
+    const notices = await get('/api/notices');
+    return notices.map(formatNotice);
+  } catch {
     return [];
   }
 };
 
 export const subscribeToNotices = (callback) => {
-  const noticesRef = collection(db, 'notices');
-  const q = query(noticesRef, orderBy('createdAt', 'desc'));
-
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const notices = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        notices.push({
-          id: doc.id,
-          title: data.title,
-          message: data.message,
-          date:
-            data.createdAt?.toDate()?.toISOString()?.split('T')[0] ||
-            new Date().toISOString().split('T')[0],
-          uploadedBy: data.uploadedBy,
-          createdAt: data.createdAt,
-        });
-      });
-      callback(notices);
-    },
-    (error) => {
-      console.error('Error listening to notices:', error);
+  const fetchData = async () => {
+    try {
+      const notices = await get('/api/notices');
+      callback(notices.map(formatNotice));
+    } catch {
       callback([]);
     }
-  );
+  };
+
+  fetchData();
+  const interval = setInterval(fetchData, 10000);
+  return () => clearInterval(interval);
 };
 
 export const markNoticeAsRead = async (userId, noticeId) => {
   try {
-    const docRef = doc(db, 'users', userId, 'readNotices', noticeId);
-    await setDoc(docRef, { readAt: new Date() });
+    await post(`/api/users/${userId}/readNotices`, { noticeId });
   } catch (error) {
     console.error('Error marking notice as read:', error);
   }
 };
 
 export const getReadNoticesIds = async (userId) => {
-  if (!userId) {
-    return [];
-  }
   try {
-    const readNoticesRef = collection(db, 'users', userId, 'readNotices');
-    const querySnapshot = await getDocs(readNoticesRef);
-    const readNoticeIds = querySnapshot.docs.map((doc) => doc.id);
-    return readNoticeIds;
-  } catch (error) {
-    console.error('Error fetching read notice IDs:', error);
+    return await get(`/api/users/${userId}/readNotices`);
+  } catch {
     return [];
   }
+};
+
+export const put = async (path, data) => {
+  return axios.put(`${API_BASE_URL}${path}`, data).then((res) => res.data);
+};
+
+export const del = async (path, id) => {
+  return axios.delete(`${API_BASE_URL}${path}/${id}`).then((res) => res.data);
 };
 
 export const subscribeToReadNotices = (userId, callback) => {
-  if (!userId) {
-    callback([]);
-    return () => {};
-  }
-  const readNoticesRef = collection(db, 'users', userId, 'readNotices');
-  return onSnapshot(
-    readNoticesRef,
-    (snapshot) => {
-      const readNoticeIds = snapshot.docs.map((doc) => doc.id);
-      callback(readNoticeIds);
-    },
-    (error) => {
-      console.error('Error listening to read notices:', error);
+  const fetchData = async () => {
+    try {
+      const ids = await getReadNoticesIds(userId);
+      callback(ids);
+    } catch {
       callback([]);
     }
-  );
-};
-
-export const addContactMessage = async (messageData) => {
-  try {
-    const docRef = await addDoc(collection(db, 'contactMessages'), {
-      ...messageData,
-      createdAt: serverTimestamp(),
-    });
-    console.log('Document written with ID: ', docRef.id);
-  } catch (e) {
-    console.error('Error adding contact message: ', e);
-    throw e;
-  }
-};
-
-export const subscribeToContactMessages = (callback) => {
-  const q = query(
-    collection(db, 'contactMessages'),
-    orderBy('createdAt', 'desc')
-  );
-
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const messages = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      callback(messages);
-    },
-    (error) => {
-      console.error('Error subscribing to contact messages: ', error);
-      callback([]);
-    }
-  );
-};
-
-export const getRecentContent = async () => {
-  try {
-    const [recentSermons, recentSongs, recentVideos] = await Promise.all([
-      getDocs(
-        query(collection(db, 'sermons'), orderBy('createdAt', 'desc'), limit(3))
-      ),
-      getDocs(
-        query(collection(db, 'songs'), orderBy('createdAt', 'desc'), limit(3))
-      ),
-      getDocs(
-        query(collection(db, 'videos'), orderBy('createdAt', 'desc'), limit(3))
-      ),
-    ]);
-
-    const content = {
-      sermons: [],
-      songs: [],
-      videos: [],
-    };
-
-    recentSermons.forEach((doc) => {
-      const data = doc.data();
-      content.sermons.push({
-        id: doc.id,
-        title: data.title,
-        content: data.content || null,
-        audioUrl: data.audioUrl || null,
-        date: data.createdAt?.toDate()?.toISOString()?.split('T')[0],
-      });
-    });
-
-    recentSongs.forEach((doc) => {
-      const data = doc.data();
-      content.songs.push({
-        id: doc.id,
-        title: data.title,
-        category: data.category,
-        audioUrl: data.audioUrl,
-      });
-    });
-
-    recentVideos.forEach((doc) => {
-      const data = doc.data();
-      content.videos.push({
-        id: doc.id,
-        title: data.title,
-        thumbnailUrl: data.thumbnailUrl || getDefaultThumbnail(),
-        videoUrl: data.videoUrl,
-      });
-    });
-
-    return content;
-  } catch (error) {
-    console.error('Error fetching recent content:', error);
-    return { sermons: [], songs: [], videos: [] };
-  }
-};
-
-export const searchContent = async (searchTerm, category = null) => {
-  try {
-    const searchTermLower = searchTerm.toLowerCase();
-
-    let allSongs = await getSongs();
-    let allSermons = await getSermons();
-    let allVideos = await getVideos();
-
-    const results = {
-      sermons: allSermons.filter(
-        (item) =>
-          item.title.toLowerCase().includes(searchTermLower) ||
-          (item.content && item.content.toLowerCase().includes(searchTermLower))
-      ),
-      songs: allSongs.filter((item) => {
-        const matchesQuery = item.title.toLowerCase().includes(searchTermLower);
-        const matchesCategory = category ? item.category === category : true;
-        return matchesQuery && matchesCategory;
-      }),
-      videos: allVideos.filter((item) =>
-        item.title.toLowerCase().includes(searchTermLower)
-      ),
-    };
-
-    return results;
-  } catch (error) {
-    console.error('Error searching content:', error);
-    return { sermons: [], songs: [], videos: [] };
-  }
-};
-
-export const getAppInfo = () => {
-  return {
-    version: '1.0.0',
-    content:
-      "Haven is a multilingual church app designed to bring the gospel to people of all languages and backgrounds. Our mission is to spread God's love through hymns, sermons, music, and animated Bible stories.",
-    contactEmail: 'info@higher.com.ng',
-    churchMission:
-      'To glorify God and make disciples of all nations through multilingual worship and biblical teaching.',
   };
+
+  fetchData();
+  const interval = setInterval(fetchData, 10000);
+  return () => clearInterval(interval);
 };
 
-export const addQuizResource = async (quizData) => {
-  try {
-    const docRef = await addDoc(collection(db, 'quizResources'), {
-      ...quizData,
-      createdAt: serverTimestamp(),
-    });
-    console.log('Quiz resource document written with ID: ', docRef.id);
-  } catch (e) {
-    console.error('Error adding quiz resource: ', e);
-    throw e;
-  }
-};
-
-export const addQuizHelpQuestion = async (questionData) => {
-  try {
-    const docRef = await addDoc(collection(db, 'quizHelpQuestions'), {
-      ...questionData,
-      createdAt: serverTimestamp(),
-    });
-    console.log('Quiz help question written with ID: ', docRef.id);
-  } catch (e) {
-    console.error('Error adding quiz help question: ', e);
-    throw e;
-  }
-};
-
-export const subscribeToQuizHelpQuestions = (callback) => {
-  const q = query(
-    collection(db, 'quizHelpQuestions'),
-    orderBy('createdAt', 'desc')
-  );
-
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const questions = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      callback(questions);
-    },
-    (error) => {
-      console.error('Error subscribing to quiz help questions: ', error);
-      callback([]);
-    }
-  );
-};
-
+// === QUIZ RESOURCES ===
 export const getQuizResources = async () => {
   try {
-    const quizRef = collection(db, 'quizResources');
-    const q = query(quizRef, orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
-
-    const quizzes = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      quizzes.push({
-        id: doc.id,
-        title: data.title,
-        age: data.age,
-        gender: data.gender,
-        year: data.year,
-        uploadedBy: data.uploadedBy,
-        createdAt: data.createdAt,
-      });
-    });
-
-    return quizzes;
-  } catch (error) {
-    console.error('Error fetching quizzes:', error);
+    const quizzes = await get('/api/quizResources');
+    return quizzes.map(formatQuiz);
+  } catch {
     return [];
   }
 };
 
 export const getQuiz = async (quizId) => {
   try {
-    const quizRef = doc(db, 'quizResources', quizId);
-    const quizSnap = await getDoc(quizRef);
-
-    if (quizSnap.exists()) {
-      const data = quizSnap.data();
-      return {
-        id: quizSnap.id,
-        title: data.title,
-        content: data.content,
-        age: data.age,
-        gender: data.gender,
-        year: data.year,
-        uploadedBy: data.uploadedBy,
-        createdAt: data.createdAt,
-      };
-    }
-    return null;
-  } catch (error) {
-    console.error('Error fetching quiz:', error);
+    const quiz = await get(`/api/quizResources/${quizId}`);
+    return quiz ? formatQuiz(quiz) : null;
+  } catch {
     return null;
   }
 };
 
 export const subscribeToQuizzes = (callback) => {
-  const quizzesRef = collection(db, 'quizResources');
-  const q = query(quizzesRef, orderBy('createdAt', 'desc'));
-
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const quizzes = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        quizzes.push({
-          id: doc.id,
-          title: data.title,
-          description: data.description,
-          questions: data.questions || [],
-          uploadedBy: data.uploadedBy,
-          createdAt: data.createdAt,
-        });
-      });
-      callback(quizzes);
-    },
-    (error) => {
-      console.error('Error listening to quizzes:', error);
+  const fetchData = async () => {
+    try {
+      const quizzes = await get('/api/quizResources');
+      callback(quizzes.map(formatQuiz));
+    } catch {
       callback([]);
     }
-  );
+  };
+
+  fetchData();
+  const interval = setInterval(fetchData, 10000);
+  return () => clearInterval(interval);
 };
+
+export const addQuizResource = async (quizData) => {
+  try {
+    await post('/api/quizResources', quizData);
+  } catch (e) {
+    console.error('Error adding quiz:', e);
+    throw e;
+  }
+};
+
+export const addQuizHelpQuestion = async (questionData) => {
+  try {
+    await post('/api/quizHelpQuestions', questionData);
+  } catch (e) {
+    console.error('Error adding quiz help:', e);
+    throw e;
+  }
+};
+
+export const subscribeToQuizHelpQuestions = (callback) => {
+  const fetchData = async () => {
+    try {
+      const questions = await get('/api/quizHelpQuestions');
+      callback(questions);
+    } catch {
+      callback([]);
+    }
+  };
+
+  fetchData();
+  const interval = setInterval(fetchData, 10000);
+  return () => clearInterval(interval);
+};
+
+// === CONTACT MESSAGES ===
+export const addContactMessage = async (messageData) => {
+  try {
+    await post('/api/contactMessages', messageData);
+  } catch (e) {
+    console.error('Error adding contact message:', e);
+    throw e;
+  }
+};
+
+export const subscribeToContactMessages = (callback) => {
+  const fetchData = async () => {
+    try {
+      const messages = await get('/api/contactMessages');
+      callback(messages);
+    } catch {
+      callback([]);
+    }
+  };
+
+  fetchData();
+  const interval = setInterval(fetchData, 10000);
+  return () => clearInterval(interval);
+};
+
+// === RECENT CONTENT ===
+export const getRecentContent = async () => {
+  try {
+    const [sermonsRes, songsRes, videosRes] = await Promise.all([
+      apiClient.get('sermons', { limit: 5 }),
+      apiClient.get('songs', { limit: 5 }),
+      apiClient.get('videos', { limit: 5 }),
+    ]);
+
+    // FILTER: Only text sermons (client-side, safe)
+    const textSermons = sermonsRes.data
+      .filter((s) => !s.audioUrl)
+      .slice(0, 5)
+      .map(formatSermon);
+
+    return {
+      sermons: textSermons,
+      songs: songsRes.data.map(formatSong),
+      videos: videosRes.data.map(formatVideo), // ← Videos work exactly as before
+    };
+  } catch (error) {
+    console.error('getRecentContent ERROR:', error.response || error);
+    return { sermons: [], songs: [], videos: [] };
+  }
+};
+
+// === SEARCH ===
+export const searchContent = async (searchTerm, category = null) => {
+  try {
+    const term = searchTerm.toLowerCase();
+    const [allSermons, allSongs, allVideos] = await Promise.all([
+      getSermons(),
+      getSongs(),
+      getVideos(),
+    ]);
+
+    return {
+      sermons: allSermons.filter(
+        (s) =>
+          s.title.toLowerCase().includes(term) ||
+          (s.content && s.content.toLowerCase().includes(term))
+      ),
+      songs: allSongs.filter(
+        (s) =>
+          s.title.toLowerCase().includes(term) &&
+          (!category || s.category === category)
+      ),
+      videos: allVideos.filter((v) => v.title.toLowerCase().includes(term)),
+    };
+  } catch {
+    return { sermons: [], songs: [], videos: [] };
+  }
+};
+
+// === FORMATTERS ===
+const formatSermon = (s) => ({
+  id: s.id,
+  title: s.title,
+  content: s.content || '',
+  category: s.category || null,
+  audioUrl: s.audioUrl || null,
+  date: s.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+  duration: s.duration || null,
+  uploadedBy: s.uploadedBy,
+  createdAt: s.createdAt,
+});
+
+const formatSong = (s) => ({
+  id: s.id,
+  title: s.title,
+  category: s.category,
+  audioUrl: s.audioUrl,
+  duration: s.duration || null,
+  style: s.style || getStyleByCategory(s.category),
+  uploadedBy: s.uploadedBy,
+  createdAt: s.createdAt,
+});
+
+const formatVideo = (v) => ({
+  id: v.id,
+  title: v.title,
+  duration: v.duration || null,
+  languageCategory: v.languageCategory || 'Multi-language',
+  videoUrl: v.videoUrl,
+  thumbnailUrl: v.thumbnailUrl || getDefaultThumbnail(),
+  uploadedBy: v.uploadedBy,
+  createdAt: v.createdAt,
+});
+
+const formatNotice = (n) => ({
+  id: n.id,
+  title: n.title,
+  message: n.message,
+  date: n.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+  uploadedBy: n.uploadedBy,
+  createdAt: n.createdAt,
+});
+
+const formatQuiz = (q) => ({
+  id: q.id,
+  title: q.title,
+  age: q.age,
+  gender: q.gender,
+  year: q.year,
+  content: q.content,
+  uploadedBy: q.uploadedBy,
+  createdAt: q.createdAt,
+});
+
+const getStyleByCategory = (category) => {
+  const styles = {
+    acapella: 'A Cappella Gospel',
+    native: 'Contemporary Gospel',
+    english: 'English Gospel',
+  };
+  return styles[category] || 'Gospel';
+};
+
+const getDefaultThumbnail = () => {
+  return 'https://images.pexels.com/photos/8879724/pexels-photo-8879724.jpeg?auto=compress&cs=tinysrgb&w=800';
+};
+
+// === APP INFO ===
+export const getAppInfo = () => ({
+  version: '1.0.0',
+  content:
+    'Grace is a multilingual church app designed to bring the gospel to people of all languages and backgrounds...',
+  contactEmail: 'info@higher.com.ng',
+  churchMission:
+    'To glorify God and make disciples of all nations through multilingual worship and biblical teaching.',
+});

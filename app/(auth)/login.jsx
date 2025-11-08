@@ -1,3 +1,4 @@
+// app/(auth)/login.jsx
 import React, { useState } from 'react';
 import {
   View,
@@ -8,21 +9,22 @@ import {
   Alert,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext'; // ← New JWT context
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 
 export default function LoginScreen() {
+  const { login } = useAuth(); // ← From JWT AuthContext
+  const { translations } = useLanguage();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
-  const { translations } = useLanguage();
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       Alert.alert(
         'Error',
         translations.fillAllFields || 'Please fill in all fields'
@@ -32,18 +34,18 @@ export default function LoginScreen() {
 
     setIsLoading(true);
     try {
-      const success = await login(email.trim(), password);
+      const success = await login(email.trim().toLowerCase(), password);
       if (success) {
         router.replace('/(tabs)/home');
       } else {
         Alert.alert(
           'Error',
-          translations.invalidCredentials || 'Invalid credentials'
+          translations.invalidCredentials || 'Invalid email or password'
         );
       }
-    } catch (error) {
-      console.error('Login failed:', error);
-      Alert.alert('Login Error', error.message || 'Something went wrong');
+    } catch (err) {
+      console.error('Login error:', err);
+      Alert.alert('Error', err.message || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -57,15 +59,16 @@ export default function LoginScreen() {
 
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logo}>🏠</Text>
-          <Text style={styles.appName}>Haven</Text>
+          <Text style={styles.appName}>Grace</Text>
         </View>
 
-        <Text style={styles.title}>{translations.loginTitle}</Text>
+        <Text style={styles.title}>
+          {translations.loginTitle || 'Welcome Back'}
+        </Text>
 
         <View style={styles.form}>
           <Input
-            label={translations.email}
+            label={translations.email || 'Email'}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -74,7 +77,7 @@ export default function LoginScreen() {
           />
 
           <Input
-            label={translations.password}
+            label={translations.password || 'Password'}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -82,7 +85,11 @@ export default function LoginScreen() {
           />
 
           <Button
-            title={isLoading ? translations.loading : translations.login}
+            title={
+              isLoading
+                ? translations.loading || 'Loading...'
+                : translations.login || 'Login'
+            }
             onPress={handleLogin}
             disabled={isLoading}
             size="large"
@@ -96,8 +103,10 @@ export default function LoginScreen() {
           disabled={isLoading}
         >
           <Text style={styles.signupText}>
-            {translations.dontHaveAccount}{' '}
-            <Text style={styles.linkText}>{translations.signup}</Text>
+            {translations.dontHaveAccount || "Don't have an account?"}{' '}
+            <Text style={styles.linkText}>
+              {translations.signup || 'Sign up'}
+            </Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -105,6 +114,7 @@ export default function LoginScreen() {
   );
 }
 
+// ← Styles unchanged
 const styles = StyleSheet.create({
   container: {
     flex: 1,

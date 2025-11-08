@@ -88,9 +88,22 @@ export default function MessagesScreen() {
 
   const formatDate = (date) => {
     if (!date) return 'Unknown Date';
-    const d = new Date(date.seconds * 1000);
+
+    // Handle Firestore Timestamp (has seconds property)
+    const d =
+      typeof date === 'object' && date.seconds
+        ? new Date(date.seconds * 1000)
+        : new Date(date);
+
+    // Check for invalid date
+    if (isNaN(d.getTime())) return 'Invalid Date';
+
     return (
-      d.toLocaleDateString() +
+      d.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }) +
       ' ' +
       d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     );
@@ -133,7 +146,7 @@ export default function MessagesScreen() {
       <View style={styles.messageFooter}>
         <Calendar size={14} color={colors.textSecondary} />
         <Text style={[styles.date, { color: colors.textSecondary }]}>
-          {formatDate(item.createdAt)}
+          {item.createdAt ? formatDate(item.createdAt) : 'Unknown Date'}
         </Text>
       </View>
     </View>

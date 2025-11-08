@@ -1,3 +1,4 @@
+// app/(tabs)/sermons/index.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -6,89 +7,230 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
+  Animated,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Search, Calendar, Clock } from 'lucide-react-native';
+import {
+  Search,
+  ChevronDown,
+  ChevronRight,
+  BookOpen,
+} from 'lucide-react-native';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../components/TopNavigation';
-import { getSermons, searchContent } from '../../../services/dataService';
+import {
+  getSermonsByCategory,
+  searchContent,
+} from '../../../services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
 import debounce from 'lodash.debounce';
+
+const SERMON_CATEGORIES = [
+  'Weekly Sermon Volume 1',
+  'Weekly Sermon Volume 2',
+  "God's Kingdom Advocate Volume 1",
+  "God's Kingdom Advocate Volume 2",
+  "God's Kingdom Advocate Volume 3",
+  'Abridged Bible Subjects',
+];
 
 const SkeletonCard = () => {
   const { colors } = useTheme();
   return (
-    <View style={[styles.sermonCard, { backgroundColor: colors.card }]}>
-      <View style={styles.sermonHeader}>
-        <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
-          style={styles.skeletonTitle}
-        />
-        <View style={styles.sermonMeta}>
-          <LinearGradient
-            colors={[colors.skeleton, colors.skeletonHighlight]}
-            style={styles.skeletonMeta}
-          />
-          <LinearGradient
-            colors={[colors.skeleton, colors.skeletonHighlight]}
-            style={styles.skeletonMeta}
-          />
+    <View style={[styles.categoryCard, { backgroundColor: colors.card }]}>
+      <LinearGradient
+        colors={[colors.skeleton, colors.skeletonHighlight]}
+        style={styles.skeletonCategory}
+      />
+      <LinearGradient
+        colors={[colors.skeleton, colors.skeletonHighlight]}
+        style={styles.skeletonCount}
+      />
+    </View>
+  );
+};
+
+const SermonItem = ({ sermon, colors, translations, onPress }) => {
+  const content = sermon.translations?.[translations.currentLanguage] || sermon;
+
+  return (
+    <TouchableOpacity
+      style={[styles.sermonItem, { backgroundColor: colors.surface }]}
+      onPress={onPress}
+    >
+      <View style={styles.sermonItemContent}>
+        <Text
+          style={[styles.sermonItemTitle, { color: colors.text }]}
+          numberOfLines={2}
+        >
+          {content.title || translations.noTitle}
+        </Text>
+        <View style={styles.sermonItemFooter}>
+          <BookOpen size={14} color={colors.primary} />
+          <Text style={[styles.readMoreText, { color: colors.primary }]}>
+            {translations.readFull || 'Read full sermon'}
+          </Text>
         </View>
       </View>
-      <LinearGradient
-        colors={[colors.skeleton, colors.skeletonHighlight]}
-        style={styles.skeletonContent}
-      />
-      <LinearGradient
-        colors={[colors.skeleton, colors.skeletonHighlight]}
-        style={styles.skeletonAudio}
-      />
+      <ChevronRight size={20} color={colors.textSecondary} />
+    </TouchableOpacity>
+  );
+};
+
+const CategoryCard = ({
+  category,
+  sermons,
+  colors,
+  translations,
+  isExpanded,
+  onToggle,
+}) => {
+  const [animation] = useState(new Animated.Value(isExpanded ? 1 : 0));
+  const sortedSermons = [...sermons].sort((a, b) => {
+    const titleA = (
+      a.translations?.[translations.currentLanguage]?.title ||
+      a.title ||
+      ''
+    ).toLowerCase();
+    const titleB = (
+      b.translations?.[translations.currentLanguage]?.title ||
+      b.title ||
+      ''
+    ).toLowerCase();
+    return titleA.localeCompare(titleB);
+  });
+
+  useEffect(() => {
+    Animated.timing(animation, {
+      toValue: isExpanded ? 1 : 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [isExpanded]);
+
+  const rotateIcon = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg'],
+  });
+
+  return (
+    <View style={[styles.categoryCard, { backgroundColor: colors.card }]}>
+      <TouchableOpacity
+        style={styles.categoryHeader}
+        onPress={onToggle}
+        activeOpacity={0.7}
+      >
+        <View style={styles.categoryHeaderLeft}>
+          <Animated.View style={{ transform: [{ rotate: rotateIcon }] }}>
+            <ChevronDown size={24} color={colors.primary} />
+          </Animated.View>
+          <View>
+            <Text style={[styles.categoryTitle, { color: colors.text }]}>
+              {category}
+            </Text>
+            <Text
+              style={[styles.categoryCount, { color: colors.textSecondary }]}
+            >
+              {sermons.length}{' '}
+              {sermons.length === 1
+                ? translations.sermon
+                : translations.sermons}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+
+      {isExpanded && (
+        <View style={styles.sermonsContainer}>
+          {sortedSermons.map((sermon) => (
+            <SermonItem
+              key={sermon.id}
+              sermon={sermon}
+              colors={colors}
+              translations={translations}
+              onPress={() => router.push(`/(tabs)/sermons/${sermon.id}`)}
+            />
+          ))}
+        </View>
+      )}
     </View>
   );
 };
 
 export default function SermonsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [sermons, setSermons] = useState([]);
+  const [categorizedSermons, setCategorizedSermons] = useState({});
   const [loading, setLoading] = useState(true);
+  const [expandedCategories, setExpandedCategories] = useState({});
   const { translations, currentLanguage } = useLanguage();
   const { colors } = useTheme();
 
+  // Fetch all sermons by category
   useEffect(() => {
     const fetchSermons = async () => {
+      setLoading(true);
       try {
-        const data = await getSermons();
-        setSermons(data);
+        const results = await Promise.all(
+          SERMON_CATEGORIES.map(async (cat) => {
+            const sermons = await getSermonsByCategory(cat);
+            return { category: cat, sermons };
+          })
+        );
+
+        const grouped = results.reduce((acc, { category, sermons }) => {
+          acc[category] = sermons;
+          return acc;
+        }, {});
+
+        setCategorizedSermons(grouped);
       } catch (error) {
         console.error('Error fetching sermons:', error);
-        setSermons([]);
+        setCategorizedSermons({});
       } finally {
         setLoading(false);
       }
     };
+
     fetchSermons();
   }, []);
 
+  // Debounced search
   const debouncedSearch = useCallback(
     debounce(async (query) => {
       if (!query.trim()) {
-        try {
-          const data = await getSermons();
-          setSermons(data);
-        } catch (error) {
-          console.error('Error fetching sermons:', error);
-          setSermons([]);
-        }
+        // Refetch all
+        const results = await Promise.all(
+          SERMON_CATEGORIES.map(async (cat) => {
+            const sermons = await getSermonsByCategory(cat);
+            return { category: cat, sermons };
+          })
+        );
+        const grouped = results.reduce((acc, { category, sermons }) => {
+          acc[category] = sermons;
+          return acc;
+        }, {});
+        setCategorizedSermons(grouped);
         return;
       }
+
       try {
         const results = await searchContent(query);
-        setSermons(results.sermons);
+        const grouped = SERMON_CATEGORIES.reduce((acc, cat) => {
+          acc[cat] = [];
+          return acc;
+        }, {});
+
+        results.sermons.forEach((sermon) => {
+          const cat = sermon.category || 'Uncategorized';
+          if (grouped[cat]) grouped[cat].push(sermon);
+        });
+
+        setCategorizedSermons(grouped);
       } catch (error) {
-        console.error('Error searching sermons:', error);
-        setSermons([]);
+        console.error('Search error:', error);
+        setCategorizedSermons({});
       }
     }, 300),
     []
@@ -98,66 +240,36 @@ export default function SermonsScreen() {
     debouncedSearch(searchQuery);
   }, [searchQuery, debouncedSearch]);
 
-  const getTranslatedContent = (sermon) => {
-    return (
-      sermon.translations?.[currentLanguage] ||
-      sermon.translations?.en ||
-      sermon
-    );
+  const toggleCategory = (category) => {
+    setExpandedCategories((prev) => ({
+      ...prev,
+      [category]: !prev[category],
+    }));
   };
 
-  const renderSermonItem = ({ item }) => {
-    const content = getTranslatedContent(item);
+  const renderCategoryItem = ({ item: category }) => (
+    <CategoryCard
+      category={category}
+      sermons={categorizedSermons[category] || []}
+      colors={colors}
+      translations={{ ...translations, currentLanguage }}
+      isExpanded={expandedCategories[category]}
+      onToggle={() => toggleCategory(category)}
+    />
+  );
 
-    return (
-      <TouchableOpacity
-        style={[styles.sermonCard, { backgroundColor: colors.card }]}
-        onPress={() => router.push(`/(tabs)/sermons/${item.id}`)}
-      >
-        <View style={styles.sermonHeader}>
-          <Text
-            style={[styles.sermonTitle, { color: colors.text }]}
-            numberOfLines={1}
-          >
-            {content.title || translations.noTitle}
-          </Text>
-          <View style={styles.sermonMeta}>
-            <View style={styles.metaItem}>
-              <Calendar size={14} color={colors.textSecondary} />
-              <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-                {item.date || translations.unknownDate}
-              </Text>
-            </View>
-            <View style={styles.metaItem}>
-              <Clock size={14} color={colors.textSecondary} />
-              <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-                {item.duration || translations.unknownDuration}
-              </Text>
-            </View>
-          </View>
-        </View>
+  const renderSkeletonCards = () =>
+    SERMON_CATEGORIES.map((cat) => <SkeletonCard key={cat} />);
 
-        <Text
-          style={[styles.sermonContent, { color: colors.textSecondary }]}
-          numberOfLines={3}
-        >
-          {content.content || translations.noContent}
-        </Text>
-        {item.audioUrl && (
-          <Text style={[styles.sermonContent, { color: colors.textSecondary }]}>
-            {translations.audioIncluded || '(Audio included)'}
-          </Text>
-        )}
-      </TouchableOpacity>
-    );
-  };
-
-  const renderSkeletonCards = () => (
-    <>
-      <SkeletonCard />
-      <SkeletonCard />
-      <SkeletonCard />
-    </>
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <BookOpen size={48} color={colors.textSecondary} />
+      <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
+        {searchQuery
+          ? translations.noSearchResults || 'No sermons found'
+          : translations.noSermons || 'No sermons available'}
+      </Text>
+    </View>
   );
 
   return (
@@ -180,18 +292,53 @@ export default function SermonsScreen() {
           style={[styles.searchInput, { color: colors.text }]}
         />
       </View>
-
-      <FlatList
-        data={loading || sermons.length === 0 ? [] : sermons}
-        renderItem={renderSermonItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[
-          styles.listContainer,
-          { backgroundColor: colors.background },
+      <View style={{ height: 10 }} />
+      {/* Audio Sermons */}
+      <View
+        style={[
+          styles.categoryCard,
+          { backgroundColor: colors.card, marginHorizontal: 18 },
         ]}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={renderSkeletonCards}
-      />
+      >
+        <TouchableOpacity
+          style={styles.categoryHeader}
+          onPress={() => router.push('/(tabs)/sermons/audio')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.categoryHeaderLeft}>
+            <View>
+              <Text style={[styles.categoryTitle, { color: colors.text }]}>
+                Sermon Audio Clips
+              </Text>
+              <Text
+                style={[styles.categoryCount, { color: colors.textSecondary }]}
+              >
+                Listen to your edifying sermons.
+              </Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </View>
+      {/* Text Sermons */}
+      {loading ? (
+        <View
+          style={[styles.listContainer, { backgroundColor: colors.background }]}
+        >
+          {renderSkeletonCards()}
+        </View>
+      ) : (
+        <FlatList
+          data={SERMON_CATEGORIES}
+          renderItem={renderCategoryItem}
+          keyExtractor={(item) => item}
+          contentContainerStyle={[
+            styles.listContainer,
+            { backgroundColor: colors.background },
+          ]}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={renderEmptyState}
+        />
+      )}
     </SafeAreaWrapper>
   );
 }
@@ -204,8 +351,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     marginHorizontal: 20,
-    marginBottom: 10,
+    marginVertical: 10,
   },
+
   searchIcon: {
     position: 'absolute',
     left: 30,
@@ -222,63 +370,90 @@ const styles = StyleSheet.create({
   listContainer: {
     padding: 20,
   },
-  sermonCard: {
+  categoryCard: {
     borderRadius: 12,
-    padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
+    overflow: 'hidden',
   },
-  sermonHeader: {
-    marginBottom: 12,
+  categoryHeader: {
+    padding: 16,
   },
-  sermonTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  sermonMeta: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  metaItem: {
+  categoryHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 12,
   },
-  metaText: {
-    fontSize: 12,
-    opacity: 0.9,
-  },
-  sermonContent: {
+  categoryTitle: {
     fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 12,
-    opacity: 0.9,
+    fontWeight: 'bold',
+    marginBottom: 2,
   },
-  skeletonTitle: {
-    height: 20,
-    width: '80%',
+  categoryCount: {
+    fontSize: 13,
+    opacity: 0.8,
+  },
+  sermonsContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    gap: 8,
+  },
+  sermonItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#c4c1c1ff',
+  },
+  sermonItemContent: {
+    flex: 1,
+  },
+
+  sermonItemTitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 6,
+    lineHeight: 20,
+  },
+  sermonItemFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  readMoreText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  skeletonCategory: {
+    height: 24,
+    width: '60%',
     borderRadius: 4,
     marginBottom: 8,
+    marginLeft: 16,
+    marginTop: 16,
   },
-  skeletonMeta: {
+  skeletonCount: {
     height: 14,
-    width: 80,
-    borderRadius: 4,
-  },
-  skeletonContent: {
-    height: 60,
-    width: '100%',
-    borderRadius: 4,
-    marginBottom: 12,
-  },
-  skeletonAudio: {
-    height: 16,
     width: 100,
     borderRadius: 4,
+    marginLeft: 16,
+    marginBottom: 16,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    gap: 12,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    textAlign: 'center',
   },
 });

@@ -18,7 +18,7 @@ export default function AboutScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopNavigation title={translations.about} onPress={() => router.back()} />
+      <TopNavigation title={translations.about} />
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.logoContainer}>
           <Text style={styles.logo}>🏠</Text>

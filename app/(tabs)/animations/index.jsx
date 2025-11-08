@@ -101,11 +101,6 @@ export default function AnimationsScreen() {
         <View style={styles.playOverlay}>
           <Play size={32} color="#FFFFFF" />
         </View>
-        <View style={styles.durationBadge}>
-          <Text style={styles.durationText}>
-            {item.duration || translations.unknownDuration}
-          </Text>
-        </View>
       </View>
 
       <View style={styles.videoInfo}>
@@ -115,7 +110,7 @@ export default function AnimationsScreen() {
         >
           {item.title}
         </Text>
-        <View style={styles.videoMeta}>
+        {/* <View style={styles.videoMeta}>
           <Clock size={14} color={colors.textSecondary} />
           <Text style={[styles.metaText, { color: colors.textSecondary }]}>
             {item.duration || translations.unknownDuration}
@@ -126,7 +121,7 @@ export default function AnimationsScreen() {
           <Text style={[styles.metaText, { color: colors.textSecondary }]}>
             {item.languageCategory || translations.unknownCategory}
           </Text>
-        </View>
+        </View> */}
       </View>
     </TouchableOpacity>
   );
@@ -183,7 +178,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     marginHorizontal: 20,
-    marginBottom: 10,
+    marginVertical: 10,
   },
   searchIcon: {
     position: 'absolute',

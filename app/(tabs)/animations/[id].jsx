@@ -139,7 +139,7 @@ export default function AnimationDetailScreen() {
       <View style={[styles.header, { backgroundColor: colors.card }]}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.back()}
+          onPress={() => router.push(`/(tabs)/animations`)}
         >
           <ArrowLeft size={24} color={colors.text} />
         </TouchableOpacity>
@@ -163,14 +163,14 @@ export default function AnimationDetailScreen() {
           {video.title || translations.noTitle}
         </Text>
         <View style={styles.metaInfo}>
-          <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+          {/* <Text style={[styles.metaText, { color: colors.textSecondary }]}>
             {translations.duration}:{' '}
             {video.duration || translations.unknownDuration}
-          </Text>
-          <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+          </Text> */}
+          {/* <Text style={[styles.metaText, { color: colors.textSecondary }]}>
             {translations.language}:{' '}
             {video.languageCategory || translations.unknownCategory}
-          </Text>
+          </Text> */}
         </View>
       </View>
 

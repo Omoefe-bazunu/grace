@@ -22,6 +22,7 @@ const CATEGORIES = [
   { id: 'complaint', label: 'Complaint' },
   { id: 'suggestion', label: 'Suggestion' },
   { id: 'request', label: 'Request' },
+  { id: 'appreciation', label: 'Appreciation' },
 ];
 
 export default function ContactScreen() {
@@ -59,10 +60,7 @@ export default function ContactScreen() {
 
   return (
     <SafeAreaView>
-      <TopNavigation
-        title={translations.contact}
-        onPress={() => router.back()}
-      />
+      <TopNavigation title={translations.contact} />
 
       {/* Wrap the content in a ScrollView */}
       <ScrollView
@@ -203,11 +201,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   scrollViewContent: {
-    paddingBottom: 20, // Add padding at the bottom for the tabs
+    paddingBottom: 60, // Add padding at the bottom for the tabs
   },
   content: {
     paddingHorizontal: 20,
     paddingTop: 20,
+    paddingBottom: 30,
   },
   description: {
     fontSize: 16,
@@ -261,7 +260,8 @@ const styles = StyleSheet.create({
     height: 100,
   },
   submitButton: {
-    marginTop: 16,
+    marginTop: 4,
+    marginBottom: 20,
   },
   modalOverlay: {
     flex: 1,

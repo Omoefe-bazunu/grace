@@ -1,84 +1,113 @@
+// contexts/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-} from 'firebase/auth';
-import { auth } from '../services/firebaseConfig'; // Verify path
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 const AuthContext = createContext(undefined);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // ← Starts true
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        const formattedUser = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-        };
-        setUser(formattedUser);
-      } else {
+  const API = 'https://grace-backend-tp3h.onrender.com';
+
+  // Auto-attach JWT
+  axios.interceptors.request.use(async (config) => {
+    const token = await AsyncStorage.getItem('jwt');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  });
+
+  // Handle 401 globally
+  axios.interceptors.response.use(
+    (res) => res,
+    async (error) => {
+      if (error.response?.status === 401) {
+        await AsyncStorage.removeItem('jwt');
         setUser(null);
       }
-      setIsLoading(false);
-    });
-
-    return unsubscribe;
-  }, []);
+      return Promise.reject(error);
+    }
+  );
 
   const login = async (email, password) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const { data } = await axios.post(`${API}/login`, { email, password });
+      await AsyncStorage.setItem('jwt', data.token);
+      const decoded = jwtDecode(data.token);
+      setUser({ uid: decoded.email, email: decoded.email });
+      setIsLoading(false); // ← NOW SET TO FALSE
       return true;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Login error:', error.response?.data || error.message);
+      setIsLoading(false); // ← Even on error
       return false;
     }
   };
 
   const signup = async (email, password) => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      return true;
+      await axios.post(`${API}/register`, { email, password });
+      return await login(email, password); // login handles isLoading
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error('Signup error:', error.response?.data || error.message);
+      setIsLoading(false);
       return false;
     }
   };
 
   const logout = async () => {
-    try {
-      await signOut(auth);
-      setUser(null);
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    await AsyncStorage.removeItem('jwt');
+    setUser(null);
+    setIsLoading(false); // ← Ensure loading ends
   };
 
-  const isAdmin =
-    user?.email === 'raniem57@gmail.com' ||
-    user?.email === 'info@higher.com.ng';
+  const isAdmin = user?.email === 'raniem57@gmail.com';
 
-  const value = {
-    user,
-    isLoading,
-    login,
-    signup,
-    logout,
-    isAdmin,
-  };
+  // Restore session
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const token = await AsyncStorage.getItem('jwt');
+        if (!token) {
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+        const decoded = jwtDecode(token);
+        const now = Date.now() / 1000;
+
+        if (decoded.exp && decoded.exp < now) {
+          await AsyncStorage.removeItem('jwt');
+          setUser(null);
+        } else {
+          setUser({ uid: decoded.email, email: decoded.email });
+        }
+      } catch (error) {
+        console.error('JWT decode error:', error);
+        await AsyncStorage.removeItem('jwt');
+        setUser(null);
+      } finally {
+        setIsLoading(false); // ← ALWAYS SET TO FALSE
+      }
+    };
+
+    restoreSession();
+  }, []);
+
+  return (
+    <AuthContext.Provider
+      value={{ user, isLoading, login, signup, logout, isAdmin }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 }

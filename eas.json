@@ -1,3 +1,25 @@
+// {
+//   "cli": {
+//     "version": ">= 16.18.0",
+//     "appVersionSource": "remote"
+//   },
+//   "build": {
+//     "development": {
+//       "developmentClient": true,
+//       "distribution": "internal"
+//     },
+//     "preview": {
+//       "distribution": "internal"
+//     },
+//     "production": {
+//       "autoIncrement": true
+//     }
+//   },
+//   "submit": {
+//     "production": {}
+//   }
+// }
+
 {
   "cli": {
     "version": ">= 16.18.0",
@@ -9,10 +31,15 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      // 👇 ADD THIS SECTION to request an APK artifact
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
       "autoIncrement": true
+      // This will build an AAB by default, which is correct for Play Store
     }
   },
   "submit": {

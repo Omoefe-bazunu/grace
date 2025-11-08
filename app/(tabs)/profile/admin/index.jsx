@@ -1,3 +1,4 @@
+// AdminDashboardScreen.tsx (updated)
 import React from 'react';
 import {
   View,
@@ -6,7 +7,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
-  Alert, // 👈 Added Alert for user feedback
+  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -17,17 +18,17 @@ import {
   Video,
   Bell,
   Mic,
+  FileText,
 } from 'lucide-react-native';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { LanguageSwitcher } from '../../../../components/LanguageSwitcher';
 import { TopNavigation } from '../../../../components/TopNavigation';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // 👈 Import AsyncStorage
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function AdminDashboardScreen() {
   const { user } = useAuth();
 
-  // 👈 Add this function to clear the onboarding state
   const handleResetOnboarding = async () => {
     try {
       await AsyncStorage.removeItem('hasSeenOnboarding');
@@ -71,6 +72,13 @@ export default function AdminDashboardScreen() {
       onPress: () => router.push('/(tabs)/profile/admin/upload/video'),
     },
     {
+      id: 'upload-sermon-audio',
+      title: 'Upload Sermon Audio',
+      description: 'Add sermon audio with date',
+      icon: <Music size={32} color="#1E3A8A" />,
+      onPress: () => router.push('/(tabs)/profile/admin/upload/sermonAudio'),
+    },
+    {
       id: 'view-messages',
       title: 'View Messages',
       description: 'Check contact form submissions',
@@ -91,7 +99,13 @@ export default function AdminDashboardScreen() {
       icon: <MessageCircleQuestion size={32} color="#DC2626" />,
       onPress: () => router.push('/(tabs)/profile/admin/quizhelpquestions'),
     },
-    // 👈 Add the new action here
+    {
+      id: 'read-notices',
+      title: 'Read Notices',
+      description: 'View, edit, and delete all notices',
+      icon: <FileText size={32} color="#7C3AED" />,
+      onPress: () => router.push('/(tabs)/profile/admin/readnotices'),
+    },
     {
       id: 'reset-onboarding',
       title: 'Reset Onboarding',
@@ -132,14 +146,6 @@ export default function AdminDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  backButton: {
-    padding: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
   content: {
     flex: 1,
     paddingHorizontal: 20,
@@ -173,23 +179,14 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
   },
-  leftCard: {
-    width: '48%',
-  },
-  rightCard: {
-    width: '48%',
-  },
-  actionIcon: {
-    marginBottom: 12,
-  },
+  leftCard: { width: '48%' },
+  rightCard: { width: '48%' },
+  actionIcon: { marginBottom: 12 },
   actionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -200,45 +197,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
     lineHeight: 16,
-  },
-  quickStats: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  statsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 16,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  statCard: {
-    alignItems: 'center',
-    width: '48%',
-    paddingVertical: 12,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1E3A8A',
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 4,
   },
 });

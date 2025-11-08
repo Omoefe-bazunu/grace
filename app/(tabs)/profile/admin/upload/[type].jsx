@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// UploadScreen.tsx (updated - sermonAudio date field)
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,363 +8,387 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Upload } from 'lucide-react-native';
+import { ArrowLeft, Upload, Plus, X } from 'lucide-react-native';
 import { LanguageSwitcher } from '../../../../../components/LanguageSwitcher';
 import { Input } from '../../../../../components/ui/Input';
 import { Button } from '../../../../../components/ui/Button';
-import { LANGUAGES } from '../../../../../constants/languages';
-import { db, storage } from '../../../../../services/firebaseConfig';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../../../../../contexts/AuthContext';
+import { apiClient } from '../../../../../utils/api';
 
 export default function UploadScreen() {
   const { type } = useLocalSearchParams();
-  const { user, isAdmin } = useAuth();
-  const [selectedLanguages, setSelectedLanguages] = useState(['en']);
+  const { user } = useAuth();
   const [formData, setFormData] = useState({});
   const [isUploading, setIsUploading] = useState(false);
+  const [songCategories, setSongCategories] = useState([]);
+  const [newCategory, setNewCategory] = useState('');
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({});
 
-  if (!isAdmin) {
-    Alert.alert('Access Denied', 'Only admins can upload content.');
-    router.back();
-    return null;
-  }
+  const FILE_SIZE_LIMITS = { audio: 50, video: 100 };
 
-  const toggleLanguage = (langCode) => {
-    setSelectedLanguages((prev) =>
-      prev.includes(langCode)
-        ? prev.filter((l) => l !== langCode)
-        : [...prev, langCode]
-    );
-  };
+  useEffect(() => {
+    if (type === 'song') {
+      fetchSongCategories();
+    }
+  }, [type]);
 
-  const updateFormData = (field, value, language) => {
-    if (language) {
-      setFormData((prev) => ({
-        ...prev,
-        [language]: { ...prev[language], [field]: value },
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [field]: value }));
+  const fetchSongCategories = async () => {
+    try {
+      const res = await apiClient.get('songs');
+      const categories = new Set();
+      res.data.forEach((song) => {
+        if (song.category?.trim()) categories.add(song.category.trim());
+      });
+      setSongCategories(Array.from(categories).sort());
+    } catch (err) {
+      console.error('Failed to load categories:', err);
+      Alert.alert('Error', 'Failed to load song categories');
     }
   };
 
-  const handleFilePick = async (
-    field,
-    maxSizeMB = 100,
-    allowedExtensions = []
-  ) => {
+  const updateField = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const pickAudio = async (field) => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: allowedExtensions.length ? allowedExtensions : ['*/*'],
+        type: ['audio/*'],
+        copyToCacheDirectory: true,
       });
       if (result.canceled) return;
-
       const file = result.assets[0];
-      if (file.size > maxSizeMB * 1024 * 1024) {
-        Alert.alert('Error', `File size exceeds ${maxSizeMB}MB limit.`);
-        return;
-      }
-
-      if (!user) {
-        Alert.alert('Error', 'You must be logged in to upload files.');
-        return;
-      }
-
-      const response = await fetch(file.uri);
-      const blob = await response.blob();
-
-      const folder = field === 'thumbnailUrl' ? 'thumbnails' : `${type}s`;
-      const fileExtension = file.name.split('.').pop().toLowerCase();
-      const storageRef = ref(storage, `${folder}/${Date.now()}_${file.name}`);
-
-      const metadata = {
-        contentType: getContentTypeFromExtension(fileExtension),
-      };
-
-      await uploadBytes(storageRef, blob, metadata);
-      const downloadURL = await getDownloadURL(storageRef);
-
-      updateFormData(field, downloadURL);
-    } catch (err) {
-      console.error('File upload error:', err);
-      if (err.code === 'storage/unauthorized') {
-        Alert.alert('Error', 'You do not have permission to upload files.');
-      } else if (err.code === 'storage/quota-exceeded') {
-        Alert.alert('Error', 'Storage quota exceeded. Contact support.');
-      } else {
-        Alert.alert('Error', 'Failed to upload file. Please try again.');
-      }
+      await uploadFile(
+        field,
+        file.uri,
+        file.name,
+        file.mimeType,
+        FILE_SIZE_LIMITS.audio
+      );
+    } catch (error) {
+      console.error('Audio picker error:', error);
+      Alert.alert('Error', 'Failed to pick audio file');
     }
   };
 
-  const getContentTypeFromExtension = (extension) => {
-    const typeMap = {
-      mp3: 'audio/mpeg',
-      wav: 'audio/wav',
-      m4a: 'audio/mp4',
-      mp4: 'video/mp4',
-      mov: 'video/quicktime',
-      avi: 'video/x-msvideo',
-      jpg: 'image/jpeg',
-      jpeg: 'image/jpeg',
-      png: 'image/png',
-      gif: 'image/gif',
-    };
-    return typeMap[extension] || 'application/octet-stream';
+  const pickVideo = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['video/*'],
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled) return;
+      const file = result.assets[0];
+      await uploadFile(
+        'videoUrl',
+        file.uri,
+        file.name,
+        file.mimeType,
+        FILE_SIZE_LIMITS.video
+      );
+    } catch (error) {
+      console.error('Video picker error:', error);
+      Alert.alert('Error', 'Failed to pick video file');
+    }
+  };
+
+  const uploadFile = async (field, uri, fileName, mimeType, maxSizeMB) => {
+    setUploadProgress((prev) => ({ ...prev, [field]: 'uploading' }));
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      if (blob.size > maxSizeMB * 1024 * 1024) {
+        Alert.alert('File Too Large', `File must be less than ${maxSizeMB}MB`);
+        setUploadProgress((prev) => ({ ...prev, [field]: 'error' }));
+        return;
+      }
+      let folder =
+        type === 'song'
+          ? 'songs'
+          : type === 'sermonAudio'
+          ? 'sermons'
+          : 'videos';
+      const destinationPath = `${folder}/${Date.now()}_${fileName}`;
+      const uploadResponse = await apiClient.upload(
+        { uri, name: fileName, type: mimeType },
+        destinationPath
+      );
+      updateField(field, uploadResponse.data.url);
+      setUploadProgress((prev) => ({ ...prev, [field]: 'success' }));
+      Alert.alert('Success', 'File uploaded successfully!');
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadProgress((prev) => ({ ...prev, [field]: 'error' }));
+      Alert.alert(
+        'Upload Failed',
+        error.response?.data?.error || error.message || 'Upload failed.'
+      );
+    }
+  };
+
+  const addCategory = () => {
+    const categoryName = newCategory.trim();
+    if (!categoryName) {
+      Alert.alert('Invalid Category', 'Category name cannot be empty');
+      return;
+    }
+    if (songCategories.includes(categoryName)) {
+      Alert.alert('Category Exists', 'This category already exists');
+      return;
+    }
+    setSongCategories((prev) => [...prev, categoryName].sort());
+    updateField('category', categoryName);
+    setNewCategory('');
+    setShowAddCategory(false);
+  };
+
+  const validateForm = () => {
+    if (type === 'notice')
+      return formData.title?.trim() && formData.message?.trim();
+    if (type === 'video') return formData.title?.trim() && formData.videoUrl;
+    if (type === 'song')
+      return formData.title?.trim() && formData.audioUrl && formData.category;
+    if (type === 'sermon')
+      return formData.title?.trim() && formData.content?.trim();
+    if (type === 'sermonAudio')
+      return (
+        formData.title?.trim() && formData.date?.trim() && formData.audioUrl
+      );
+    if (type === 'quiz') return formData.title?.trim();
+    return false;
   };
 
   const handleSubmit = async () => {
+    if (!validateForm()) {
+      Alert.alert('Validation Error', 'Please fill all required fields');
+      return;
+    }
     setIsUploading(true);
     try {
       const payload = {
-        createdAt: serverTimestamp(),
-        uploadedBy: user.email,
+        title: formData.title?.trim() || '',
+        category: formData.category || '',
+        content: formData.content?.trim() || '',
+        date: formData.date || '',
+        audioUrl: formData.audioUrl || '',
+        videoUrl: formData.videoUrl || '',
+        message: formData.message?.trim() || '',
+        uploadedBy: user?.email || 'admin',
       };
-
-      if (type === 'notice') {
-        if (!formData.title || !formData.message) {
-          throw new Error('Title and message are required.');
-        }
-        payload.title = formData.title;
-        payload.message = formData.message;
-        await addDoc(collection(db, 'notices'), payload);
-      } else if (type === 'video') {
-        if (!formData.videoUrl) {
-          throw new Error('Video file is required.');
-        }
-        payload.title = formData.title || '';
-        payload.videoUrl = formData.videoUrl;
-        payload.languageCategory = formData.languageCategory || '';
-        payload.thumbnailUrl = formData.thumbnailUrl || '';
-        await addDoc(collection(db, 'videos'), payload);
-      } else if (type === 'sermon') {
-        if (!formData.title) {
-          throw new Error('Title is required.');
-        }
-        payload.title = formData.title;
-        payload.content = formData.content || '';
-        if (formData.audioUrl) payload.audioUrl = formData.audioUrl;
-        await addDoc(collection(db, 'sermons'), payload);
-      } else if (type === 'song') {
-        if (!formData.title || !formData.audioUrl) {
-          throw new Error('Title and audio file are required.');
-        }
-        payload.title = formData.title;
-        payload.audioUrl = formData.audioUrl;
-        payload.category = formData.category || '';
-        await addDoc(collection(db, 'songs'), payload);
-      } else if (type === 'hymn') {
-        if (!formData.en?.title) {
-          throw new Error('Title for English is required.');
-        }
-        await addDoc(collection(db, 'hymns'), { ...formData, ...payload });
-      }
-
-      Alert.alert('Success', `${type} uploaded successfully!`);
-      router.back();
-    } catch (err) {
-      console.error('Upload failed:', err);
+      let collectionName;
+      if (type === 'song') collectionName = 'songs';
+      else if (type === 'sermon' || type === 'sermonAudio')
+        collectionName = 'sermons';
+      else collectionName = `${type}s`;
+      await apiClient.post(collectionName, payload);
       Alert.alert(
-        'Error',
-        err.message || 'Failed to upload. Please try again.'
+        'Success',
+        `${
+          type.charAt(0).toUpperCase() + type.slice(1)
+        } uploaded successfully!`,
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (error) {
+      console.error('Submission error:', error);
+      Alert.alert(
+        'Upload Failed',
+        error.response?.data?.error || 'Failed to upload.'
       );
     } finally {
       setIsUploading(false);
     }
   };
 
-  const renderLanguageInputs = () => (
-    <View style={styles.languageSection}>
-      <Text style={styles.sectionTitle}>Languages</Text>
-      <View style={styles.languageGrid}>
-        {LANGUAGES.map((lang) => (
-          <TouchableOpacity
-            key={lang.code}
-            style={[
-              styles.languageChip,
-              selectedLanguages.includes(lang.code) &&
-                styles.selectedLanguageChip,
-            ]}
-            onPress={() => toggleLanguage(lang.code)}
-          >
-            <Text style={styles.languageFlag}>{lang.flag}</Text>
-            <Text
-              style={[
-                styles.languageChipText,
-                selectedLanguages.includes(lang.code) &&
-                  styles.selectedLanguageChipText,
-              ]}
-            >
-              {lang.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
+  const getUploadStatusUI = (field) => {
+    const status = uploadProgress[field];
+    if (!status) return null;
+    const config = {
+      uploading: { text: 'Uploading...', color: '#F59E0B' },
+      success: { text: 'Uploaded Success', color: '#10B981' },
+      error: { text: 'Upload Failed', color: '#EF4444' },
+    }[status];
+    return config ? (
+      <Text style={[styles.statusText, { color: config.color }]}>
+        {config.text}
+      </Text>
+    ) : null;
+  };
 
-  const renderCommonFields = () => {
-    if (type === 'song') {
+  const renderFormFields = () => {
+    if (type === 'sermon') {
       return (
-        <View style={styles.commonFields}>
-          <Text style={styles.sectionTitle}>Category</Text>
-          <View style={styles.languageGrid}>
-            {['acapella', 'native', 'english'].map((cat) => (
-              <TouchableOpacity
-                key={cat}
-                style={[
-                  styles.languageChip,
-                  formData.category === cat && styles.selectedLanguageChip,
-                ]}
-                onPress={() => updateFormData('category', cat)}
-              >
-                <Text
-                  style={[
-                    styles.languageChipText,
-                    formData.category === cat &&
-                      styles.selectedLanguageChipText,
-                  ]}
-                >
-                  {cat}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.fileUpload}>
-            <TouchableOpacity
-              style={styles.uploadButton}
-              onPress={() =>
-                handleFilePick('audioUrl', 50, [
-                  'audio/mpeg',
-                  'audio/wav',
-                  'audio/mp4',
-                ])
-              }
-            >
-              <Upload size={20} color="#1E3A8A" />
-              <Text style={styles.uploadText}>Upload Audio File</Text>
-            </TouchableOpacity>
-            {formData.audioUrl && (
-              <Text style={styles.uploadedText}>Audio uploaded</Text>
-            )}
-          </View>
+        <View style={styles.fieldBlock}>
+          <Input
+            label="Sermon Content *"
+            value={formData.content || ''}
+            onChangeText={(value) => updateField('content', value)}
+            multiline
+            numberOfLines={8}
+            placeholder="Enter sermon content..."
+            style={styles.textArea}
+            editable={!isUploading}
+          />
         </View>
       );
     }
 
-    if (type === 'notice') {
+    if (type === 'sermonAudio') {
       return (
-        <View style={styles.commonFields}>
-          <Input
-            label="Message"
-            value={formData.message || ''}
-            onChangeText={(value) => updateFormData('message', value)}
-            multiline
-            numberOfLines={4}
-            placeholder="Enter notice message"
-            style={styles.textArea}
+        <View style={styles.fieldBlock}>
+          <Text style={styles.label}>Date *</Text>
+          <TextInput
+            placeholder="YYYY-MM-DD"
+            value={formData.date || ''}
+            onChangeText={(value) => updateField('date', value)}
+            style={styles.dateInput}
+            editable={!isUploading}
           />
+          <Text style={styles.infoText}>
+            Max file size: {FILE_SIZE_LIMITS.audio}MB
+          </Text>
+          <TouchableOpacity
+            style={[styles.uploadButton, isUploading && styles.disabled]}
+            onPress={() => pickAudio('audioUrl')}
+            disabled={isUploading}
+          >
+            <Upload size={20} color="#1E3A8A" />
+            <Text style={styles.uploadButtonText}>Select Audio File *</Text>
+          </TouchableOpacity>
+          {getUploadStatusUI('audioUrl')}
+        </View>
+      );
+    }
+
+    if (type === 'song') {
+      return (
+        <View style={styles.fieldBlock}>
+          <Text style={styles.label}>Category *</Text>
+          <ScrollView
+            horizontal
+            style={styles.categoryScroll}
+            showsHorizontalScrollIndicator={false}
+          >
+            {songCategories.map((category) => (
+              <TouchableOpacity
+                key={category}
+                style={[
+                  styles.categoryChip,
+                  formData.category === category && styles.categoryChipActive,
+                ]}
+                onPress={() => updateField('category', category)}
+                disabled={isUploading}
+              >
+                <Text
+                  style={[
+                    styles.categoryChipText,
+                    formData.category === category &&
+                      styles.categoryChipTextActive,
+                  ]}
+                >
+                  {category}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={styles.addCategoryButton}
+              onPress={() => setShowAddCategory(true)}
+              disabled={isUploading}
+            >
+              <Plus size={16} color="#1E3A8A" />
+              <Text style={styles.addCategoryText}>Add</Text>
+            </TouchableOpacity>
+          </ScrollView>
+          {showAddCategory && (
+            <View style={styles.addCategoryRow}>
+              <TextInput
+                placeholder="Enter new category name"
+                value={newCategory}
+                onChangeText={setNewCategory}
+                style={styles.categoryInput}
+                autoFocus
+                editable={!isUploading}
+              />
+              <TouchableOpacity
+                onPress={addCategory}
+                style={styles.categoryAddButton}
+                disabled={isUploading}
+              >
+                <Text style={styles.categoryAddButtonText}>Add</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowAddCategory(false);
+                  setNewCategory('');
+                }}
+                disabled={isUploading}
+              >
+                <X size={20} color="#666" />
+              </TouchableOpacity>
+            </View>
+          )}
+          <Text style={styles.infoText}>
+            Max file size: {FILE_SIZE_LIMITS.audio}MB
+          </Text>
+          <TouchableOpacity
+            style={[styles.uploadButton, isUploading && styles.disabled]}
+            onPress={() => pickAudio('audioUrl')}
+            disabled={isUploading}
+          >
+            <Upload size={20} color="#1E3A8A" />
+            <Text style={styles.uploadButtonText}>Select Audio File *</Text>
+          </TouchableOpacity>
+          {getUploadStatusUI('audioUrl')}
         </View>
       );
     }
 
     if (type === 'video') {
       return (
-        <View style={styles.commonFields}>
-          <Input
-            label="Language Category"
-            value={formData.languageCategory || ''}
-            onChangeText={(value) => updateFormData('languageCategory', value)}
-            placeholder="e.g., English, Multi-language"
-          />
-          <View style={styles.fileUpload}>
-            <TouchableOpacity
-              style={styles.uploadButton}
-              onPress={() =>
-                handleFilePick('thumbnailUrl', 5, [
-                  'image/jpeg',
-                  'image/png',
-                  'image/gif',
-                ])
-              }
-            >
-              <Upload size={20} color="#1E3A8A" />
-              <Text style={styles.uploadText}>Upload Thumbnail</Text>
-            </TouchableOpacity>
-            {formData.thumbnailUrl && (
-              <Text style={styles.uploadedText}>Thumbnail uploaded</Text>
-            )}
-          </View>
-          <View style={styles.fileUpload}>
-            <TouchableOpacity
-              style={styles.uploadButton}
-              onPress={() =>
-                handleFilePick('videoUrl', 100, [
-                  'video/mp4',
-                  'video/quicktime',
-                  'video/x-msvideo',
-                ])
-              }
-            >
-              <Upload size={20} color="#1E3A8A" />
-              <Text style={styles.uploadText}>Upload Video (Max 10 mins)</Text>
-            </TouchableOpacity>
-            <Text style={styles.uploadNote}>
-              Video duration should not exceed 10 minutes.
-            </Text>
-            {formData.videoUrl && (
-              <Text style={styles.uploadedText}>Video uploaded</Text>
-            )}
-          </View>
+        <View style={styles.fieldBlock}>
+          <Text style={styles.infoText}>
+            Max file size: {FILE_SIZE_LIMITS.video}MB
+          </Text>
+          <TouchableOpacity
+            style={[styles.uploadButton, isUploading && styles.disabled]}
+            onPress={pickVideo}
+            disabled={isUploading}
+          >
+            <Upload size={20} color="#1E3A8A" />
+            <Text style={styles.uploadButtonText}>Select Video File *</Text>
+          </TouchableOpacity>
+          {getUploadStatusUI('videoUrl')}
         </View>
       );
     }
 
-    if (type === 'sermon') {
+    if (type === 'notice') {
       return (
-        <View style={styles.commonFields}>
+        <View style={styles.fieldBlock}>
           <Input
-            label="Content"
-            value={formData.content || ''}
-            onChangeText={(value) => updateFormData('content', value)}
+            label="Message *"
+            value={formData.message || ''}
+            onChangeText={(value) => updateField('message', value)}
             multiline
-            numberOfLines={6}
-            placeholder="Enter sermon content (use *bold*, _italic_, - bullets, 1. numbers, [text](url) for links)"
-            style={styles.textArea}
+            numberOfLines={4}
+            placeholder="Enter notice message..."
+            editable={!isUploading}
           />
-          <Text style={styles.formatNote}>
-            Use *text* for bold, _text_ for italic, - text for bullets, 1. text
-            for numbers, [text](url) for links.
+        </View>
+      );
+    }
+
+    if (type === 'quiz') {
+      return (
+        <View style={styles.fieldBlock}>
+          <Text style={styles.infoText}>
+            Quiz content is handled separately
           </Text>
-          <View style={styles.fileUpload}>
-            <TouchableOpacity
-              style={styles.uploadButton}
-              onPress={() =>
-                handleFilePick('audioUrl', 50, [
-                  'audio/mpeg',
-                  'audio/wav',
-                  'audio/mp4',
-                ])
-              }
-            >
-              <Upload size={20} color="#1E3A8A" />
-              <Text style={styles.uploadText}>
-                Upload Audio File (Optional)
-              </Text>
-            </TouchableOpacity>
-            <Text style={styles.uploadNote}>
-              Audio file is optional. You can upload just the sermon text
-              without audio.
-            </Text>
-            {formData.audioUrl && (
-              <Text style={styles.uploadedText}>Audio uploaded</Text>
-            )}
-          </View>
         </View>
       );
     }
@@ -371,53 +396,46 @@ export default function UploadScreen() {
     return null;
   };
 
-  const getTitle = () => {
-    switch (type) {
-      case 'notice':
-        return 'Add New Notice';
-      case 'sermon':
-        return 'Add New Sermon';
-      case 'song':
-        return 'Upload New Song';
-      case 'video':
-        return 'Upload New Video';
-      default:
-        return 'Upload Content';
-    }
+  const getPageTitle = () => {
+    const titles = {
+      notice: 'Add Notice',
+      sermon: 'Add Text Sermon',
+      sermonAudio: 'Upload Sermon Audio',
+      song: 'Upload Song',
+      video: 'Upload Animation Video',
+      quiz: 'Add Quiz Resource',
+    };
+    return titles[type] || 'Upload';
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity onPress={() => router.back()} disabled={isUploading}>
           <ArrowLeft size={24} color="#1F2937" />
         </TouchableOpacity>
-        <Text style={styles.title}>{getTitle()}</Text>
+        <Text style={styles.headerTitle}>{getPageTitle()}</Text>
         <LanguageSwitcher />
       </View>
-
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {(type === 'song' ||
-          type === 'video' ||
-          type === 'notice' ||
-          type === 'sermon') && (
-          <Input
-            label="Title"
-            value={formData.title || ''}
-            onChangeText={(value) => updateFormData('title', value)}
-            placeholder="Enter title"
-          />
+        <Input
+          label="Title *"
+          value={formData.title || ''}
+          onChangeText={(value) => updateField('title', value)}
+          placeholder="Enter title"
+          editable={!isUploading}
+        />
+        {renderFormFields()}
+        {isUploading && (
+          <View style={styles.uploadingIndicator}>
+            <ActivityIndicator size="small" color="#1E3A8A" />
+            <Text style={styles.uploadingText}>Uploading content...</Text>
+          </View>
         )}
-        {type === 'hymn' && renderLanguageInputs()}
-        {type !== 'hymn' && renderCommonFields()}
-
         <Button
           title={isUploading ? 'Uploading...' : `Upload ${type}`}
           onPress={handleSubmit}
-          disabled={isUploading}
+          disabled={isUploading || !validateForm()}
           size="large"
           style={styles.submitButton}
         />
@@ -432,67 +450,81 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
+    padding: 16,
+    backgroundColor: '#FFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  backButton: { padding: 8 },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#1F2937' },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#1F2937' },
   content: { flex: 1, paddingHorizontal: 20, paddingTop: 20 },
-  languageSection: { marginBottom: 24 },
-  sectionTitle: {
+  label: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1F2937',
     marginBottom: 12,
   },
-  languageGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 20,
+  categoryScroll: { maxHeight: 60, marginBottom: 16 },
+  categoryChip: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
-  languageChip: {
+  categoryChipActive: { backgroundColor: '#EBF4FF', borderColor: '#1E3A8A' },
+  categoryChipText: { fontSize: 14, color: '#6B7280' },
+  categoryChipTextActive: { color: '#1E3A8A', fontWeight: '600' },
+  addCategoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#EBF4FF',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: '#1E3A8A',
+    borderStyle: 'dashed',
   },
-  selectedLanguageChip: { backgroundColor: '#EBF4FF', borderColor: '#1E3A8A' },
-  languageFlag: { fontSize: 16, marginRight: 6 },
-  languageChipText: { fontSize: 14, color: '#6B7280' },
-  selectedLanguageChipText: { color: '#1E3A8A', fontWeight: '600' },
-  languageForm: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
+  addCategoryText: {
+    marginLeft: 4,
+    fontSize: 14,
+    color: '#1E3A8A',
+    fontWeight: '600',
+  },
+  addCategoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    gap: 8,
   },
-  languageFormTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 12,
+  categoryInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    backgroundColor: '#FFF',
   },
-  textArea: { textAlignVertical: 'top', height: 120 },
-  formatNote: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 4,
-    marginBottom: 8,
+  categoryAddButton: {
+    backgroundColor: '#1E3A8A',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
-  fileUpload: { marginTop: 8 },
+  categoryAddButtonText: { color: '#FFF', fontWeight: '600' },
+  dateInput: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    backgroundColor: '#FFF',
+    marginBottom: 16,
+  },
+  textArea: { textAlignVertical: 'top', height: 180 },
   uploadButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -503,36 +535,45 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderRadius: 8,
     paddingVertical: 16,
-    paddingHorizontal: 20,
+    marginTop: 16,
   },
-  uploadText: {
+  disabled: { opacity: 0.6 },
+  uploadButtonText: {
     marginLeft: 8,
     fontSize: 14,
     color: '#1E3A8A',
     fontWeight: '600',
   },
-  uploadNote: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 4,
+  statusText: {
+    fontSize: 14,
+    marginTop: 8,
     textAlign: 'center',
+    fontWeight: '600',
   },
-  uploadedText: {
-    fontSize: 12,
-    color: '#1E3A8A',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  commonFields: {
-    backgroundColor: '#FFFFFF',
+  fieldBlock: {
+    backgroundColor: '#FFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  submitButton: { marginTop: 20, marginBottom: 40 },
+  infoText: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 8,
+    fontStyle: 'italic',
+  },
+  uploadingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 16,
+    gap: 8,
+  },
+  uploadingText: { fontSize: 14, color: '#6B7280', fontStyle: 'italic' },
+  submitButton: { marginVertical: 20 },
 });

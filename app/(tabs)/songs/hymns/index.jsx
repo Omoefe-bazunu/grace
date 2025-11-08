@@ -13,6 +13,7 @@ import { Picker } from '@react-native-picker/picker';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { Search } from 'lucide-react-native';
+import { ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../../../../contexts/LanguageContext';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
@@ -180,6 +181,9 @@ export default function HymnsScreen() {
   return (
     <SafeAreaWrapper>
       <TopNavigation title={translations.hymns} />
+      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <Text style={styles.backText}>Return Back</Text>
+      </TouchableOpacity>
       <View
         style={[
           styles.controlsContainer,
@@ -249,6 +253,14 @@ const styles = StyleSheet.create({
   controlsContainer: {
     marginHorizontal: 20,
     marginVertical: 10,
+  },
+  backText: {
+    color: '#1E3A8A',
+    fontSize: 16,
+    marginHorizontal: 'auto',
+    marginVertical: 10,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   searchContainer: {
     flexDirection: 'row',

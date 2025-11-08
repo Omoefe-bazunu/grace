@@ -14,44 +14,69 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../components/TopNavigation';
 import { getRecentContent } from '../../services/dataService';
-import { ChevronRight, Play, Clock } from 'lucide-react-native';
+import { ChevronRight, Play, BookOpen, Video } from 'lucide-react-native'; // Changed Clock to BookOpen for sermons
 import { LinearGradient } from 'expo-linear-gradient';
+
+// --- NEW REUSABLE CARD WRAPPER COMPONENT ---
+const ContentCardWrapper = ({ children, style, onPress, colors }) => (
+  <TouchableOpacity
+    style={[styles.cardWrapper, { backgroundColor: colors.card }, style]}
+    onPress={onPress}
+    activeOpacity={0.8}
+  >
+    {children}
+  </TouchableOpacity>
+);
 
 const SkeletonCard = ({ type }) => {
   const { colors } = useTheme();
+  const isVideo = type === 'video';
+
+  // Use a modern shimmer effect for richness
+  const shimmerColors = [
+    colors.skeleton,
+    colors.skeletonHighlight,
+    colors.skeleton,
+  ];
+
   return (
-    <View
-      style={[
-        styles.card,
-        type === 'video' ? styles.videoCard : {},
-        { backgroundColor: colors.card },
-      ]}
+    <ContentCardWrapper
+      colors={colors}
+      style={isVideo ? styles.videoCard : styles.sermonSongCard}
     >
-      {type === 'video' && (
+      {isVideo && (
         <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
+          colors={shimmerColors}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
           style={styles.videoThumbnail}
         />
       )}
-      <View style={type === 'video' ? styles.videoInfo : {}}>
+      <View style={isVideo ? styles.videoInfo : styles.sermonSongInfo}>
         <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
+          colors={shimmerColors}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
           style={styles.skeletonTitle}
         />
         <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
+          colors={shimmerColors}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
           style={styles.skeletonSubtitle}
         />
-        {type !== 'video' && (
+        {!isVideo && (
           <View style={styles.cardFooter}>
             <LinearGradient
-              colors={[colors.skeleton, colors.skeletonHighlight]}
+              colors={shimmerColors}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
               style={styles.skeletonAction}
             />
           </View>
         )}
       </View>
-    </View>
+    </ContentCardWrapper>
   );
 };
 
@@ -69,7 +94,9 @@ export default function HomeScreen() {
   useEffect(() => {
     const fetchContent = async () => {
       try {
+        console.log('Fetching recent content...');
         const data = await getRecentContent();
+        console.log('Content loaded:', data);
         setContent(data);
       } catch (error) {
         console.error('Error fetching recent content:', error);
@@ -86,12 +113,15 @@ export default function HomeScreen() {
     );
   };
 
+  // --- REFACTORED RENDER FUNCTIONS ---
+
   const renderSermonCard = (sermon) => {
     const content = getTranslatedContent(sermon);
     return (
-      <TouchableOpacity
+      <ContentCardWrapper
         key={sermon.id}
-        style={[styles.card, { backgroundColor: colors.card }]}
+        colors={colors}
+        style={styles.sermonSongCard}
         onPress={() => router.push(`/(tabs)/sermons/${sermon.id}`)}
       >
         <Text
@@ -107,20 +137,20 @@ export default function HomeScreen() {
           {content.content || translations.noContent}
         </Text>
         <View style={styles.cardFooter}>
-          {/* <Clock size={16} color={colors.primary} /> */}
+          <BookOpen size={18} color={colors.primary} />
           <Text style={[styles.cardAction, { color: colors.primary }]}>
-            {/* {sermon.duration || translations.unknownDuration} */}
             Start studying
           </Text>
         </View>
-      </TouchableOpacity>
+      </ContentCardWrapper>
     );
   };
 
   const renderSongCard = (song) => (
-    <TouchableOpacity
+    <ContentCardWrapper
       key={song.id}
-      style={[styles.card, { backgroundColor: colors.card }]}
+      colors={colors}
+      style={styles.sermonSongCard}
       onPress={() => router.push(`/(tabs)/songs/music/${song.id}`)}
     >
       <Text
@@ -133,36 +163,56 @@ export default function HomeScreen() {
         Category: {song.category || translations.unknownCategory}
       </Text>
       <View style={styles.cardFooter}>
-        <Play size={16} color={colors.primary} />
+        <Play size={18} color={colors.primary} />
         <Text style={[styles.cardAction, { color: colors.primary }]}>
           Play now
         </Text>
       </View>
-    </TouchableOpacity>
+    </ContentCardWrapper>
   );
 
   const renderVideoCard = (video) => (
-    <TouchableOpacity
+    <ContentCardWrapper
       key={video.id}
-      style={[styles.videoCard, { backgroundColor: colors.card }]}
+      colors={colors}
+      style={styles.videoCard}
       onPress={() => router.push(`/(tabs)/animations/${video.id}`)}
     >
-      <Image
-        source={{ uri: video.thumbnailUrl }}
-        style={styles.videoThumbnail}
-      />
+      <View style={styles.videoThumbnailContainer}>
+        <Image
+          source={{ uri: video.thumbnailUrl }}
+          style={styles.videoThumbnail}
+        />
+        {/* Richness: Gradient overlay for a professional video player look */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.5)']}
+          style={styles.videoGradientOverlay}
+        />
+        {/* Richness: Center Play icon */}
+        <View style={styles.playButtonOverlay}>
+          <Play size={30} color="#FFFFFF" fill="rgba(0, 0, 0, 0.4)" />
+        </View>
+      </View>
       <View style={styles.videoInfo}>
         <Text
-          style={[styles.cardTitle, { color: colors.text }]}
+          style={[styles.cardTitle, { color: colors.text, marginBottom: 4 }]}
           numberOfLines={1}
         >
           {video.title}
         </Text>
-        <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-          {/* {video.duration || translations.unknownDuration} */} Watch Now
-        </Text>
+        <View style={styles.cardFooter}>
+          <Video size={16} color={colors.textSecondary} />
+          <Text
+            style={[
+              styles.cardAction,
+              { color: colors.textSecondary, fontWeight: '500' },
+            ]}
+          >
+            Watch Now
+          </Text>
+        </View>
       </View>
-    </TouchableOpacity>
+    </ContentCardWrapper>
   );
 
   const renderSkeletonCards = (type) => (
@@ -175,27 +225,33 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaWrapper>
+      {/* Updated Top Navigation for a modern feel */}
       <TopNavigation title="Grace" />
       <ScrollView
         style={[styles.content, { backgroundColor: colors.background }]}
         showsVerticalScrollIndicator={false}
       >
+        {/* Richer Welcome Section */}
         <View style={styles.welcomeSection}>
-          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
-            {user?.email || translations.guest}
+          <Text style={[styles.userGreeting, { color: colors.text }]}>
+            {user?.email
+              ? `Welcome back, ${user.email.split('@')[0]}`
+              : 'Welcome, Guest'}
           </Text>
         </View>
+
+        {/* --- Content Sections --- */}
 
         {/* Sermons section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {translations.latestSermons}
+              {translations.latestSermons || 'Latest Sermons'}
             </Text>
             <TouchableOpacity onPress={() => router.push('/(tabs)/sermons')}>
               <View style={styles.seeAllContainer}>
                 <Text style={[styles.seeAll, { color: colors.primary }]}>
-                  {translations.seeAll}
+                  {translations.seeAll || 'See All'}
                 </Text>
                 <ChevronRight size={16} color={colors.primary} />
               </View>
@@ -216,14 +272,14 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {translations.recentMusic}
+              {translations.recentMusic || 'Recent Music'}
             </Text>
             <TouchableOpacity
               onPress={() => router.push('/(tabs)/songs/music')}
             >
               <View style={styles.seeAllContainer}>
                 <Text style={[styles.seeAll, { color: colors.primary }]}>
-                  {translations.seeAll}
+                  {translations.seeAll || 'See All'}
                 </Text>
                 <ChevronRight size={16} color={colors.primary} />
               </View>
@@ -244,12 +300,12 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {translations.recentAnimations}
+              {translations.recentAnimations || 'Recent Animations'}
             </Text>
             <TouchableOpacity onPress={() => router.push('/(tabs)/animations')}>
               <View style={styles.seeAllContainer}>
                 <Text style={[styles.seeAll, { color: colors.primary }]}>
-                  {translations.seeAll}
+                  {translations.seeAll || 'See All'}
                 </Text>
                 <ChevronRight size={16} color={colors.primary} />
               </View>
@@ -271,21 +327,26 @@ export default function HomeScreen() {
   );
 }
 
+// --- UPDATED STYLES ---
+
 const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  // Richer Welcome Section Styles
   welcomeSection: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
-  userEmail: {
-    fontSize: 16,
-    marginTop: 8,
-    opacity: 0.8,
+  userGreeting: {
+    fontSize: 24, // Larger greeting
+    fontWeight: '700', // Bolder
+    letterSpacing: -0.5,
   },
+  // Section Header Styles
   section: {
-    marginBottom: 24,
+    marginBottom: 32, // More vertical space between sections
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -295,9 +356,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    letterSpacing: -0.3,
+    fontSize: 22, // Larger, more impactful title
+    fontWeight: '700', // Bolder
+    letterSpacing: -0.5,
   },
   seeAllContainer: {
     flexDirection: 'row',
@@ -305,84 +366,104 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   seeAll: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
   },
   horizontalScroll: {
     paddingHorizontal: 16,
   },
-  card: {
-    borderRadius: 16,
-    padding: 16,
-    marginRight: 12,
-    marginVertical: 10,
-    width: 220,
+  // General Card Styles (used by ContentCardWrapper)
+  cardWrapper: {
+    borderRadius: 12, // Slightly reduced radius for a modern feel
+    marginRight: 16,
+    marginVertical: 4, // Reduce vertical margin and rely on shadow
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 6 }, // Deeper shadow for "floating" effect
     shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowRadius: 10,
+    elevation: 8,
+    width: 240, // Slightly wider cards
+  },
+  // Sermon and Song Specific Card Styles
+  sermonSongCard: {
+    padding: 16,
+    height: 150, // Fixed height for consistency
+    justifyContent: 'space-between',
+  },
+  sermonSongInfo: {
+    // Styling for skeleton info inside sermon/song card
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    testTransform: 'uppercase',
-    marginBottom: 8,
+    fontSize: 17, // Slightly larger title
+    fontWeight: '700',
+    marginBottom: 6,
+    letterSpacing: 0.1,
   },
   cardSubtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    opacity: 0.85,
-    marginBottom: 12,
+    fontSize: 13,
+    lineHeight: 18,
+    opacity: 0.8,
   },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   cardAction: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
+  // Video Card Styles (overrides)
   videoCard: {
-    borderRadius: 16,
-    marginRight: 12,
-    marginVertical: 10,
-    width: 220,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
     overflow: 'hidden',
+  },
+  videoThumbnailContainer: {
+    width: '100%',
+    height: 140,
+    position: 'relative',
   },
   videoThumbnail: {
     width: '100%',
-    height: 140,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    height: '100%',
+  },
+  videoGradientOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  playButtonOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   videoInfo: {
-    padding: 16,
+    padding: 12,
   },
+  // Skeleton Styles (Adjusted for new layout)
   skeletonTitle: {
     height: 20,
-    width: '80%',
+    width: '70%',
     borderRadius: 4,
     marginBottom: 8,
   },
   skeletonSubtitle: {
     height: 16,
-    width: '60%',
+    width: '50%',
     borderRadius: 4,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   skeletonAction: {
     height: 16,
-    width: 60,
+    width: 80,
     borderRadius: 4,
   },
   bottomSpacer: {
-    height: 24,
+    height: 48,
   },
 });

@@ -1,3 +1,4 @@
+// SongsScreen.tsx (final - confirmed data from dataService)
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -5,93 +6,49 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  TextInput,
   ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Search, Play, Clock } from 'lucide-react-native';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../components/TopNavigation';
-import { getSongs, getHymns } from '../../../services/dataService';
-import { AudioPlayer } from '../../../components/AudioPlayer';
-import { Book, Music } from 'lucide-react-native';
+import { getSongs } from '../../../services/dataService';
 
-const CATEGORIES = [
-  {
-    id: 'native',
-    label: 'Instrumental Native',
-    description: 'Traditional tunes with instruments',
-  },
-  {
-    id: 'acappella',
-    label: 'A Cappella',
-    description: 'Pure vocal harmony without instruments',
-  },
-  {
-    id: 'english',
-    label: 'Instrumental English',
-    description: 'English songs with instrumental backing',
-  },
-];
-
-// Defines the Songs screen with Hymns and Music tabs
 export default function SongsScreen() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [hymns, setHymns] = useState([]);
   const [songs, setSongs] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { translations, currentLanguage } = useLanguage();
+  const { translations } = useLanguage();
   const { colors } = useTheme();
 
-  // Fetch hymns and songs from dataService
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [fetchedHymns, fetchedSongs] = await Promise.all([
-          getHymns ? getHymns() : Promise.resolve([]), // Fallback to empty array if getHymns is not defined
-          getSongs(),
-        ]);
-        setHymns(fetchedHymns || []);
-        setSongs(fetchedSongs || []);
+        const fetchedSongs = await getSongs();
+        setSongs(fetchedSongs);
+
+        // Extract unique categories from actual data
+        const uniqueCategories = [
+          ...new Set(
+            fetchedSongs
+              .map((s) => s.category)
+              .filter(Boolean)
+              .sort()
+          ),
+        ];
+        setCategories(uniqueCategories);
       } catch (error) {
-        console.error('Error fetching data:', error);
-        setHymns([]);
+        console.error('Error fetching songs:', error);
         setSongs([]);
+        setCategories([]);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, []);
-
-  const safeSearchQuery = (searchQuery || '').toString();
-
-  // Filter hymns
-  const filteredHymns = (hymns || []).filter((hymn) => {
-    const content =
-      (hymn.translations && hymn.translations[currentLanguage]) ||
-      hymn.translations?.en ||
-      {};
-    const title = content.title || '';
-    const hymnContent = content.content || '';
-    return (
-      title.toLowerCase().includes(safeSearchQuery.toLowerCase()) ||
-      hymnContent.toLowerCase().includes(safeSearchQuery.toLowerCase())
-    );
-  });
-
-  // Filter non-hymn songs
-  const filteredSongs = (songs || []).filter((song) => {
-    const title = song.title || '';
-    const style = song.style || '';
-    return (
-      title.toLowerCase().includes(safeSearchQuery.toLowerCase()) ||
-      style.toLowerCase().includes(safeSearchQuery.toLowerCase())
-    );
-  });
 
   return (
     <SafeAreaWrapper>
@@ -100,7 +57,7 @@ export default function SongsScreen() {
         contentContainerStyle={{ paddingBottom: 30, paddingTop: 20 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Tabs for Hymns and Music */}
+        {/* Tabs
         <View style={styles.tabsContainer}>
           <TouchableOpacity
             style={[styles.tab, { backgroundColor: colors.card }]}
@@ -118,98 +75,79 @@ export default function SongsScreen() {
               {translations.music || 'Music'}
             </Text>
           </TouchableOpacity>
-        </View>
-
+        </View> */}
         {/* Hymns Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            {translations.hymns || 'Hymns'}
+            {`${translations.hymns || 'Hymns'} & ${
+              translations.psalms || 'Psalms'
+            }`}
           </Text>
-
-          <View
-            style={{ flexDirection: 'row', justifyContent: 'space-between' }}
+          <TouchableOpacity
+            style={[styles.card, { backgroundColor: colors.card }]}
+            onPress={() => router.push('/songs/hymns')}
           >
-            {/* Theocratic Songs of Praise */}
-            <TouchableOpacity
+            <Text
               style={[
-                styles.card,
-                { backgroundColor: colors.card, width: '48%' },
+                styles.cardTitle,
+                { color: colors.text, marginBottom: 4 },
               ]}
-              onPress={() => router.push('/songs/hymns')}
             >
-              <Text
-                style={[
-                  styles.cardTitle,
-                  { color: colors.text, marginBottom: 4 },
-                ]}
-              >
-                Theocratic Songs of Praise (TSPs)
-              </Text>
-              <Text style={[styles.metaText, { color: colors.primary }]}>
-                Explore
-              </Text>
-            </TouchableOpacity>
-
-            {/* Psalms */}
-            <TouchableOpacity
-              style={[
-                styles.card,
-                { backgroundColor: colors.card, width: '48%' },
-              ]}
-              onPress={() => router.push('/songs/hymns')}
-            >
-              <Text
-                style={[
-                  styles.cardTitle,
-                  { color: colors.text, marginBottom: 4 },
-                ]}
-              >
-                Psalms
-              </Text>
-              <Text style={[styles.metaText, { color: colors.primary }]}>
-                Explore
-              </Text>
-            </TouchableOpacity>
-          </View>
+              Theocratic Songs of Praise (TSPs)
+            </Text>
+            <Text style={[styles.cardContent, { color: colors.textSecondary }]}>
+              {translations.theocraticSongs ||
+                'Explore the collection of Theocratic Songs of Praise.'}
+            </Text>
+            <Text style={[styles.metaText, { color: colors.primary }]}>
+              See all hymns and psalms
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Music section */}
+        {/* Music Section - Dynamic Categories */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             {translations.music || 'Music'}
           </Text>
-
-          <FlatList
-            data={CATEGORIES}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContainer}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[styles.card, { backgroundColor: colors.card }]}
-                onPress={() =>
-                  router.push({
-                    pathname: '/(tabs)/songs/music',
-                    params: { category: item.id },
-                  })
-                }
-              >
-                <Text style={[styles.cardTitle, { color: colors.text }]}>
-                  {item.label}
-                </Text>
-                <Text
-                  style={[styles.cardContent, { color: colors.textSecondary }]}
-                  numberOfLines={3}
+          {loading ? (
+            <Text
+              style={{ color: colors.textSecondary, paddingHorizontal: 20 }}
+            >
+              Loading categories...
+            </Text>
+          ) : categories.length === 0 ? (
+            <Text
+              style={{ color: colors.textSecondary, paddingHorizontal: 20 }}
+            >
+              No songs available
+            </Text>
+          ) : (
+            <FlatList
+              data={categories}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item}
+              contentContainerStyle={styles.listContainer}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.card, { backgroundColor: colors.card }]}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(tabs)/songs/music',
+                      params: { category: item },
+                    })
+                  }
                 >
-                  {item.description}
-                </Text>
-                <Text style={[styles.metaText, { color: colors.primary }]}>
-                  Explore
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
+                  <Text style={[styles.cardTitle, { color: colors.text }]}>
+                    {item}
+                  </Text>
+                  <Text style={[styles.metaText, { color: colors.primary }]}>
+                    See all songs in this category
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          )}
         </View>
       </ScrollView>
     </SafeAreaWrapper>
@@ -266,19 +204,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 12,
   },
-  songInfo: {
-    flex: 1,
-  },
-  songMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
   metaText: {
     fontSize: 12,
-  },
-  playButton: {
-    borderRadius: 25,
-    padding: 12,
   },
 });

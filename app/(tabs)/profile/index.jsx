@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// app/(tabs)/profile/index.tsx (UPDATED)
+import React from 'react';
 import {
   View,
   Text,
@@ -13,9 +14,8 @@ import {
   Music,
   MessageCircle,
   Info,
-  Settings,
-  LogOut,
   Bell,
+  Book,
 } from 'lucide-react-native';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useLanguage } from '../../../contexts/LanguageContext';
@@ -24,32 +24,13 @@ import { SafeAreaWrapper } from '../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../components/TopNavigation';
 import { Button } from '../../../components/ui/Button';
 import { LANGUAGES } from '../../../constants/languages';
-import { db } from '../../../services/firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const { translations, currentLanguage } = useLanguage();
   const { colors } = useTheme();
-  const [isAdmin, setIsAdmin] = useState(false);
 
   const currentLang = LANGUAGES.find((lang) => lang.code === currentLanguage);
-
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (user && user.email) {
-        try {
-          const docRef = doc(db, 'admins', user.email);
-          const docSnap = await getDoc(docRef);
-          setIsAdmin(docSnap.exists());
-        } catch (error) {
-          console.error('Error checking admin status:', error);
-          setIsAdmin(false);
-        }
-      }
-    };
-    checkAdminStatus();
-  }, [user]);
 
   const handleLogout = async () => {
     await logout();
@@ -57,6 +38,11 @@ export default function ProfileScreen() {
   };
 
   const menuItems = [
+    {
+      icon: <Book size={20} color={colors.primary} />,
+      title: translations.quiz || 'Quiz Resources',
+      onPress: () => router.push('/profile/quizresources'),
+    },
     {
       icon: <Bell size={20} color={colors.primary} />,
       title: translations.notices,
@@ -73,15 +59,6 @@ export default function ProfileScreen() {
       onPress: () => router.push('/profile/about'),
     },
   ];
-
-  // Conditionally add the admin link if the user is an admin
-  if (isAdmin) {
-    menuItems.unshift({
-      icon: <Music size={20} color={colors.primary} />,
-      title: translations.admin,
-      onPress: () => router.push('/profile/admin'),
-    });
-  }
 
   return (
     <SafeAreaWrapper>
@@ -144,6 +121,7 @@ export default function ProfileScreen() {
   );
 }
 
+// Styles unchanged
 const styles = StyleSheet.create({
   content: {
     flex: 1,
@@ -156,10 +134,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
@@ -180,10 +155,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
@@ -213,10 +185,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,

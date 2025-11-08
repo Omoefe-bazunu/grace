@@ -7,6 +7,8 @@ export default function AdminLayout() {
       <Stack.Screen name="upload" />
       <Stack.Screen name="messages" />
       <Stack.Screen name="quizupload" />
+      <Stack.Screen name="quizhelpquestions" />
+      <Stack.Screen name="readnotices" />
     </Stack>
   );
 }
