@@ -1,4 +1,4 @@
-// MusicScreen.tsx (final - uses dataService + category param)
+// MusicScreen.js (Fixed with Better Error Handling - Pure JavaScript)
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -7,6 +7,9 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  RefreshControl,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Search, Play, Clock } from 'lucide-react-native';
@@ -14,7 +17,11 @@ import { useLanguage } from '../../../../contexts/LanguageContext';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
-import { getSongs, searchContent } from '../../../../services/dataService';
+import {
+  getSongsByCategoryPaginated,
+  getSongsPaginated,
+  searchContentPaginated,
+} from '../../../../services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
 import debounce from 'lodash.debounce';
 
@@ -51,66 +58,188 @@ export default function MusicScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [nextCursor, setNextCursor] = useState(null);
+  const [error, setError] = useState(null);
   const { translations } = useLanguage();
   const { colors } = useTheme();
 
-  // Fetch songs by category
-  useEffect(() => {
-    const fetchSongs = async () => {
-      setLoading(true);
-      try {
-        const allSongs = await getSongs();
-        const filtered = category
-          ? allSongs.filter((s) => s.category === category)
-          : allSongs;
-        setSongs(filtered);
-      } catch (error) {
-        console.error('Error fetching songs:', error);
-        setSongs([]);
-      } finally {
-        setLoading(false);
+  // Load songs by category with pagination
+  const loadSongs = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+        setNextCursor(null);
       }
-    };
-    fetchSongs();
+
+      setError(null);
+
+      // Log the category being requested
+      console.log('Loading songs for category:', category);
+
+      let result;
+
+      if (category && category !== 'all') {
+        // Try with category filter
+        try {
+          result = await getSongsByCategoryPaginated(
+            category,
+            15,
+            isRefresh ? null : nextCursor
+          );
+          console.log('Category result:', {
+            count: result.songs.length,
+            hasMore: result.hasMore,
+            nextCursor: result.nextCursor,
+          });
+        } catch (categoryError) {
+          console.error(
+            'Category filter failed, falling back to all songs:',
+            categoryError
+          );
+          // Fallback: Get all songs and filter client-side
+          const allSongsResult = await getSongsPaginated(
+            15,
+            isRefresh ? null : nextCursor
+          );
+          result = {
+            songs: allSongsResult.songs.filter((s) => s.category === category),
+            hasMore: allSongsResult.hasMore,
+            nextCursor: allSongsResult.nextCursor,
+            totalCount: allSongsResult.totalCount,
+          };
+        }
+      } else {
+        // Get all songs if no category specified
+        result = await getSongsPaginated(15, isRefresh ? null : nextCursor);
+        console.log('All songs result:', {
+          count: result.songs.length,
+          hasMore: result.hasMore,
+          nextCursor: result.nextCursor,
+        });
+      }
+
+      if (isRefresh) {
+        setSongs(result.songs);
+      } else {
+        setSongs(result.songs);
+      }
+
+      setHasMore(result.hasMore);
+      setNextCursor(result.nextCursor);
+    } catch (error) {
+      console.error('Error fetching songs:', error);
+      setError(error.message || 'Failed to load songs');
+      setSongs([]);
+      setHasMore(false);
+
+      // Show user-friendly error
+      Alert.alert(
+        'Error Loading Songs',
+        'Unable to load songs. Please check your connection and try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Load more songs
+  const loadMoreSongs = async () => {
+    if (loadingMore || !hasMore || !nextCursor || searchQuery) return;
+
+    try {
+      setLoadingMore(true);
+      console.log('Loading more songs with cursor:', nextCursor);
+
+      let result;
+
+      if (category && category !== 'all') {
+        try {
+          result = await getSongsByCategoryPaginated(category, 15, nextCursor);
+        } catch (categoryError) {
+          console.error(
+            'Category filter failed for pagination:',
+            categoryError
+          );
+          // Fallback: Get all songs and filter client-side
+          const allSongsResult = await getSongsPaginated(15, nextCursor);
+          result = {
+            songs: allSongsResult.songs.filter((s) => s.category === category),
+            hasMore: allSongsResult.hasMore,
+            nextCursor: allSongsResult.nextCursor,
+            totalCount: allSongsResult.totalCount,
+          };
+        }
+      } else {
+        result = await getSongsPaginated(15, nextCursor);
+      }
+
+      console.log('More songs loaded:', result.songs.length);
+
+      setSongs((prev) => [...prev, ...result.songs]);
+      setHasMore(result.hasMore);
+      setNextCursor(result.nextCursor);
+    } catch (error) {
+      console.error('Error loading more songs:', error);
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSongs();
   }, [category]);
 
-  // Debounced search
+  const onRefresh = () => {
+    loadSongs(true);
+  };
+
+  // Debounced search with pagination
   const debouncedSearch = useCallback(
     debounce(async (query) => {
-      setLoading(true);
       if (!query.trim()) {
-        // Refetch by category
-        try {
-          const allSongs = await getSongs();
-          const filtered = category
-            ? allSongs.filter((s) => s.category === category)
-            : allSongs;
-          setSongs(filtered);
-        } catch {
-          setSongs([]);
-        } finally {
-          setLoading(false);
-        }
+        // Refetch by category when search is cleared
+        loadSongs(true);
         return;
       }
 
       try {
-        const results = await searchContent(query);
-        const filtered = results.songs.filter((s) =>
-          category ? s.category === category : true
-        );
+        setLoading(true);
+        console.log('Searching for:', query, 'in category:', category);
+
+        const results = await searchContentPaginated(query, category, 50, null);
+        console.log('Search results:', results.songs.length);
+
+        const filtered =
+          category && category !== 'all'
+            ? results.songs.filter((s) => s.category === category)
+            : results.songs;
+
         setSongs(filtered);
-      } catch {
+        setHasMore(false); // Disable infinite scroll during search
+        setNextCursor(null);
+      } catch (error) {
+        console.error('Search error:', error);
         setSongs([]);
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
-    }, 300),
+    }, 500),
     [category]
   );
 
   useEffect(() => {
     debouncedSearch(searchQuery);
+
+    return () => {
+      debouncedSearch.cancel();
+    };
   }, [searchQuery, debouncedSearch]);
 
   const renderSongItem = ({ item }) => (
@@ -143,10 +272,23 @@ export default function MusicScreen() {
           { backgroundColor: colors.primaryLight || colors.primary },
         ]}
       >
-        <Play size={20} style={styles.playButton} />
+        <Play size={20} color="#FFFFFF" />
       </TouchableOpacity>
     </TouchableOpacity>
   );
+
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+          Loading more songs...
+        </Text>
+      </View>
+    );
+  };
 
   const renderSkeletonCards = () => (
     <>
@@ -156,6 +298,41 @@ export default function MusicScreen() {
     </>
   );
 
+  const renderEmptyState = () => {
+    if (loading) return null;
+
+    return (
+      <View style={styles.emptyContainer}>
+        <Search size={64} color={colors.textSecondary} opacity={0.5} />
+        <Text style={[styles.emptyText, { color: colors.text }]}>
+          {searchQuery
+            ? 'No songs found'
+            : error
+            ? 'Unable to load songs'
+            : 'No songs available'}
+        </Text>
+        <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+          {error ||
+            (searchQuery ? 'Try a different search term' : 'Check back later')}
+        </Text>
+        {error && (
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: colors.primary }]}
+            onPress={() => loadSongs(true)}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
+
+  const handleEndReached = () => {
+    if (!loading && !loadingMore && hasMore && !searchQuery.trim()) {
+      loadMoreSongs();
+    }
+  };
+
   return (
     <SafeAreaWrapper>
       <TopNavigation title={category || translations.music} />
@@ -163,8 +340,11 @@ export default function MusicScreen() {
         onPress={() => router.push(`/(tabs)/songs`)}
         style={styles.backButton}
       >
-        <Text style={styles.backText}>Return Back</Text>
+        <Text style={[styles.backText, { color: colors.primary }]}>
+          Return Back
+        </Text>
       </TouchableOpacity>
+
       <View
         style={[styles.searchContainer, { backgroundColor: colors.surface }]}
       >
@@ -174,23 +354,53 @@ export default function MusicScreen() {
           style={styles.searchIcon}
         />
         <TextInput
-          placeholder={translations.search}
+          placeholder={translations.search || 'Search songs...'}
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor={colors.textSecondary}
           style={[styles.searchInput, { color: colors.text }]}
         />
       </View>
+
+      {/* Results Count */}
+      {!loading && songs.length > 0 && (
+        <View style={styles.resultsHeader}>
+          <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>
+            {songs.length} {songs.length === 1 ? 'song' : 'songs'}
+            {searchQuery ? ' found' : ' available'}
+            {hasMore && !searchQuery && '+'}
+          </Text>
+        </View>
+      )}
+
       <FlatList
-        data={loading || songs.length === 0 ? [] : songs}
+        data={songs}
         renderItem={renderSongItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.listContainer,
           { backgroundColor: colors.background },
+          songs.length === 0 && styles.listContainerEmpty,
         ]}
         showsVerticalScrollIndicator={false}
-        ListEmptyComponent={renderSkeletonCards}
+        ListEmptyComponent={
+          loading ? renderSkeletonCards() : renderEmptyState()
+        }
+        ListFooterComponent={renderFooter}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.5}
+        removeClippedSubviews={true}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={10}
       />
     </SafeAreaWrapper>
   );
@@ -207,8 +417,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 'auto',
     borderRadius: 12,
   },
+  backButton: {
+    padding: 10,
+  },
   backText: {
-    color: '#1E3A8A',
     fontSize: 16,
     marginHorizontal: 'auto',
     marginVertical: 10,
@@ -227,8 +439,21 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     height: 40,
   },
+  resultsHeader: {
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  resultsCount: {
+    fontSize: 14,
+    fontWeight: '600',
+    opacity: 0.8,
+  },
   listContainer: {
     padding: 20,
+  },
+  listContainerEmpty: {
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   songCard: {
     borderRadius: 12,
@@ -268,7 +493,8 @@ const styles = StyleSheet.create({
   playButton: {
     borderRadius: 25,
     padding: 12,
-    color: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   skeletonTitle: {
     height: 16,
@@ -291,5 +517,45 @@ const styles = StyleSheet.create({
     height: 44,
     width: 44,
     borderRadius: 22,
+  },
+  footerLoader: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+    opacity: 0.7,
+  },
+  retryButton: {
+    marginTop: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

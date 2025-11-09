@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
+  RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Search, Mic, Calendar } from 'lucide-react-native';
@@ -15,7 +16,10 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
 import { TopNavigation } from '@/components/TopNavigation';
-import { getSermons } from '@/services/dataService';
+import {
+  getSermonsPaginated,
+  searchContentPaginated,
+} from '@/services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const SkeletonItem = () => {
@@ -37,32 +41,118 @@ const SkeletonItem = () => {
 export default function AudioSermonsScreen() {
   const [sermons, setSermons] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [nextCursor, setNextCursor] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const { colors } = useTheme();
   const { translations } = useLanguage();
 
-  useEffect(() => {
-    fetchSermons();
-  }, []);
-
-  const fetchSermons = async () => {
-    setLoading(true);
+  // Load audio sermons with pagination
+  const loadSermons = async (isRefresh = false) => {
     try {
-      const data = await getSermons();
-      const audioSermons = data.filter((s) => s.audioUrl);
-      setSermons(audioSermons);
+      if (isRefresh) {
+        setRefreshing(true);
+        setNextCursor(null);
+      }
+
+      const result = await getSermonsPaginated(15, null);
+      const audioSermons = result.sermons.filter((s) => s.audioUrl);
+
+      if (isRefresh) {
+        setSermons(audioSermons);
+      } else {
+        setSermons(audioSermons);
+      }
+
+      setHasMore(result.hasMore && audioSermons.length > 0);
+      setNextCursor(result.nextCursor);
     } catch (error) {
       console.error('Error fetching sermons:', error);
+      setSermons([]);
+      setHasMore(false);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const filteredSermons = sermons.filter(
-    (s) =>
-      s.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.date?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Load more sermons
+  const loadMoreSermons = async () => {
+    if (loadingMore || !hasMore || !nextCursor || searchQuery) return;
+
+    try {
+      setLoadingMore(true);
+      const result = await getSermonsPaginated(15, nextCursor);
+      const moreAudioSermons = result.sermons.filter((s) => s.audioUrl);
+
+      if (moreAudioSermons.length > 0) {
+        setSermons((prev) => [...prev, ...moreAudioSermons]);
+        setHasMore(result.hasMore);
+        setNextCursor(result.nextCursor);
+      } else {
+        // If no audio sermons in this batch but hasMore is true, try next batch
+        if (result.hasMore) {
+          setTimeout(() => loadMoreSermons(), 100);
+        } else {
+          setHasMore(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading more sermons:', error);
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSermons();
+  }, []);
+
+  const onRefresh = () => {
+    loadSermons(true);
+  };
+
+  // Handle search
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const searchAudioSermons = async () => {
+        try {
+          setLoading(true);
+          const results = await searchContentPaginated(
+            searchQuery,
+            null,
+            50,
+            null
+          );
+          const audioSermons = results.sermons.filter((s) => s.audioUrl);
+          setSermons(audioSermons);
+          setHasMore(false); // Disable infinite scroll during search
+        } catch (error) {
+          console.error('Error searching sermons:', error);
+          setSermons([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const timeoutId = setTimeout(searchAudioSermons, 500);
+      return () => clearTimeout(timeoutId);
+    } else {
+      // If search is cleared, reload paginated sermons
+      loadSermons(true);
+    }
+  }, [searchQuery]);
+
+  const filteredSermons = searchQuery.trim()
+    ? sermons.filter(
+        (s) =>
+          s.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          s.date?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : sermons;
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
@@ -86,6 +176,19 @@ export default function AudioSermonsScreen() {
     </TouchableOpacity>
   );
 
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+          Loading more sermons...
+        </Text>
+      </View>
+    );
+  };
+
   const renderSkeleton = () => (
     <>
       <SkeletonItem />
@@ -95,10 +198,23 @@ export default function AudioSermonsScreen() {
     </>
   );
 
+  const handleEndReached = () => {
+    if (!loading && !loadingMore && hasMore && !searchQuery.trim()) {
+      loadMoreSermons();
+    }
+  };
+
   return (
     <SafeAreaWrapper>
       <TopNavigation title={translations.audioSermons || 'Audio Sermons'} />
-      <View style={styles.searchContainer}>
+
+      {/* Search Bar */}
+      <View
+        style={[
+          styles.searchContainer,
+          { borderColor: colors.textSecondary + '30' },
+        ]}
+      >
         <Search
           size={20}
           color={colors.textSecondary}
@@ -113,6 +229,18 @@ export default function AudioSermonsScreen() {
         />
       </View>
 
+      {/* Results Count */}
+      {!loading && filteredSermons.length > 0 && (
+        <View style={styles.resultsHeader}>
+          <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>
+            {filteredSermons.length}{' '}
+            {filteredSermons.length === 1 ? 'sermon' : 'sermons'}
+            {searchQuery ? ' found' : ' available'}
+            {hasMore && !searchQuery && '+'}
+          </Text>
+        </View>
+      )}
+
       {loading ? (
         <View style={styles.listContainer}>{renderSkeleton()}</View>
       ) : filteredSermons.length === 0 ? (
@@ -120,9 +248,16 @@ export default function AudioSermonsScreen() {
           <Mic size={64} color={colors.textSecondary} />
           <Text style={[styles.emptyText, { color: colors.text }]}>
             {searchQuery
-              ? translations.noSermonsFound
-              : translations.noAudioSermons}
+              ? translations.noSermonsFound || 'No sermons found'
+              : translations.noAudioSermons || 'No audio sermons available'}
           </Text>
+          {!searchQuery && (
+            <Text
+              style={[styles.emptySubtext, { color: colors.textSecondary }]}
+            >
+              Check back later for new audio content
+            </Text>
+          )}
         </View>
       ) : (
         <FlatList
@@ -131,6 +266,21 @@ export default function AudioSermonsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
+          }
+          ListFooterComponent={renderFooter}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.5}
+          removeClippedSubviews={true}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={10}
         />
       )}
     </SafeAreaWrapper>
@@ -146,13 +296,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, paddingVertical: 12, fontSize: 16 },
-
-  listContainer: { paddingHorizontal: 20, paddingBottom: 20 },
-
+  searchInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  resultsHeader: {
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  resultsCount: {
+    fontSize: 14,
+    fontWeight: '600',
+    opacity: 0.8,
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
   item: {
     flexDirection: 'row',
     padding: 16,
@@ -168,7 +331,9 @@ const styles = StyleSheet.create({
     marginRight: 16,
     justifyContent: 'center',
   },
-  textContainer: { flex: 1 },
+  textContainer: {
+    flex: 1,
+  },
   title: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -179,7 +344,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  date: { fontSize: 14 },
+  date: {
+    fontSize: 14,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -190,6 +357,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     marginTop: 16,
+    fontWeight: '600',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+    opacity: 0.7,
   },
   skeletonTitle: {
     height: 16,
@@ -201,5 +375,16 @@ const styles = StyleSheet.create({
     height: 14,
     width: '50%',
     borderRadius: 4,
+  },
+  footerLoader: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

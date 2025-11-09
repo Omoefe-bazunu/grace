@@ -79,20 +79,27 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    const fetchContent = async () => {
-      try {
-        console.log('Fetching recent content...');
-        const data = await getRecentContent();
-        console.log('Content loaded:', data);
-        setContent(data);
-      } catch (error) {
-        console.error('Error fetching recent content:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchContent();
+    loadContent();
   }, []);
+
+  const loadContent = async () => {
+    try {
+      console.log('Fetching recent content...');
+      const data = await getRecentContent();
+      console.log('Content loaded:', data);
+      setContent(data);
+    } catch (error) {
+      console.error('Error fetching recent content:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadContent();
+  };
 
   const getTranslatedContent = (item) => {
     return (
@@ -250,14 +257,14 @@ export default function HomeScreen() {
       <ScrollView
         style={[styles.content, { backgroundColor: colors.background }]}
         showsVerticalScrollIndicator={false}
-        // refreshControl={
-        //   <RefreshControl
-        //     refreshing={refreshing}
-        //     onRefresh={onRefresh}
-        //     colors={[colors.primary]} // Android spinner color
-        //     tintColor={colors.primary} // iOS spinner color
-        //   />
-        // }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
       >
         <View style={styles.welcomeSection}>
           <LinearGradient
@@ -493,14 +500,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardTitle: {
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: '700',
     letterSpacing: -0.3,
     marginBottom: 8,
     lineHeight: 24,
   },
   cardSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     lineHeight: 20,
     opacity: 0.75,
     marginBottom: 16,

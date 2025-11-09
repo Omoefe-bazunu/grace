@@ -85,8 +85,12 @@ api.interceptors.response.use(
 );
 
 export const apiClient = {
-  // GET request with query parameters
+  // GET request with query parameters - returns full response with pagination
   get: (collection, params = {}) => api.get(`/api/${collection}`, { params }),
+
+  // GET request with offset pagination (alternative to cursor-based)
+  getWithOffset: (collection, params = {}) =>
+    api.get(`/api/${collection}/offset`, { params }),
 
   // POST request
   post: (collection, data) => api.post(`/api/${collection}`, data),
@@ -160,6 +164,57 @@ export const apiClient = {
     api.get('/health').catch(() => {
       console.log('Health check failed - server may be starting');
     }),
+
+  // === PAGINATION HELPERS ===
+
+  // Get paginated data with cursor
+  getPaginated: (
+    collection,
+    {
+      limit = 10,
+      after = null,
+      category = null,
+      sort = 'createdAt',
+      order = 'desc',
+    } = {}
+  ) => {
+    const params = { limit, sort, order };
+    if (after) params.after = after;
+    if (category) params.category = category;
+    return api.get(`/api/${collection}`, { params });
+  },
+
+  // Get paginated data with offset (page numbers)
+  getPaginatedOffset: (
+    collection,
+    {
+      page = 1,
+      limit = 10,
+      category = null,
+      sort = 'createdAt',
+      order = 'desc',
+    } = {}
+  ) => {
+    const params = { page, limit, sort, order };
+    if (category) params.category = category;
+    return api.get(`/api/${collection}/offset`, { params });
+  },
+
+  // Extract data and pagination from response
+  extractData: (response, collection) => {
+    const data = response.data;
+    return {
+      items: data[collection] || [],
+      pagination: data.pagination || { hasMore: false },
+    };
+  },
+
+  // Helper to get all items (for backward compatibility)
+  getAll: async (collection, category = null) => {
+    const params = category ? { category } : {};
+    const response = await api.get(`/api/${collection}`, { params });
+    return response.data[collection] || [];
+  },
 };
 
 export default apiClient;

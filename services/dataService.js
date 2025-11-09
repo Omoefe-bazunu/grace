@@ -1,6 +1,5 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import apiClient from '../utils/api';
 
 const API_BASE_URL = 'https://grace-backend-tp3h.onrender.com';
 
@@ -11,7 +10,7 @@ axios.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Helper: GET with query params
+// Helper: GET with query params (returns data directly)
 const get = (path, params = {}) => {
   return axios
     .get(`${API_BASE_URL}${path}`, { params })
@@ -26,8 +25,8 @@ const post = (path, data) => {
 // === SERMONS ===
 export const getSermons = async () => {
   try {
-    const sermons = await get('/api/sermons');
-    return sermons.map(formatSermon);
+    const response = await get('/api/sermons');
+    return response.sermons || [];
   } catch (error) {
     console.error('Error fetching sermons:', error);
     return [];
@@ -38,11 +37,86 @@ export const getSermonsByCategory = async (category, limit = null) => {
   try {
     const params = { category };
     if (limit) params.limit = limit;
-    const sermons = await get('/api/sermons', params);
-    return sermons.map(formatSermon);
+    const response = await get('/api/sermons', params);
+    return response.sermons || [];
   } catch (error) {
     console.error('Error fetching sermons by category:', error);
     return [];
+  }
+};
+
+// Paginated sermons (all sermons)
+export const getSermonsPaginated = async (limit = 15, after = null) => {
+  try {
+    const params = {
+      limit,
+      sort: 'createdAt',
+      order: 'desc',
+    };
+
+    if (after) params.after = after;
+
+    const data = await get('/api/sermons', params);
+
+    return {
+      sermons: data.sermons || [],
+      hasMore: data.pagination?.hasMore || false,
+      nextCursor: data.pagination?.nextCursor || null,
+      totalCount: data.pagination?.count || 0,
+    };
+  } catch (error) {
+    console.error('Error fetching paginated sermons:', error);
+    return { sermons: [], hasMore: false, nextCursor: null, totalCount: 0 };
+  }
+};
+
+// Paginated sermons by category
+export const getSermonsByCategoryPaginated = async (
+  category,
+  limit = 10,
+  after = null
+) => {
+  try {
+    const params = {
+      category,
+      limit,
+      sort: 'createdAt',
+      order: 'desc',
+    };
+
+    if (after) params.after = after;
+
+    const data = await get('/api/sermons', params);
+
+    return {
+      sermons: data.sermons || [],
+      hasMore: data.pagination?.hasMore || false,
+      nextCursor: data.pagination?.nextCursor || null,
+      totalCount: data.pagination?.count || 0,
+    };
+  } catch (error) {
+    console.error('Error fetching paginated sermons by category:', error);
+
+    // Fallback: fetch all and filter client-side
+    if (error.message?.includes('index')) {
+      console.warn('Index not ready, using fallback');
+      try {
+        const allSermons = await getSermonsPaginated(100, null);
+        const filtered = allSermons.sermons.filter(
+          (s) => s.category === category
+        );
+        return {
+          sermons: filtered.slice(0, limit),
+          hasMore: filtered.length > limit,
+          nextCursor: filtered[limit - 1]?.id || null,
+          totalCount: filtered.length,
+        };
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+      }
+    }
+
+    return { sermons: [], hasMore: false, nextCursor: null, totalCount: 0 };
   }
 };
 
@@ -58,8 +132,8 @@ export const getSermon = async (sermonId) => {
 export const subscribeToSermons = (callback) => {
   const fetchData = async () => {
     try {
-      const sermons = await get('/api/sermons');
-      callback(sermons.map(formatSermon));
+      const response = await get('/api/sermons');
+      callback(response.sermons || []);
     } catch {
       callback([]);
     }
@@ -73,8 +147,8 @@ export const subscribeToSermons = (callback) => {
 // === SONGS ===
 export const getSongs = async () => {
   try {
-    const songs = await get('/api/songs');
-    return songs.map(formatSong);
+    const response = await get('/api/songs');
+    return response.songs || [];
   } catch {
     return [];
   }
@@ -82,10 +156,87 @@ export const getSongs = async () => {
 
 export const getSongsByCategory = async (category) => {
   try {
-    const songs = await get('/api/songs', { category });
-    return songs.map(formatSong);
+    const response = await get('/api/songs', { category });
+    return response.songs || [];
   } catch {
     return [];
+  }
+};
+
+// Paginated songs (all songs)
+export const getSongsPaginated = async (limit = 15, after = null) => {
+  try {
+    const params = {
+      limit,
+      sort: 'title',
+      order: 'asc',
+    };
+
+    if (after) params.after = after;
+
+    const data = await get('/api/songs', params);
+
+    return {
+      songs: data.songs || [],
+      hasMore: data.pagination?.hasMore || false,
+      nextCursor: data.pagination?.nextCursor || null,
+      totalCount: data.pagination?.count || 0,
+    };
+  } catch (error) {
+    console.error('Error fetching paginated songs:', error);
+    return { songs: [], hasMore: false, nextCursor: null, totalCount: 0 };
+  }
+};
+
+// Paginated songs by category - FIXED to match backend composite index
+export const getSongsByCategoryPaginated = async (
+  category,
+  limit = 10,
+  after = null
+) => {
+  try {
+    const params = {
+      category,
+      limit,
+      // Don't specify sort/order - backend handles it automatically
+      // Backend uses: category ASC + title ASC (matches composite index)
+    };
+
+    if (after) params.after = after;
+
+    const data = await get('/api/songs', params);
+
+    return {
+      songs: data.songs || [],
+      hasMore: data.pagination?.hasMore || false,
+      nextCursor: data.pagination?.nextCursor || null,
+      totalCount: data.pagination?.count || 0,
+    };
+  } catch (error) {
+    console.error('Error fetching paginated songs by category:', error);
+
+    // Fallback: If index not ready, fetch all and filter client-side
+    if (
+      error.message?.includes('index') ||
+      error.response?.data?.error?.includes('index')
+    ) {
+      console.warn('Composite index not ready, using fallback method');
+      try {
+        const allSongs = await getSongsPaginated(100, null);
+        const filtered = allSongs.songs.filter((s) => s.category === category);
+
+        return {
+          songs: filtered.slice(0, limit),
+          hasMore: filtered.length > limit,
+          nextCursor: filtered[limit - 1]?.id || null,
+          totalCount: filtered.length,
+        };
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+      }
+    }
+
+    return { songs: [], hasMore: false, nextCursor: null, totalCount: 0 };
   }
 };
 
@@ -101,8 +252,8 @@ export const getSong = async (songId) => {
 export const subscribeToSongs = (callback) => {
   const fetchData = async () => {
     try {
-      const songs = await get('/api/songs');
-      callback(songs.map(formatSong));
+      const response = await get('/api/songs');
+      callback(response.songs || []);
     } catch {
       callback([]);
     }
@@ -116,10 +267,35 @@ export const subscribeToSongs = (callback) => {
 // === VIDEOS ===
 export const getVideos = async () => {
   try {
-    const videos = await get('/api/videos');
-    return videos.map(formatVideo);
+    const response = await get('/api/videos');
+    return response.videos || [];
   } catch {
     return [];
+  }
+};
+
+// Paginated videos
+export const getVideosPaginated = async (limit = 12, after = null) => {
+  try {
+    const params = {
+      limit,
+      sort: 'createdAt',
+      order: 'desc',
+    };
+
+    if (after) params.after = after;
+
+    const data = await get('/api/videos', params);
+
+    return {
+      videos: data.videos || [],
+      hasMore: data.pagination?.hasMore || false,
+      nextCursor: data.pagination?.nextCursor || null,
+      totalCount: data.pagination?.count || 0,
+    };
+  } catch (error) {
+    console.error('Error fetching paginated videos:', error);
+    return { videos: [], hasMore: false, nextCursor: null, totalCount: 0 };
   }
 };
 
@@ -135,8 +311,8 @@ export const getVideo = async (videoId) => {
 export const subscribeToVideos = (callback) => {
   const fetchData = async () => {
     try {
-      const videos = await get('/api/videos');
-      callback(videos.map(formatVideo));
+      const response = await get('/api/videos');
+      callback(response.videos || []);
     } catch {
       callback([]);
     }
@@ -150,8 +326,8 @@ export const subscribeToVideos = (callback) => {
 // === NOTICES ===
 export const getNotices = async () => {
   try {
-    const notices = await get('/api/notices');
-    return notices.map(formatNotice);
+    const response = await get('/api/notices');
+    return response.notices || [];
   } catch {
     return [];
   }
@@ -160,8 +336,8 @@ export const getNotices = async () => {
 export const subscribeToNotices = (callback) => {
   const fetchData = async () => {
     try {
-      const notices = await get('/api/notices');
-      callback(notices.map(formatNotice));
+      const response = await get('/api/notices');
+      callback(response.notices || []);
     } catch {
       callback([]);
     }
@@ -214,8 +390,8 @@ export const subscribeToReadNotices = (userId, callback) => {
 // === QUIZ RESOURCES ===
 export const getQuizResources = async () => {
   try {
-    const quizzes = await get('/api/quizResources');
-    return quizzes.map(formatQuiz);
+    const response = await get('/api/quizResources');
+    return response.quizResources || [];
   } catch {
     return [];
   }
@@ -233,8 +409,8 @@ export const getQuiz = async (quizId) => {
 export const subscribeToQuizzes = (callback) => {
   const fetchData = async () => {
     try {
-      const quizzes = await get('/api/quizResources');
-      callback(quizzes.map(formatQuiz));
+      const response = await get('/api/quizResources');
+      callback(response.quizResources || []);
     } catch {
       callback([]);
     }
@@ -266,8 +442,8 @@ export const addQuizHelpQuestion = async (questionData) => {
 export const subscribeToQuizHelpQuestions = (callback) => {
   const fetchData = async () => {
     try {
-      const questions = await get('/api/quizHelpQuestions');
-      callback(questions);
+      const response = await get('/api/quizHelpQuestions');
+      callback(response.quizHelpQuestions || []);
     } catch {
       callback([]);
     }
@@ -291,8 +467,8 @@ export const addContactMessage = async (messageData) => {
 export const subscribeToContactMessages = (callback) => {
   const fetchData = async () => {
     try {
-      const messages = await get('/api/contactMessages');
-      callback(messages);
+      const response = await get('/api/contactMessages');
+      callback(response.contactMessages || []);
     } catch {
       callback([]);
     }
@@ -307,21 +483,21 @@ export const subscribeToContactMessages = (callback) => {
 export const getRecentContent = async () => {
   try {
     const [sermonsRes, songsRes, videosRes] = await Promise.all([
-      apiClient.get('sermons', { limit: 3 }),
-      apiClient.get('songs', { limit: 3 }),
-      apiClient.get('videos', { limit: 3 }),
+      get('/api/sermons', { limit: 3 }),
+      get('/api/songs', { limit: 3 }),
+      get('/api/videos', { limit: 3 }),
     ]);
 
     // FILTER: Only text sermons (client-side, safe)
-    const textSermons = sermonsRes.data
+    const textSermons = (sermonsRes.sermons || [])
       .filter((s) => !s.audioUrl)
       .slice(0, 5)
       .map(formatSermon);
 
     return {
       sermons: textSermons,
-      songs: songsRes.data.map(formatSong),
-      videos: videosRes.data.map(formatVideo), // ← Videos work exactly as before
+      songs: (songsRes.songs || []).map(formatSong),
+      videos: (videosRes.videos || []).map(formatVideo),
     };
   } catch (error) {
     console.error('getRecentContent ERROR:', error.response || error);
@@ -357,6 +533,87 @@ export const searchContent = async (searchTerm, category = null) => {
   }
 };
 
+// Optimized search with pagination support
+export const searchContentPaginated = async (
+  searchTerm,
+  category = null,
+  limit = 20,
+  after = null
+) => {
+  try {
+    const term = searchTerm.toLowerCase();
+
+    // Fetch more items initially for better search results
+    const [sermonsData, songsData, videosData] = await Promise.all([
+      getSermonsPaginated(100, null),
+      getSongsPaginated(100, null),
+      getVideosPaginated(100, null),
+    ]);
+
+    const filteredSermons = sermonsData.sermons.filter(
+      (s) =>
+        s.title.toLowerCase().includes(term) ||
+        (s.content && s.content.toLowerCase().includes(term))
+    );
+
+    const filteredSongs = songsData.songs.filter(
+      (s) =>
+        s.title.toLowerCase().includes(term) &&
+        (!category || s.category === category)
+    );
+
+    const filteredVideos = videosData.videos.filter((v) =>
+      v.title.toLowerCase().includes(term)
+    );
+
+    // Combine and sort all results
+    const allResults = [
+      ...filteredSermons.map((s) => ({ ...s, type: 'sermon' })),
+      ...filteredSongs.map((s) => ({ ...s, type: 'song' })),
+      ...filteredVideos.map((v) => ({ ...v, type: 'video' })),
+    ].sort((a, b) => a.title.localeCompare(b.title));
+
+    // Apply cursor-based pagination
+    const startIndex = after
+      ? allResults.findIndex((item) => item.id === after) + 1
+      : 0;
+    const endIndex = startIndex + limit;
+    const paginatedResults = allResults.slice(startIndex, endIndex);
+
+    // Separate back into types
+    const resultsByType = {
+      sermons: paginatedResults
+        .filter((item) => item.type === 'sermon')
+        .map(({ type, ...item }) => item),
+      songs: paginatedResults
+        .filter((item) => item.type === 'song')
+        .map(({ type, ...item }) => item),
+      videos: paginatedResults
+        .filter((item) => item.type === 'video')
+        .map(({ type, ...item }) => item),
+    };
+
+    const lastItem = paginatedResults[paginatedResults.length - 1];
+
+    return {
+      ...resultsByType,
+      pagination: {
+        hasMore: endIndex < allResults.length,
+        nextCursor: lastItem ? lastItem.id : null,
+        totalCount: allResults.length,
+      },
+    };
+  } catch (error) {
+    console.error('Error in searchContentPaginated:', error);
+    return {
+      sermons: [],
+      songs: [],
+      videos: [],
+      pagination: { hasMore: false, nextCursor: null, totalCount: 0 },
+    };
+  }
+};
+
 // === FORMATTERS ===
 const formatSermon = (s) => ({
   id: s.id,
@@ -364,6 +621,7 @@ const formatSermon = (s) => ({
   content: s.content || '',
   category: s.category || null,
   audioUrl: s.audioUrl || null,
+  ttsAudioUrl: s.ttsAudioUrl || null,
   date: s.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
   duration: s.duration || null,
   uploadedBy: s.uploadedBy,
@@ -434,3 +692,49 @@ export const getAppInfo = () => ({
   churchMission:
     'To glorify God and make disciples of all nations through multilingual worship and biblical teaching.',
 });
+
+// === TTS FUNCTIONS ===
+export const generateSermonAudio = async (
+  sermonId,
+  languageCode = 'en-US',
+  voiceName = 'en-US-Neural2-F'
+) => {
+  try {
+    const response = await post(`/api/sermons/${sermonId}/generate-audio`, {
+      languageCode,
+      voiceName,
+    });
+    return response;
+  } catch (error) {
+    console.error('Error generating sermon audio:', error);
+    throw error;
+  }
+};
+
+export const getSermonAudioStatus = async (sermonId) => {
+  try {
+    const response = await get(`/api/sermons/${sermonId}/audio-status`);
+    return response;
+  } catch (error) {
+    console.error('Error getting sermon audio status:', error);
+    throw error;
+  }
+};
+
+export const synthesizeTTS = async (
+  text,
+  languageCode = 'en-US',
+  voiceName = 'en-US-Neural2-F'
+) => {
+  try {
+    const response = await post('/api/tts/synthesize', {
+      text,
+      languageCode,
+      voiceName,
+    });
+    return response;
+  } catch (error) {
+    console.error('Error synthesizing TTS:', error);
+    throw error;
+  }
+};

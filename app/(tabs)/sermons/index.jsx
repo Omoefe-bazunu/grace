@@ -8,6 +8,8 @@ import {
   StyleSheet,
   TextInput,
   Animated,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -21,8 +23,8 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../components/TopNavigation';
 import {
-  getSermonsByCategory,
-  searchContent,
+  getSermonsByCategoryPaginated,
+  searchContentPaginated,
 } from '../../../services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
 import debounce from 'lodash.debounce';
@@ -86,9 +88,23 @@ const CategoryCard = ({
   translations,
   isExpanded,
   onToggle,
+  onLoadMore,
+  hasMore,
+  isLoadingMore,
 }) => {
   const [animation] = useState(new Animated.Value(isExpanded ? 1 : 0));
-  const sortedSermons = [...sermons].sort((a, b) => {
+  const [localSermons, setLocalSermons] = useState(sermons);
+  const [nextCursor, setNextCursor] = useState(null);
+
+  // Update local sermons when prop changes
+  useEffect(() => {
+    if (sermons.length > 0 && sermons[0]?.id !== localSermons[0]?.id) {
+      setLocalSermons(sermons);
+      setNextCursor(null);
+    }
+  }, [sermons]);
+
+  const sortedSermons = [...localSermons].sort((a, b) => {
     const titleA = (
       a.translations?.[translations.currentLanguage]?.title ||
       a.title ||
@@ -109,6 +125,20 @@ const CategoryCard = ({
       useNativeDriver: false,
     }).start();
   }, [isExpanded]);
+
+  const handleLoadMore = async () => {
+    if (!hasMore || isLoadingMore || !nextCursor) return;
+
+    try {
+      const moreSermons = await onLoadMore(category, nextCursor);
+      if (moreSermons.sermons.length > 0) {
+        setLocalSermons((prev) => [...prev, ...moreSermons.sermons]);
+        setNextCursor(moreSermons.nextCursor);
+      }
+    } catch (error) {
+      console.error('Error loading more sermons:', error);
+    }
+  };
 
   const rotateIcon = animation.interpolate({
     inputRange: [0, 1],
@@ -133,10 +163,11 @@ const CategoryCard = ({
             <Text
               style={[styles.categoryCount, { color: colors.textSecondary }]}
             >
-              {sermons.length}{' '}
-              {sermons.length === 1
+              {localSermons.length}{' '}
+              {localSermons.length === 1
                 ? translations.sermon
                 : translations.sermons}
+              {hasMore && '+'}
             </Text>
           </View>
         </View>
@@ -153,6 +184,25 @@ const CategoryCard = ({
               onPress={() => router.push(`/(tabs)/sermons/${sermon.id}`)}
             />
           ))}
+
+          {hasMore && (
+            <TouchableOpacity
+              style={[
+                styles.loadMoreButton,
+                { borderColor: colors.primary + '30' },
+              ]}
+              onPress={handleLoadMore}
+              disabled={isLoadingMore}
+            >
+              {isLoadingMore ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Text style={[styles.loadMoreText, { color: colors.primary }]}>
+                  Load More Sermons
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </View>
@@ -162,61 +212,94 @@ const CategoryCard = ({
 export default function SermonsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categorizedSermons, setCategorizedSermons] = useState({});
+  const [categoryMetadata, setCategoryMetadata] = useState({});
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState({});
   const { translations, currentLanguage } = useLanguage();
   const { colors } = useTheme();
 
-  // Fetch all sermons by category
-  useEffect(() => {
-    const fetchSermons = async () => {
-      setLoading(true);
-      try {
-        const results = await Promise.all(
-          SERMON_CATEGORIES.map(async (cat) => {
-            const sermons = await getSermonsByCategory(cat);
-            return { category: cat, sermons };
-          })
-        );
-
-        const grouped = results.reduce((acc, { category, sermons }) => {
-          acc[category] = sermons;
-          return acc;
-        }, {});
-
-        setCategorizedSermons(grouped);
-      } catch (error) {
-        console.error('Error fetching sermons:', error);
+  // Load initial sermons with pagination
+  const loadSermons = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
         setCategorizedSermons({});
-      } finally {
-        setLoading(false);
+        setCategoryMetadata({});
       }
-    };
 
-    fetchSermons();
+      const initialSermons = {};
+      const metadata = {};
+
+      // Load first page for each category
+      for (const category of SERMON_CATEGORIES) {
+        const result = await getSermonsByCategoryPaginated(category, 10, null);
+        initialSermons[category] = result.sermons;
+        metadata[category] = {
+          hasMore: result.hasMore,
+          nextCursor: result.nextCursor,
+          totalCount: result.totalCount,
+        };
+      }
+
+      setCategorizedSermons(initialSermons);
+      setCategoryMetadata(metadata);
+    } catch (error) {
+      console.error('Error fetching sermons:', error);
+      setCategorizedSermons({});
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Load more sermons for a specific category
+  const loadMoreSermons = async (category, cursor) => {
+    try {
+      setLoadingMore(true);
+      const result = await getSermonsByCategoryPaginated(category, 10, cursor);
+
+      // Update metadata
+      setCategoryMetadata((prev) => ({
+        ...prev,
+        [category]: {
+          ...prev[category],
+          hasMore: result.hasMore,
+          nextCursor: result.nextCursor,
+        },
+      }));
+
+      return result;
+    } catch (error) {
+      console.error('Error loading more sermons:', error);
+      return { sermons: [], hasMore: false, nextCursor: null };
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    loadSermons();
   }, []);
 
-  // Debounced search
+  // Pull to refresh handler
+  const onRefresh = () => {
+    loadSermons(true);
+  };
+
+  // Debounced search with pagination
   const debouncedSearch = useCallback(
     debounce(async (query) => {
       if (!query.trim()) {
-        // Refetch all
-        const results = await Promise.all(
-          SERMON_CATEGORIES.map(async (cat) => {
-            const sermons = await getSermonsByCategory(cat);
-            return { category: cat, sermons };
-          })
-        );
-        const grouped = results.reduce((acc, { category, sermons }) => {
-          acc[category] = sermons;
-          return acc;
-        }, {});
-        setCategorizedSermons(grouped);
+        loadSermons(true);
         return;
       }
 
       try {
-        const results = await searchContent(query);
+        setRefreshing(true);
+        const results = await searchContentPaginated(query, null, 50, null);
         const grouped = SERMON_CATEGORIES.reduce((acc, cat) => {
           acc[cat] = [];
           return acc;
@@ -228,11 +311,24 @@ export default function SermonsScreen() {
         });
 
         setCategorizedSermons(grouped);
+
+        // Reset metadata for search results
+        const searchMetadata = {};
+        SERMON_CATEGORIES.forEach((cat) => {
+          searchMetadata[cat] = {
+            hasMore: false,
+            nextCursor: null,
+            totalCount: grouped[cat]?.length || 0,
+          };
+        });
+        setCategoryMetadata(searchMetadata);
       } catch (error) {
         console.error('Search error:', error);
         setCategorizedSermons({});
+      } finally {
+        setRefreshing(false);
       }
-    }, 300),
+    }, 500),
     []
   );
 
@@ -255,6 +351,9 @@ export default function SermonsScreen() {
       translations={{ ...translations, currentLanguage }}
       isExpanded={expandedCategories[category]}
       onToggle={() => toggleCategory(category)}
+      onLoadMore={loadMoreSermons}
+      hasMore={categoryMetadata[category]?.hasMore}
+      isLoadingMore={loadingMore}
     />
   );
 
@@ -337,6 +436,17 @@ export default function SermonsScreen() {
           ]}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={renderEmptyState}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
+          }
+          initialNumToRender={3}
+          maxToRenderPerBatch={5}
+          windowSize={7}
         />
       )}
     </SafeAreaWrapper>
@@ -353,7 +463,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginVertical: 10,
   },
-
   searchIcon: {
     position: 'absolute',
     left: 30,
@@ -415,7 +524,6 @@ const styles = StyleSheet.create({
   sermonItemContent: {
     flex: 1,
   },
-
   sermonItemTitle: {
     fontSize: 12,
     fontWeight: '500',
@@ -429,6 +537,17 @@ const styles = StyleSheet.create({
   },
   readMoreText: {
     fontSize: 12,
+    fontWeight: '600',
+  },
+  loadMoreButton: {
+    padding: 12,
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  loadMoreText: {
+    fontSize: 14,
     fontWeight: '600',
   },
   skeletonCategory: {

@@ -8,6 +8,8 @@ import {
   StyleSheet,
   SafeAreaView,
   Image,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -21,7 +23,10 @@ import {
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { LanguageSwitcher } from '../../../components/LanguageSwitcher';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { getVideos, searchContent } from '../../../services/dataService';
+import {
+  getVideosPaginated,
+  searchContentPaginated,
+} from '../../../services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
 import debounce from 'lodash.debounce';
 import { TopNavigation } from '../../../components/TopNavigation';
@@ -53,48 +58,86 @@ export default function AnimationsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [nextCursor, setNextCursor] = useState(null);
   const { translations } = useLanguage();
   const { colors } = useTheme();
 
-  useEffect(() => {
-    const fetchVideos = async () => {
-      try {
-        const data = await getVideos();
-        setVideos(data);
-      } catch (error) {
-        console.error('Error fetching videos:', error);
-        setVideos([]);
-      } finally {
-        setLoading(false);
+  const loadVideos = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+        setNextCursor(null);
       }
-    };
-    fetchVideos();
+
+      const result = await getVideosPaginated(12, null); // Load first 12 videos
+      setVideos(result.videos);
+      setHasMore(result.hasMore);
+      setNextCursor(result.nextCursor);
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+      setVideos([]);
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const loadMoreVideos = async () => {
+    if (loadingMore || !hasMore || !nextCursor) return;
+
+    try {
+      setLoadingMore(true);
+      const result = await getVideosPaginated(12, nextCursor);
+      setVideos((prev) => [...prev, ...result.videos]);
+      setHasMore(result.hasMore);
+      setNextCursor(result.nextCursor);
+    } catch (error) {
+      console.error('Error loading more videos:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    loadVideos();
   }, []);
+
+  const onRefresh = () => {
+    loadVideos(true);
+  };
 
   const debouncedSearch = useCallback(
     debounce(async (query) => {
       if (!query.trim()) {
-        try {
-          const data = await getVideos();
-          setVideos(data);
-        } catch (error) {
-          console.error('Error fetching videos:', error);
-          setVideos([]);
-        }
+        // Refetch all videos when search is cleared
+        loadVideos(true);
         return;
       }
       try {
-        const results = await searchContent(query);
+        setLoading(true);
+        const results = await searchContentPaginated(query, null, 20, null);
         setVideos(results.videos);
+        setHasMore(results.pagination?.hasMore || false);
+        setNextCursor(results.pagination?.nextCursor || null);
       } catch (error) {
         console.error('Error searching videos:', error);
         setVideos([]);
+        setHasMore(false);
+      } finally {
+        setLoading(false);
       }
-    }, 300),
+    }, 500), // Increased debounce for better performance
     []
   );
 
   useEffect(() => {
+    if (searchQuery) {
+      setLoading(true);
+    }
     debouncedSearch(searchQuery);
   }, [searchQuery, debouncedSearch]);
 
@@ -141,6 +184,19 @@ export default function AnimationsScreen() {
     </TouchableOpacity>
   );
 
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+          Loading more videos...
+        </Text>
+      </View>
+    );
+  };
+
   const renderSkeletonCards = () => (
     <>
       <SkeletonCard />
@@ -170,6 +226,12 @@ export default function AnimationsScreen() {
       </Text>
     </View>
   );
+
+  const handleEndReached = () => {
+    if (!loading && !loadingMore && hasMore && !searchQuery) {
+      loadMoreVideos();
+    }
+  };
 
   return (
     <SafeAreaWrapper>
@@ -218,6 +280,7 @@ export default function AnimationsScreen() {
           <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>
             {videos.length} {videos.length === 1 ? 'video' : 'videos'}
             {searchQuery ? ' found' : ' available'}
+            {hasMore && !searchQuery && '+'}
           </Text>
         </View>
       )}
@@ -234,6 +297,21 @@ export default function AnimationsScreen() {
         ListEmptyComponent={
           loading ? renderSkeletonCards() : renderEmptyState()
         }
+        ListFooterComponent={renderFooter}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.5}
+        removeClippedSubviews={true}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={10}
       />
     </SafeAreaWrapper>
   );
@@ -355,7 +433,7 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   videoTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     letterSpacing: -0.3,
     marginBottom: 10,
@@ -418,5 +496,16 @@ const styles = StyleSheet.create({
   },
   headerSpacer: {
     height: 4,
+  },
+  footerLoader: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
