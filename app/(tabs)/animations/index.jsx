@@ -7,9 +7,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  Image,
   RefreshControl,
   ActivityIndicator,
+  // Image is no longer needed for the video card, but kept just in case
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -19,9 +20,12 @@ import {
   Film,
   Sparkles,
   PlayIcon,
+  Video as VideoIcon, // Renamed lucide icon to VideoIcon to prevent conflict
 } from 'lucide-react-native';
+// ADDED: Import the functional Video component for playback
+import { Video } from 'expo-av';
+
 import { useLanguage } from '../../../contexts/LanguageContext';
-import { LanguageSwitcher } from '../../../components/LanguageSwitcher';
 import { useTheme } from '../../../contexts/ThemeContext';
 import {
   getVideosPaginated,
@@ -72,7 +76,7 @@ export default function AnimationsScreen() {
         setNextCursor(null);
       }
 
-      const result = await getVideosPaginated(12, null); // Load first 12 videos
+      const result = await getVideosPaginated(12, null);
       setVideos(result.videos);
       setHasMore(result.hasMore);
       setNextCursor(result.nextCursor);
@@ -113,7 +117,6 @@ export default function AnimationsScreen() {
   const debouncedSearch = useCallback(
     debounce(async (query) => {
       if (!query.trim()) {
-        // Refetch all videos when search is cleared
         loadVideos(true);
         return;
       }
@@ -130,7 +133,7 @@ export default function AnimationsScreen() {
       } finally {
         setLoading(false);
       }
-    }, 500), // Increased debounce for better performance
+    }, 500),
     []
   );
 
@@ -141,27 +144,65 @@ export default function AnimationsScreen() {
     debouncedSearch(searchQuery);
   }, [searchQuery, debouncedSearch]);
 
+  const formatDuration = (duration) => {
+    if (!duration) return '--:--';
+    const minutes = Math.floor(duration / 60);
+    const seconds = duration % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
   const renderVideoItem = ({ item }) => (
     <TouchableOpacity
       style={[styles.videoCard, { backgroundColor: colors.card }]}
       onPress={() => router.push(`/(tabs)/animations/${item.id}`)}
       activeOpacity={0.7}
     >
+      {/* Thumbnail Container */}
       <View style={styles.thumbnailContainer}>
-        <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnail} />
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.75)']}
-          style={styles.thumbnailGradient}
+        {/* MODIFICATION: Using Video component instead of Image */}
+        <Video
+          // IMPORTANT: Use item.videoUrl for the actual video source
+          source={{ uri: item.videoUrl }}
+          style={styles.thumbnail}
+          resizeMode="cover"
+          shouldPlay={true} // Auto-play the video snippet
+          isLooping={true} // Loop the video
+          isMuted={true} // Mute for automatic playback
+          useNativeControls={false} // Hide controls for a cleaner snippet look
+          onError={(e) => {
+            console.error('Video load error:', e.error);
+          }}
+          // The posterSource can be set to item.thumbnailUrl for a fallback/initial image
+          // posterSource={{ uri: item.thumbnailUrl }}
+          // usePoster={true}
         />
-        <View style={styles.playOverlay}>
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.7)']}
+          style={styles.thumbnailOverlay}
+        />
+
+        {/* Play Button Overlay (Kept, but is visually redundant for an auto-playing snippet. 
+            You may want to remove it or make it just a pause/unmute indicator.) */}
+        <View style={styles.playButtonOverlay}>
           <View
             style={[styles.playButton, { backgroundColor: colors.primary }]}
           >
-            <Play size={28} color="#fff" fill="#fff" />
+            <Play size={24} color="#fff" fill="#fff" />
           </View>
         </View>
+
+        {/* Duration Badge */}
+        {item.duration && (
+          <View style={styles.durationBadge}>
+            <Clock size={12} color="#fff" />
+            <Text style={styles.durationText}>
+              {formatDuration(item.duration)}
+            </Text>
+          </View>
+        )}
       </View>
 
+      {/* Video Info */}
       <View style={styles.videoInfo}>
         <Text
           style={[styles.videoTitle, { color: colors.text }]}
@@ -169,16 +210,32 @@ export default function AnimationsScreen() {
         >
           {item.title}
         </Text>
-        <View
-          style={[
-            styles.videoBadge,
-            { backgroundColor: colors.primary + '15' },
-          ]}
-        >
-          <PlayIcon size={12} color={colors.primary} />
-          <Text style={[styles.badgeText, { color: colors.primary }]}>
-            Watch Now
-          </Text>
+
+        <View style={styles.videoMeta}>
+          <View
+            style={[
+              styles.watchBadge,
+              { backgroundColor: colors.primary + '15' },
+            ]}
+          >
+            <PlayIcon size={12} color={colors.primary} />
+            <Text style={[styles.badgeText, { color: colors.primary }]}>
+              Watch Now
+            </Text>
+          </View>
+
+          {item.languageCategory && (
+            <View
+              style={[
+                styles.languageBadge,
+                { backgroundColor: colors.primary + '10' },
+              ]}
+            >
+              <Text style={[styles.languageText, { color: colors.primary }]}>
+                {item.languageCategory}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -237,7 +294,7 @@ export default function AnimationsScreen() {
     <SafeAreaWrapper>
       <TopNavigation title={translations.animations} />
 
-      {/* Enhanced Search Bar */}
+      {/* Search Bar */}
       <View style={styles.searchWrapper}>
         <LinearGradient
           colors={[colors.primary + '08', 'transparent']}
@@ -400,15 +457,16 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: '100%',
     height: '100%',
+    backgroundColor: '#f0f0f0', // Fallback background
   },
-  thumbnailGradient: {
+  thumbnailOverlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     height: '60%',
   },
-  playOverlay: {
+  playButtonOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -418,9 +476,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   playButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -428,6 +486,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
+  },
+  durationBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    gap: 4,
+  },
+  durationText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   videoInfo: {
     padding: 14,
@@ -440,10 +515,14 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     minHeight: 40,
   },
-  videoBadge: {
+  videoMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  watchBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 8,
@@ -453,6 +532,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     letterSpacing: -0.1,
+  },
+  languageBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  languageText: {
+    fontSize: 10,
+    fontWeight: '500',
   },
   emptyContainer: {
     flex: 1,

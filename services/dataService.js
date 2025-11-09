@@ -686,11 +686,65 @@ const getDefaultThumbnail = () => {
 // === APP INFO ===
 export const getAppInfo = () => ({
   version: '1.0.0',
-  content:
-    'Grace is a multilingual church app designed to bring the gospel to people of all languages and backgrounds...',
-  contactEmail: 'info@higher.com.ng',
-  churchMission:
+  content: `The God's Kingdom Society (GKS) is a Christian organization founded by Jehovah God through His servant, Saint Gideon Meriodere Urhobo. 
+
+Established in 1934, GKS emerged from a divine calling when St. G.M. Urhobo received a vision from Jesus Christ commissioning him to proclaim the Gospel of God's Kingdom and expose false doctrines.
+
+What makes GKS unique:
+• Founded on direct biblical revelation and divine calling
+• Committed to pure Bible teachings without denominational traditions
+• Multilingual ministry reaching people of all backgrounds
+• Focused on God's Kingdom as the solution to human suffering
+
+From small beginnings in Lagos, GKS has grown into a vibrant Christian community across Nigeria and beyond, fulfilling the biblical prophecy: "A little one shall become a thousand" (Isaiah 60:22).`,
+
+  mission:
     'To glorify God and make disciples of all nations through multilingual worship and biblical teaching.',
+
+  contactInfo: {
+    headquarters: 'Salem City, P.O. Box 424, Warri, Delta State, Nigeria',
+    phones: ['+234-810 098 7661', '+234-802 329 5127'],
+    emails: [
+      'gkssecretariat@mountaingks.org',
+      'publicitysecretary@mountaingks.org',
+    ],
+    socialMedia: {
+      facebook: 'www.facebook.com/mountaingks',
+      twitter: 'www.twitter.com/mountaingks',
+    },
+  },
+
+  keyBeliefs: [
+    'The Bible as the only authorized law book of God',
+    "God's Kingdom as the only remedy for human suffering",
+    'The importance of exposing false doctrines',
+    'Service and reverence to Jehovah God',
+    'Christian unity across all nations and backgrounds',
+  ],
+
+  // For a more detailed "About" screen if needed
+  detailedHistory: {
+    founding: '1934 by St. G.M. Urhobo through divine revelation',
+    nameEvolution: [
+      "Lagos Division of Jehovah's Witnesses (1934)",
+      'Lagos Company of Christian People (1939)',
+      'Nigerian Christian Society (1942)',
+      "God's Kingdom Society (1943)",
+    ],
+    earlyCenters: [
+      'Lagos (1934)',
+      'Port Harcourt (1940)',
+      'Warri & Sapele (1942)',
+      'Onitsha (1946)',
+      'Aba (1948)',
+    ],
+    significantEvents: [
+      '1933: St. Urhobo resigns from government service to preach full-time',
+      '1934: Divine commission and start of ministry',
+      "1943: Official naming as God's Kingdom Society",
+      'Growth from small group to international Christian organization',
+    ],
+  },
 });
 
 // === TTS FUNCTIONS ===

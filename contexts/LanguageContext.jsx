@@ -560,58 +560,268 @@ const translations = {
 const AboutUsInfo = {
   en: {
     version: '1.0.0',
-    content:
-      "Haven is a multilingual church app designed to bring the gospel to people of all languages and backgrounds. Our mission is to spread God's love through hymns, sermons, music, and animated Bible stories.",
-    contactEmail: 'info@higher.com.ng',
-    churchMission:
+    content: `The God's Kingdom Society (GKS) is a Christian organization founded by Jehovah God through His servant, Saint Gideon Meriodere Urhobo. 
+
+Established in 1934, GKS emerged from a divine calling when St. G.M. Urhobo received a vision from Jesus Christ commissioning him to proclaim the Gospel of God's Kingdom and expose false doctrines.
+
+What makes GKS unique:
+• Founded on direct biblical revelation and divine calling
+• Committed to pure Bible teachings without denominational traditions
+• Multilingual ministry reaching people of all backgrounds
+• Focused on God's Kingdom as the solution to human suffering
+
+From small beginnings in Lagos, GKS has grown into a vibrant Christian community across Nigeria and beyond, fulfilling the biblical prophecy: "A little one shall become a thousand" (Isaiah 60:22).`,
+
+    mission:
       'To glorify God and make disciples of all nations through multilingual worship and biblical teaching.',
+
+    contactInfo: {
+      headquarters: 'Salem City, P.O. Box 424, Warri, Delta State, Nigeria',
+      phones: ['+234-810 098 7661', '+234-802 329 5127'],
+      emails: [
+        'gkssecretariat@mountaingks.org',
+        'publicitysecretary@mountaingks.org',
+      ],
+      socialMedia: {
+        facebook: 'www.facebook.com/mountaingks',
+        twitter: 'www.twitter.com/mountaingks',
+      },
+    },
+
+    keyBeliefs: [
+      'The Bible as the only authorized law book of God',
+      "God's Kingdom as the only remedy for human suffering",
+      'The importance of exposing false doctrines',
+      'Service and reverence to Jehovah God',
+      'Christian unity across all nations and backgrounds',
+    ],
   },
   yo: {
     version: '1.0.0',
-    content:
-      'Haven jẹ app ijo ti o ni ede pupọ ti a ṣe apẹrẹ lati mu ihinrere wa si awọn eniyan ti gbogbo ede ati ipilẹṣẹ. Ise wa ni lati tan ifẹ Ọlọrun ka nipasẹ awọn orin iyin, iwasu, orin, ati awọn itan Bibeli ti o ni ere.',
-    contactEmail: 'info@higher.com.ng',
-    churchMission:
+    content: `Ẹgbẹ Ijọba Ọlọrun (GKS) jẹ ẹgbẹ Kristian ti Ọlọrun Jehovah da sile nipasẹ ẹrẹ Rẹ, Saint Gideon Meriodere Urhobo.
+
+Ti a da sile ni 1934, GKS jade lati inu ipe Ọlọrun nigbati St. G.M. Urhobo gba iranran lati ọdọ Jesu Kristi ti o firanṣẹ rẹ sii lati ké Ihinrere Ijọba Ọlọrun ati lati ṣe afihan awọn ẹkọ irọ.
+
+Ohun ti o ṣe GKS yàtọ:
+• Ti a da sile lori ifihan Bibeli taara ati ipe Ọlọrun
+• Gbẹkẹle lati fẹ ẹkọ Bibeli laisilẹ awọn aṣa iṣẹṣi
+• Iṣẹ iṣin ni ede pupọ ti n de awọn eniyan ti gbogbo ipilẹṣẹ
+• O dojukọ Ijọba Ọlọrun bi ojutu fun iya eniyan
+
+Lati awọn ibẹrẹ kekere ni Lagos, GKS ti dagba si awujọ Kristian alagbara kari Gẹẹsi ati kari, ti n ṣe aṣẹ Bibeli: "Ẹni kekere kan yoo di ẹgbẹrun" (Isaiah 60:22).`,
+
+    mission:
       'Lati yin Ọlọrun lógo ati lati ṣe awọn ọmọ-ẹhin ti gbogbo orilẹ-ede nipasẹ ijọsin ede pupọ ati ẹkọ Bibeli.',
+
+    contactInfo: {
+      headquarters: 'Ilu Salem, P.O. Apoti 424, Warri, Ipinle Delta, Nigeria',
+      phones: ['+234-810 098 7661', '+234-802 329 5127'],
+      emails: [
+        'gkssecretariat@mountaingks.org',
+        'publicitysecretary@mountaingks.org',
+      ],
+      socialMedia: {
+        facebook: 'www.facebook.com/mountaingks',
+        twitter: 'www.twitter.com/mountaingks',
+      },
+    },
+
+    keyBeliefs: [
+      'Bibeli bi iwe ofin iyasọtọ nikan ti Ọlọrun',
+      'Ijọba Ọlọrun bi ojutu nikan fun iya eniyan',
+      'Pataki ti ṣiṣe afihan awọn ẹkọ irọ',
+      'Iṣẹ ati iberu fun Ọlọrun Jehovah',
+      'Iṣọkan Kristian laarin gbogbo orilẹ-ede ati ipilẹṣẹ',
+    ],
   },
   fr: {
     version: '1.0.0',
-    content:
-      "Haven est une application d'église multilingue conçue pour apporter l'évangile aux personnes de toutes langues et origines. Notre mission est de répandre l'amour de Dieu à travers des cantiques, des sermons, de la musique et des histoires bibliques animées.",
-    contactEmail: 'info@higher.com.ng',
-    churchMission:
+    content: `La Société du Royaume de Dieu (GKS) est une organisation chrétienne fondée par Jéhovah Dieu par l'intermédiaire de son serviteur, Saint Gideon Meriodere Urhobo.
+
+Établie en 1934, la GKS est née d'un appel divin lorsque St G.M. Urhobo a reçu une vision de Jésus-Christ le chargeant de proclamer l'Évangile du Royaume de Dieu et d'exposer les fausses doctrines.
+
+Ce qui rend la GKS unique :
+• Fondée sur une révélation biblique directe et un appel divin
+• Engagée envers les enseignements bibliques purs sans traditions dénominationnelles
+• Ministère multilingue atteignant des personnes de tous horizons
+• Axée sur le Royaume de Dieu comme solution à la souffrance humaine
+
+Depuis ses modestes débuts à Lagos, la GKS est devenue une communauté chrétienne dynamique à travers le Nigeria et au-delà, accomplissant la prophétie biblique : "Le plus petit deviendra un millier" (Ésaïe 60:22).`,
+
+    mission:
       'Glorifier Dieu et faire des disciples de toutes les nations par un culte multilingue et un enseignement biblique.',
+
+    contactInfo: {
+      headquarters: 'Salem City, B.P. 424, Warri, État du Delta, Nigeria',
+      phones: ['+234-810 098 7661', '+234-802 329 5127'],
+      emails: [
+        'gkssecretariat@mountaingks.org',
+        'publicitysecretary@mountaingks.org',
+      ],
+      socialMedia: {
+        facebook: 'www.facebook.com/mountaingks',
+        twitter: 'www.twitter.com/mountaingks',
+      },
+    },
+
+    keyBeliefs: [
+      'La Bible comme seul livre de loi autorisé de Dieu',
+      'Le Royaume de Dieu comme seul remède à la souffrance humaine',
+      "L'importance d'exposer les fausses doctrines",
+      'Service et révérence envers Jéhovah Dieu',
+      'Unité chrétienne à travers toutes les nations et origines',
+    ],
   },
   ak: {
     version: '1.0.0',
-    content:
-      'Haven yɛ app a ɛwɔ kasa pii mu a wɔayɛ sɛ ɛbɛma asɛmpa aba nnipa a wɔwɔ kasa ahorow ne wɔn a wɔfiri nea wɔfiri mu. Yɛn nneyɛɛ yɛ sɛ yɛde Onyankopɔn dɔ bɛkɔ so wɔ nnwom, asubɔ, nnwom ne Bible ho nsɛm a wɔayɛ no nkanka so.',
-    contactEmail: 'info@higher.com.ng',
-    churchMission:
+    content: `Oman Nyankopɔn Asoɛe (GKS) yɛ Kristosom asɔredan a Onyankopɔn Jehovah sii so de N'akoa, Saint Gideon Meriodere Urhobo so.
+
+Wɔsii so wɔ 1934 mu, GKS fii Onyankopɔn frɛ mu bae bere a St. G.M. Urhobo nyaa adiyisɛm fi Yesu Kristo hɔ a ɛhyɛɛ no sɛ ɔnkɔbɔ Onyankopɔn Ahennie Asɛmpa no na ɔnkyerɛ nkɔmmɔ atoro no adi.
+
+Deɛ ɛma GKS yɛ soronko:
+• Wɔsii so wɔ Bible adiyisɛm a ɛkɔ so na Onyankopɔn frɛ so
+• Wɔde wɔn ho hyɛ ma Bible nkyerɛkyerɛ a ɛyɛ fɛfɛɛfɛ a ɛnyɛ asɔre mmara so
+• Asɔre a ɛwɔ kasa pii a ɛkɔ so kɔsra nnipa a wofi beae nyinaa
+• Wɔhwɛ Onyankopɔn Ahennie sɛ ɔkwan pa ma onipa yaw
+
+Fi mfitiase a ɛyɛ ketewaa bi wɔ Lagos, GKS ayɛ Kristosom kuo a ɛwɔ tumi wɔ Nigeria nyinaa ne nea ɛboro saa, na ɛdi Bible nkɔm no so: "Obi ketewaa bɛyɛ apem" (Yesaia 60:22).`,
+
+    mission:
       'Sɛ yɛbɛhyɛ Onyankopɔn anuonyam na yɛayɛ nnipa a wɔfiri aman nyinaa mu nnipa sɛ ɔmɔbɔfo wɔ kasa pii mu nkwahosan ne Bible nkyerɛkyerɛ.',
+
+    contactInfo: {
+      headquarters: 'Salem City, P.O. Box 424, Warri, Delta Mantam, Nigeria',
+      phones: ['+234-810 098 7661', '+234-802 329 5127'],
+      emails: [
+        'gkssecretariat@mountaingks.org',
+        'publicitysecretary@mountaingks.org',
+      ],
+      socialMedia: {
+        facebook: 'www.facebook.com/mountaingks',
+        twitter: 'www.twitter.com/mountaingks',
+      },
+    },
+
+    keyBeliefs: [
+      'Bible sɛ Onyankopɔn mmara nhoma a wɔpaw no nkɔsoɔ',
+      'Onyankopɔn Ahennie sɛ ɔkwan pa ma onipa yaw',
+      'Ahofadi a ɛwɔ nkɔmmɔ atoro akyerɛkyerɛ so',
+      'Som ne Onyankopɔn Jehovah ho suahu',
+      'Kristosom a ɛwɔ aman nyinaa ne nkyekyɛmu nyinaa mu',
+    ],
   },
   zh: {
     version: '1.0.0',
-    content:
-      '天堂是一款多語言教會應用程式，旨在為各種語言和背景的人們帶來福音。我們的使命是通過讚美詩、佈道、音樂和聖經故事動畫傳播神的愛。',
-    contactEmail: 'info@higher.com.ng',
-    churchMission: '通過多語言崇拜和聖經教導，榮耀神並使萬國成為門徒。',
+    content: `上帝王國協會（GKS）是一個基督教組織，由耶和華上帝透過祂的僕人聖吉迪恩·梅里奧德爾·烏爾霍博建立。
+
+成立於1934年，GKS源於神聖的呼召，當時聖G.M.烏爾霍博從耶穌基督那裡得到異象，委任他宣揚上帝王國的福音並揭露錯誤的教義。
+
+GKS的獨特之處：
+• 建立在直接的聖經啟示和神聖呼召之上
+• 致力於純粹的聖經教導，不受宗派傳統影響
+• 多語言事工，觸及各種背景的人們
+• 專注於上帝王國作為人類苦難的解決方案
+
+從拉各斯的小規模開始，GKS已成長為遍及尼日利亞及以外的充滿活力的基督教社區，應驗了聖經預言："至小的族要加增千倍"（以賽亞書60:22）。`,
+
+    mission: '通過多語言崇拜和聖經教導，榮耀神並使萬國成為門徒。',
+
+    contactInfo: {
+      headquarters: '塞勒姆市，郵政信箱424，瓦里，三角洲州，尼日利亞',
+      phones: ['+234-810 098 7661', '+234-802 329 5127'],
+      emails: [
+        'gkssecretariat@mountaingks.org',
+        'publicitysecretary@mountaingks.org',
+      ],
+      socialMedia: {
+        facebook: 'www.facebook.com/mountaingks',
+        twitter: 'www.twitter.com/mountaingks',
+      },
+    },
+
+    keyBeliefs: [
+      '聖經作為上帝唯一授權的法律書',
+      '上帝王國作為人類苦難的唯一補救措施',
+      '揭露錯誤教義的重要性',
+      '事奉和敬畏耶和華上帝',
+      '跨越所有國家和背景的基督教團結',
+    ],
   },
   zu: {
     version: '1.0.0',
-    content:
-      'I-Haven iwuhlelo lokusebenza lwesonto olusebenzisa izilimi eziningi oluklanyelwe ukuletha ivangeli kubantu bazo zonke izilimi nezizinda. Inhloso yethu ukusabalalisa uthando lukaNkulunkulu ngamahubo, izintshumayelo, umculo, nezindaba zeBhayibheli ezinyakazayo.',
-    contactEmail: 'info@higher.com.ng',
-    churchMission:
+    content: `I-God\'s Kingdom Society (GKS) yinhlangano yobuKristu eyasungulwa nguJehova uNkulunkulu ngesandla sencwadi yakhe, uSaint Gideon Meriodere Urhobo.
+
+Yasungulwa ngo-1934, i-GKS yavela ekumeni okungcwele lapho uSt. G.M. Urhobo ethola umbono ovela kuJesu Kristu emnika umsebenzi wokumemezela iVangeli loMbuso kaNkulunkulu nokudalula izimfundiso ezingamanga.
+
+Okwenza i-GKS ihluke:
+• Yasungulwa ngokudalulwa kweBhayibheli okuqondile nokumenwa nguNkulunkulu
+• Izibophezele ekufundiseni iBhayibheli elimsulwa ngaphandle kwamasiko amasonto
+• Ukusebenza ngezilimi eziningi kufinyelela kubantu bakuzo zonke izizinda
+• Ugxile eMbusweni kaNkulunkulu njengesisombululo sokuhlupheka komuntu
+
+Kusukela ekuqaleni okuncane eLagos, i-GKS isikhule yaba umphakathi ophilayo wobuKristu eNingizimu Afrika nakwezinye izinda, ifezisa isiprofetho seBhayibheli: "Oyincane uyokuba yinkulungwane" (Isaya 60:22).`,
+
+    mission:
       'Ukudumisa uNkulunkulu nokwenza abafundi bazo zonke izizwe ngokukhonza ngezilimi eziningi nangokufundisa kweBhayibheli.',
+
+    contactInfo: {
+      headquarters: 'Salem City, P.O. Box 424, Warri, Delta State, Nigeria',
+      phones: ['+234-810 098 7661', '+234-802 329 5127'],
+      emails: [
+        'gkssecretariat@mountaingks.org',
+        'publicitysecretary@mountaingks.org',
+      ],
+      socialMedia: {
+        facebook: 'www.facebook.com/mountaingks',
+        twitter: 'www.twitter.com/mountaingks',
+      },
+    },
+
+    keyBeliefs: [
+      'IBhayibheli njengencwadi yomthetho evunyelwe kuphela kaNkulunkulu',
+      'UMbuso kaNkulunkulu njengesisombululo kuphela sokuhlupheka komuntu',
+      'Ukubaluleka kokudalula izimfundiso ezingamanga',
+      'Ukukhonza nokuhlonipha uJehova uNkulunkulu',
+      'Ubunye bobuKristu kuzo zonke izizwe nezizinda',
+    ],
   },
   sw: {
     version: '1.0.0',
-    content:
-      'Haven ni programu ya kanisa yenye lugha nyingi iliyoundwa kuleta injili kwa watu wa lugha na asili zote. Dhamira yetu ni kueneza upendo wa Mungu kupitia nyimbo za kiroho, mahubiri, muziki, na hadithi za Biblia za michoro.',
-    contactEmail: 'info@higher.com.ng',
-    churchMission:
+    content: `Jumuiya ya Ufalme wa Mungu (GKS) ni shirika la Kikristo lilianzishwa na Mungu Yehova kupitia mtumishi wake, Mtakatifu Gideon Meriodere Urhobo.
+
+Ilianzishwa mwaka 1934, GKS ilitokana na wito wa kimungu wakati Mtakatifu G.M. Urhobo alipopata maono kutoka kwa Yesu Kristo akiagiza aweze kutangaza Injili ya Ufalme wa Mungu na kufichua mafundisho ya uwongo.
+
+Kinachofanya GKS iwe ya kipekee:
+• Ilianzishwa kwa msingi wa ufunuo wa moja kwa moja wa Biblia na wito wa kimungu
+• Imejitolea kwa mafundisho safi ya Biblia bila mila ya madhehebu
+• Huduma ya lugha nyingi inayowafikia watu wa asili zote
+• Inalenga Ufalme wa Mungu kama suluhisho la mateso ya binadamu
+
+Kuanzia mwanzo mdogo huko Lagos, GKS imekua kuwa jamii hai ya Kikristo nchini Nigeria na nje, ikitimiza unabii wa kibiblia: "Mdogo atakuwa elfu" (Isaya 60:22).`,
+
+    mission:
       'Kumtukuza Mungu na kufanya wanafunzi wa mataifa yote kupitia ibada ya lugha nyingi na mafundisho ya Biblia.',
+
+    contactInfo: {
+      headquarters: 'Jiji la Salem, S.L. 424, Warri, Jimbo la Delta, Nigeria',
+      phones: ['+234-810 098 7661', '+234-802 329 5127'],
+      emails: [
+        'gkssecretariat@mountaingks.org',
+        'publicitysecretary@mountaingks.org',
+      ],
+      socialMedia: {
+        facebook: 'www.facebook.com/mountaingks',
+        twitter: 'www.twitter.com/mountaingks',
+      },
+    },
+
+    keyBeliefs: [
+      'Biblia kama kitabu pekee cha sheria kilichoidhinishwa na Mungu',
+      'Ufalme wa Mungu kama tiba pekee ya mateso ya binadamu',
+      'Umuhimu wa kufichua mafundisho ya uwongo',
+      'Huduma na heshima kwa Mungu Yehova',
+      'Umoja wa Kikristo katika mataifa yote na asili',
+    ],
   },
 };
 

@@ -9,6 +9,9 @@ import {
   RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
+// ADDED: Import the Video component for the home screen preview
+import { Video } from 'expo-av';
+
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -203,9 +206,21 @@ export default function HomeScreen() {
       activeOpacity={0.7}
     >
       <View style={styles.videoThumbnailContainer}>
-        <Image
-          source={{ uri: video.thumbnailUrl }}
+        {/* MODIFIED: Using Video component for auto-playing preview */}
+        <Video
+          source={{ uri: video.videoUrl }}
           style={styles.videoThumbnail}
+          resizeMode="cover"
+          shouldPlay={true} // Auto-play the video snippet
+          isLooping={true} // Loop the video
+          isMuted={true} // Mute for automatic playback
+          useNativeControls={false} // Hide controls for a cleaner snippet look
+          onError={(e) => {
+            console.error('Video load error:', e.error);
+          }}
+          // Fallback poster image can be used if video fails to load immediately
+          // posterSource={{ uri: video.thumbnailUrl }}
+          // usePoster={true}
         />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.7)']}
@@ -480,12 +495,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   // cardGradient: {
-  //   position: 'absolute',
-  //   top: 0,
-  //   left: 0,
-  //   right: 0,
-  //   height: '100%',
-  //   borderRadius: 20,
+  //   position: 'absolute',
+  //   top: 0,
+  //   left: 0,
+  //   right: 0,
+  //   height: '100%',
+  //   borderRadius: 20,
   // },
   cardContent: {
     padding: 20,
