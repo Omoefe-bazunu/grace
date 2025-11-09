@@ -107,6 +107,13 @@ export default function AdminDashboardScreen() {
       onPress: () => router.push('/(tabs)/profile/admin/readnotices'),
     },
     {
+      id: 'manage-contents',
+      title: 'Manage Contents',
+      description: 'View, edit, and delete all contents',
+      icon: <FileText size={32} color="#7C3AED" />,
+      onPress: () => router.push('/(tabs)/profile/admin/contentmanager'),
+    },
+    {
       id: 'reset-onboarding',
       title: 'Reset Onboarding',
       description: 'Clear onboarding state for testing',
@@ -119,6 +126,12 @@ export default function AdminDashboardScreen() {
     <SafeAreaWrapper>
       <TopNavigation />
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <TouchableOpacity
+          onPress={() => router.push(`/(tabs)/profile`)}
+          style={styles.backButton}
+        >
+          <Text style={styles.backText}>Return Back</Text>
+        </TouchableOpacity>
         <View style={styles.welcomeCard}>
           <Text style={styles.welcomeTitle}>Welcome, Administrator</Text>
           <Text style={styles.welcomeSubtitle}>{user?.email}</Text>
@@ -156,6 +169,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     marginBottom: 24,
+  },
+  backText: {
+    color: '#1E3A8A',
+    fontSize: 16,
+    marginHorizontal: 'auto',
+    marginBottom: 10,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   welcomeTitle: {
     fontSize: 24,

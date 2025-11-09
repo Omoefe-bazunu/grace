@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -75,6 +76,7 @@ export default function HomeScreen() {
     videos: [],
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -248,6 +250,14 @@ export default function HomeScreen() {
       <ScrollView
         style={[styles.content, { backgroundColor: colors.background }]}
         showsVerticalScrollIndicator={false}
+        // refreshControl={
+        //   <RefreshControl
+        //     refreshing={refreshing}
+        //     onRefresh={onRefresh}
+        //     colors={[colors.primary]} // Android spinner color
+        //     tintColor={colors.primary} // iOS spinner color
+        //   />
+        // }
       >
         <View style={styles.welcomeSection}>
           <LinearGradient
@@ -462,14 +472,14 @@ const styles = StyleSheet.create({
     elevation: 8,
     overflow: 'hidden',
   },
-  cardGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '100%',
-    borderRadius: 20,
-  },
+  // cardGradient: {
+  //   position: 'absolute',
+  //   top: 0,
+  //   left: 0,
+  //   right: 0,
+  //   height: '100%',
+  //   borderRadius: 20,
+  // },
   cardContent: {
     padding: 20,
     flexGrow: 1,

@@ -9,6 +9,7 @@ export default function AdminLayout() {
       <Stack.Screen name="quizupload" />
       <Stack.Screen name="quizhelpquestions" />
       <Stack.Screen name="readnotices" />
+      <Stack.Screen name="contentmanager" />
     </Stack>
   );
 }
