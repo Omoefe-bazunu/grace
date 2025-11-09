@@ -51,7 +51,9 @@ export default function UploadScreen() {
     try {
       const res = await apiClient.get('songs');
       const categories = new Set();
-      res.data.forEach((song) => {
+      // Backend now returns { songs: [...], pagination: {...} }
+      const songs = res.data.songs || res.data || [];
+      songs.forEach((song) => {
         if (song.category?.trim()) categories.add(song.category.trim());
       });
       setSongCategories(Array.from(categories).sort());
