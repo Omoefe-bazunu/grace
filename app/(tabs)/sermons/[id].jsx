@@ -26,6 +26,7 @@ import { LanguageSwitcher } from '../../../components/LanguageSwitcher';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { AudioPlayer } from '../../../components/AudioPlayer';
 import { getSermon } from '../../../services/dataService';
+import { apiClient } from '../../../utils/api';
 
 // Constants
 const MAX_CHARS_PER_CHUNK = 4000; // Safe limit for Google TTS
@@ -50,8 +51,9 @@ export default function SermonDetailScreen() {
   const [currentChunk, setCurrentChunk] = useState(0);
   const [audioChunks, setAudioChunks] = useState([]);
   const [totalChunks, setTotalChunks] = useState(0);
+  const [useCachedAudio, setUseCachedAudio] = useState(false);
+  const [cachedAudioUrl, setCachedAudioUrl] = useState(null);
 
-  const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_TTS_API_KEY;
   const highlightAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -131,38 +133,39 @@ export default function SermonDetailScreen() {
   };
 
   const generateTTSAudio = async (text) => {
-    if (!API_KEY) {
-      throw new Error('Google TTS API key is missing');
+    try {
+      const voiceConfig = getVoiceConfig();
+
+      // Call backend API instead of Google directly
+      const response = await apiClient.generateTTS(
+        text,
+        voiceConfig.languageCode,
+        voiceConfig.name
+      );
+
+      if (!response.data?.audioContent) {
+        throw new Error('No audio content received from server');
+      }
+
+      return response.data.audioContent;
+    } catch (error) {
+      console.error('TTS Error Details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+
+      // Provide user-friendly error messages
+      if (error.response?.status === 500) {
+        throw new Error('Server error generating speech. Please try again.');
+      } else if (error.code === 'NETWORK_ERROR') {
+        throw new Error('Network error. Please check your connection.');
+      } else if (error.message.includes('timeout')) {
+        throw new Error('Request timed out. Please try again.');
+      }
+
+      throw new Error(error.message || 'Failed to generate speech');
     }
-
-    const endpoint = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${API_KEY}`;
-
-    const requestBody = {
-      input: { text },
-      voice: getVoiceConfig(),
-      audioConfig: {
-        audioEncoding: 'MP3',
-        speakingRate: 1.0,
-        pitch: 0.0,
-        volumeGainDb: 0.0,
-      },
-    };
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`TTS failed: ${response.status}`);
-    }
-
-    const jsonResponse = await response.json();
-    return jsonResponse.audioContent;
   };
 
   const playChunk = async (chunkIndex) => {
@@ -174,6 +177,8 @@ export default function SermonDetailScreen() {
 
     try {
       setCurrentChunk(chunkIndex);
+      setGenerating(true);
+
       const base64Audio = await generateTTSAudio(audioChunks[chunkIndex]);
       const audioUri = `data:audio/mp3;base64,${base64Audio}`;
 
@@ -187,6 +192,7 @@ export default function SermonDetailScreen() {
       );
 
       setSound(newSound);
+      setGenerating(false);
 
       newSound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded) {
@@ -201,9 +207,10 @@ export default function SermonDetailScreen() {
       });
     } catch (error) {
       console.error('Error playing chunk:', error);
+      setGenerating(false);
       Alert.alert(
         'TTS Error',
-        `Failed to generate speech for part ${chunkIndex + 1}`
+        error.message || `Failed to generate speech for part ${chunkIndex + 1}`
       );
       handleStop();
     }
@@ -228,14 +235,12 @@ export default function SermonDetailScreen() {
       return;
     }
 
-    setGenerating(true);
     setIsSpeaking(true);
     setIsPaused(false);
     setCurrentWordIndex(-1);
 
     // Start from the first chunk
     await playChunk(0);
-    setGenerating(false);
   };
 
   const handlePause = async () => {
@@ -444,9 +449,9 @@ export default function SermonDetailScreen() {
                 backgroundColor: colors.primary,
                 padding: 12,
                 borderRadius: 8,
-                opacity: currentChunk > 0 ? 1 : 0.5,
+                opacity: currentChunk > 0 && !generating ? 1 : 0.5,
               }}
-              disabled={currentChunk <= 0}
+              disabled={currentChunk <= 0 || generating}
             >
               <SkipBack size={20} color="#fff" />
             </TouchableOpacity>
@@ -498,9 +503,10 @@ export default function SermonDetailScreen() {
                 backgroundColor: colors.primary,
                 padding: 12,
                 borderRadius: 8,
-                opacity: currentChunk < totalChunks - 1 ? 1 : 0.5,
+                opacity:
+                  currentChunk < totalChunks - 1 && !generating ? 1 : 0.5,
               }}
-              disabled={currentChunk >= totalChunks - 1}
+              disabled={currentChunk >= totalChunks - 1 || generating}
             >
               <SkipForward size={20} color="#fff" />
             </TouchableOpacity>
@@ -532,7 +538,9 @@ export default function SermonDetailScreen() {
                 textAlign: 'center',
               }}
             >
-              Part Progress: {Math.round(progress * 100)}%
+              {generating
+                ? 'Generating audio...'
+                : `Part Progress: ${Math.round(progress * 100)}%`}
             </Text>
           </View>
 

@@ -1,4 +1,4 @@
-// UploadScreen.tsx (updated - sermonAudio date field)
+// UploadScreen.tsx (updated - sermon categories added)
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -19,6 +19,15 @@ import { Button } from '../../../../../components/ui/Button';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import { apiClient } from '../../../../../utils/api';
+
+const SERMON_CATEGORIES = [
+  'Weekly Sermon Volume 1',
+  'Weekly Sermon Volume 2',
+  "God's Kingdom Advocate Volume 1",
+  "God's Kingdom Advocate Volume 2",
+  "God's Kingdom Advocate Volume 3",
+  'Abridged Bible Subjects',
+];
 
 export default function UploadScreen() {
   const { type } = useLocalSearchParams();
@@ -155,7 +164,9 @@ export default function UploadScreen() {
     if (type === 'song')
       return formData.title?.trim() && formData.audioUrl && formData.category;
     if (type === 'sermon')
-      return formData.title?.trim() && formData.content?.trim();
+      return (
+        formData.title?.trim() && formData.content?.trim() && formData.category
+      );
     if (type === 'sermonAudio')
       return (
         formData.title?.trim() && formData.date?.trim() && formData.audioUrl
@@ -186,14 +197,38 @@ export default function UploadScreen() {
       else if (type === 'sermon' || type === 'sermonAudio')
         collectionName = 'sermons';
       else collectionName = `${type}s`;
-      await apiClient.post(collectionName, payload);
-      Alert.alert(
-        'Success',
-        `${
-          type.charAt(0).toUpperCase() + type.slice(1)
-        } uploaded successfully!`,
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
+
+      const response = await apiClient.post(collectionName, payload);
+      const sermonId = response.data.id;
+
+      // Auto-generate TTS for text sermons
+      if (type === 'sermon' && formData.content?.trim()) {
+        Alert.alert(
+          'Sermon Uploaded',
+          'Sermon uploaded successfully! Generating audio in background...',
+          [
+            {
+              text: 'OK',
+              onPress: async () => {
+                // Trigger audio generation in background (don't wait)
+                apiClient
+                  .generateSermonAudio(sermonId, 'en-US', 'en-US-Neural2-F')
+                  .then(() => console.log('TTS generated for sermon', sermonId))
+                  .catch((err) => console.error('TTS generation failed:', err));
+                router.back();
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Success',
+          `${
+            type.charAt(0).toUpperCase() + type.slice(1)
+          } uploaded successfully!`,
+          [{ text: 'OK', onPress: () => router.back() }]
+        );
+      }
     } catch (error) {
       console.error('Submission error:', error);
       Alert.alert(
@@ -224,6 +259,34 @@ export default function UploadScreen() {
     if (type === 'sermon') {
       return (
         <View style={styles.fieldBlock}>
+          <Text style={styles.label}>Category *</Text>
+          <ScrollView
+            horizontal
+            style={styles.categoryScroll}
+            showsHorizontalScrollIndicator={false}
+          >
+            {SERMON_CATEGORIES.map((category) => (
+              <TouchableOpacity
+                key={category}
+                style={[
+                  styles.categoryChip,
+                  formData.category === category && styles.categoryChipActive,
+                ]}
+                onPress={() => updateField('category', category)}
+                disabled={isUploading}
+              >
+                <Text
+                  style={[
+                    styles.categoryChipText,
+                    formData.category === category &&
+                      styles.categoryChipTextActive,
+                  ]}
+                >
+                  {category}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
           <Input
             label="Sermon Content *"
             value={formData.content || ''}
