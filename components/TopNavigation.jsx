@@ -27,6 +27,18 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
   const [readNoticeIds, setReadNoticeIds] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // === BACK BUTTON HANDLER LOGIC ===
+  const handleBackPress = () => {
+    if (onPress && typeof onPress === 'function') {
+      // If a custom onPress handler is provided, use it
+      onPress();
+    } else {
+      // Otherwise, default to navigating back
+      router.back();
+    }
+  };
+  // ==================================
+
   // Subscribe to real-time notices and read notices
   useEffect(() => {
     const unsubscribeNotices = subscribeToNotices((newNotices) => {
@@ -114,7 +126,10 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
       >
         <View style={styles.leftSection}>
           {showBackButton && (
-            <TouchableOpacity style={styles.backButton} onPress={onPress}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBackPress}
+            >
               <ArrowLeft size={24} color={colors.text} />
             </TouchableOpacity>
           )}
@@ -199,6 +214,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginRight: 12,
+    padding: 4, // Add padding for easier touch
   },
   title: {
     fontSize: 24,

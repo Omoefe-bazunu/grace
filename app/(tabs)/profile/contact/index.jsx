@@ -17,6 +17,7 @@ import { TopNavigation } from '@/components/TopNavigation';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { addContactMessage } from '@/services/dataService';
+import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 
 const CATEGORIES = [
   { id: 'complaint', label: 'Complaint' },
@@ -59,8 +60,22 @@ export default function ContactScreen() {
   };
 
   return (
-    <SafeAreaView>
-      <TopNavigation title={translations.contact} />
+    <SafeAreaWrapper>
+      <TopNavigation showBackButton={true} />
+      <View>
+        <Text
+          style={[
+            {
+              marginHorizontal: 'auto',
+              fontWeight: 'bold',
+              fontSize: 24,
+              marginVertical: 12,
+            },
+          ]}
+        >
+          Contact
+        </Text>
+      </View>
 
       {/* Wrap the content in a ScrollView */}
       <ScrollView
@@ -177,7 +192,7 @@ export default function ContactScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </SafeAreaWrapper>
   );
 }
 
@@ -185,27 +200,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-  },
-  backButton: {
-    padding: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
+
   scrollViewContent: {
     paddingBottom: 60, // Add padding at the bottom for the tabs
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 20,
     paddingBottom: 30,
   },
   description: {

@@ -1,4 +1,3 @@
-// app/(auth)/login.jsx
 import React, { useState } from 'react';
 import {
   View,
@@ -7,16 +6,19 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Alert,
+  Dimensions, // Import Dimensions for dynamic styling
 } from 'react-native';
 import { router } from 'expo-router';
-import { useAuth } from '../../contexts/AuthContext'; // ← New JWT context
+import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { Input } from '../../components/ui/Input';
-import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input'; // Assuming Input component is flexible
+import { Button } from '../../components/ui/Button'; // Assuming Button component is flexible
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 
+const { width, height } = Dimensions.get('window');
+
 export default function LoginScreen() {
-  const { login } = useAuth(); // ← From JWT AuthContext
+  const { login } = useAuth();
   const { translations } = useLanguage();
 
   const [email, setEmail] = useState('');
@@ -53,37 +55,45 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      {/* Top Left Curve Placeholder */}
+      <View style={styles.topLeftCurve} />
+
+      {/* Language Switcher - Positioned top right */}
+      <View style={styles.languageSwitcherContainer}>
         <LanguageSwitcher />
       </View>
 
       <View style={styles.content}>
-        <View style={styles.logoContainer}>
-          <Text style={styles.appName}>Grace</Text>
-        </View>
-
-        <Text style={styles.title}>
-          {translations.loginTitle || 'Welcome Back'}
-        </Text>
+        {/* "Log in" Title */}
+        <Text style={styles.title}>{translations.loginTitle || 'Log in'}</Text>
 
         <View style={styles.form}>
+          {/* Email Input */}
+          <Text style={styles.inputLabel}>{translations.email || 'Email'}</Text>
           <Input
-            label={translations.email || 'Email'}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
             placeholder={translations.enterEmail || 'Enter your email'}
+            style={styles.inputField} // Apply custom style
+            placeholderTextColor="#888" // Adjust placeholder text color
           />
 
+          {/* Password Input */}
+          <Text style={styles.inputLabel}>
+            {translations.password || 'Password'}
+          </Text>
           <Input
-            label={translations.password || 'Password'}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
             placeholder={translations.enterPassword || 'Enter your password'}
+            style={styles.inputField} // Apply custom style
+            placeholderTextColor="#888" // Adjust placeholder text color
           />
 
+          {/* Login Button */}
           <Button
             title={
               isLoading
@@ -92,20 +102,21 @@ export default function LoginScreen() {
             }
             onPress={handleLogin}
             disabled={isLoading}
-            size="large"
-            style={styles.loginButton}
+            style={styles.loginButton} // Apply custom style
+            textStyle={styles.loginButtonText} // Apply custom text style
           />
         </View>
 
+        {/* Sign Up Link */}
         <TouchableOpacity
           style={styles.signupLink}
           onPress={() => router.push('/(auth)/signup')}
           disabled={isLoading}
         >
           <Text style={styles.signupText}>
-            {translations.dontHaveAccount || "Don't have an account?"}{' '}
+            {translations.dontHaveAccount || "Don't have an account yet?"}{' '}
             <Text style={styles.linkText}>
-              {translations.signup || 'Sign up'}
+              {translations.signup || 'Sign Up'}
             </Text>
           </Text>
         </TouchableOpacity>
@@ -114,57 +125,100 @@ export default function LoginScreen() {
   );
 }
 
-// ← Styles unchanged
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#0d326f', // Deep blue background from the image
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    padding: 16,
+  // --- Top Left Curve ---
+  topLeftCurve: {
+    position: 'absolute',
+    top: -50, // Adjust as needed to match the curve's visibility
+    left: -50, // Adjust as needed
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)', // Semi-transparent white
   },
+  // --- Language Switcher ---
+  languageSwitcherContainer: {
+    position: 'absolute',
+    top: 30, // Consistent with onboarding skip button
+    right: 30, // Consistent with onboarding skip button
+    zIndex: 10,
+    // Add a slight shadow if desired to make it pop
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+  },
+  // --- Main Content Area ---
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    justifyContent: 'center',
+    justifyContent: 'center', // Center content vertically
+    // Pushing content down slightly to account for top controls
+    paddingTop: height * 0.1,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  logo: {
-    fontSize: 64,
-    marginBottom: 8,
-  },
-  appName: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1E3A8A',
-  },
+  // --- Title ---
   title: {
-    fontSize: 24,
+    fontSize: 32, // Larger font size
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#FFFFFF', // White text
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 40, // More space below title
   },
+  // --- Form Elements ---
   form: {
     marginBottom: 24,
+    width: '100%', // Ensure form takes full width for centering
+    alignItems: 'center', // Center input fields and button
   },
+  inputLabel: {
+    fontSize: 18, // Slightly larger label
+    fontWeight: '500',
+    color: '#FFFFFF', // White text
+    marginBottom: 8, // Space between label and input
+    textAlign: 'center',
+    width: '90%', // Match input width
+  },
+  inputField: {
+    backgroundColor: '#FFFFFF', // White background for inputs
+    borderRadius: 30, // More rounded corners
+    height: 55, // Taller input fields
+    paddingHorizontal: 20, // More horizontal padding
+    marginBottom: 20, // Space between inputs
+    width: 300, // Fixed width for inputs to look consistent
+    fontSize: 16,
+    color: '#333333', // Dark text color for input
+  },
+  // --- Login Button ---
   loginButton: {
-    marginTop: 16,
+    marginTop: 10, // Adjust margin top
+    backgroundColor: '#ffc700', // Yellow/Gold background
+    borderRadius: 30, // Rounded corners
+    height: 55, // Taller button
+    width: '90%', // Match input width
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  loginButtonText: {
+    color: '#333333', // Dark text for contrast on yellow
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  // --- Sign Up Link ---
   signupLink: {
     alignItems: 'center',
+    marginTop: 20, // Space above sign up link
   },
   signupText: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#FFFFFF', // White text
   },
   linkText: {
-    color: '#1E3A8A',
+    color: '#ffc700', // Yellow/Gold for the link
     fontWeight: '600',
   },
 });

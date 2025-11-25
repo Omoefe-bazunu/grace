@@ -24,16 +24,16 @@ import {
 
 import { Video } from 'expo-av';
 
-import { useLanguage } from '../../../contexts/LanguageContext';
-import { useTheme } from '../../../contexts/ThemeContext';
+import { useLanguage } from '../../../../contexts/LanguageContext';
+import { useTheme } from '../../../../contexts/ThemeContext';
 import {
   getVideosPaginated,
   searchContentPaginated,
-} from '../../../services/dataService';
+} from '../../../../services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
 import debounce from 'lodash.debounce';
-import { TopNavigation } from '../../../components/TopNavigation';
-import { SafeAreaWrapper } from '../../../components/ui/SafeAreaWrapper';
+import { TopNavigation } from '../../../../components/TopNavigation';
+import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 
 const SkeletonCard = () => {
   const { colors } = useTheme();
@@ -153,7 +153,7 @@ export default function AnimationsScreen() {
   const renderVideoItem = ({ item }) => (
     <TouchableOpacity
       style={[styles.videoCard, { backgroundColor: colors.card }]}
-      onPress={() => router.push(`/(tabs)/animations/${item.id}`)}
+      onPress={() => router.push(`/(tabs)/sermons/video/${item.id}`)}
       activeOpacity={0.7}
     >
       {/* Thumbnail Container */}
@@ -291,11 +291,11 @@ export default function AnimationsScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title={'Animations'} />
+      <TopNavigation showBackButton={true} />
       <View style={styles.bannerContainer}>
         <ImageBackground
           source={{
-            uri: 'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/ANIMATIONS.png?alt=media&token=2e09351a-c50c-4dd8-8ea3-a093f8768ff1',
+            uri: 'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/SERMON.png?alt=media&token=b288818c-4d0e-426b-b40a-dd8f532b0a75',
           }}
           style={styles.bannerImage}
         >
@@ -304,10 +304,9 @@ export default function AnimationsScreen() {
             style={styles.bannerGradient}
           />
           <View style={styles.bannerText}>
-            <Text style={styles.bannerTitle}>BIBLE-BASED STORIES</Text>
+            <Text style={styles.bannerTitle}>VIDEO SERMONS</Text>
             <Text style={styles.bannerSubtitle}>
-              Learn the word of God through visual illustrations that brings the
-              stories and characters to life.
+              Watch the video versions of sermons of the Church.
             </Text>
           </View>
         </ImageBackground>

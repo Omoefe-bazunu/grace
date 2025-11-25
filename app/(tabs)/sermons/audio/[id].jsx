@@ -23,6 +23,7 @@ import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
 import { getSermon } from '@/services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
+import { TopNavigation } from '../../../../components/TopNavigation';
 
 const SkeletonSermon = () => {
   const { colors } = useTheme();
@@ -157,18 +158,7 @@ export default function SermonAudioDetailScreen() {
 
   return (
     <SafeAreaWrapper>
-      <View style={[styles.header, { backgroundColor: colors.card }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <ArrowLeft size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          {translations.audioSermon || 'Audio Sermon'}
-        </Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <TopNavigation showBackButton={true} />
 
       <ScrollView
         style={[styles.content, { backgroundColor: colors.background }]}

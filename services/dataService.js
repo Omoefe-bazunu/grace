@@ -264,6 +264,20 @@ export const subscribeToSongs = (callback) => {
   return () => clearInterval(interval);
 };
 
+export const toggleFavorite = async (songId, action) => {
+  try {
+    if (!['add', 'remove'].includes(action)) {
+      throw new Error("Action must be 'add' or 'remove'");
+    }
+    // The server-side route is: app.post("/api/songs/:id/favorite", ...)
+    const response = await post(`/api/songs/${songId}/favorite`, { action });
+    return response;
+  } catch (error) {
+    console.error(`Error toggling favorite for song ${songId}:`, error);
+    throw error;
+  }
+};
+
 // === VIDEOS ===
 export const getVideos = async () => {
   try {

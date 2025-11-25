@@ -21,12 +21,13 @@ import {
   SkipBack,
 } from 'lucide-react-native';
 import { Audio } from 'expo-av';
-import { useLanguage } from '../../../contexts/LanguageContext';
-import { LanguageSwitcher } from '../../../components/LanguageSwitcher';
-import { useTheme } from '../../../contexts/ThemeContext';
-import { AudioPlayer } from '../../../components/AudioPlayer';
-import { getSermon } from '../../../services/dataService';
-import { apiClient } from '../../../utils/api';
+import { useLanguage } from '../../../../contexts/LanguageContext';
+import { LanguageSwitcher } from '../../../../components/LanguageSwitcher';
+import { useTheme } from '../../../../contexts/ThemeContext';
+import { AudioPlayer } from '../../../../components/AudioPlayer';
+import { getSermon } from '../../../../services/dataService';
+import { apiClient } from '../../../../utils/api';
+import { TopNavigation } from '../../../../components/TopNavigation';
 
 // Constants
 const MAX_CHARS_PER_CHUNK = 4000; // Safe limit for Google TTS
@@ -338,18 +339,7 @@ export default function SermonDetailScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          padding: 20,
-        }}
-      >
-        <TouchableOpacity onPress={() => router.push('/(tabs)/sermons')}>
-          <ArrowLeft size={24} color={colors.text} />
-        </TouchableOpacity>
-        <LanguageSwitcher />
-      </View>
+      <TopNavigation showBackButton={true} />
 
       <ScrollView
         style={{ paddingHorizontal: 20 }}
@@ -360,14 +350,14 @@ export default function SermonDetailScreen() {
             fontSize: 28,
             fontWeight: 'bold',
             textAlign: 'center',
-            color: colors.text,
+            color: colors.primary,
+            marginTop: 8,
           }}
         >
           {content.title || translations.noTitle}
         </Text>
 
-        <View style={{ alignItems: 'center', marginVertical: 10 }}>
-          <Calendar size={16} color={colors.textSecondary} />
+        <View style={{ alignItems: 'center' }}>
           <Text style={{ color: colors.textSecondary, marginTop: 4 }}>
             {sermon.date || translations.unknownDate}
           </Text>
@@ -554,21 +544,11 @@ export default function SermonDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  backButton: { padding: 8 },
   content: { flex: 1, paddingHorizontal: 20, paddingTop: 20 },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 8,
     textAlign: 'center',
   },
   metaContainer: {

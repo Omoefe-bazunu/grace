@@ -23,6 +23,7 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TopNavigation } from '@/components/TopNavigation';
 import { useTheme } from '@/contexts/ThemeContext';
+import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental &&
@@ -79,10 +80,10 @@ export default function AboutScreen() {
   );
 
   return (
-    <SafeAreaView
+    <SafeAreaWrapper
       style={[styles.container, { backgroundColor: colors.background }]}
     >
-      <TopNavigation title={translations.about} />
+      <TopNavigation showBackButton={true} />
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.logoContainer}>
@@ -155,9 +156,9 @@ export default function AboutScreen() {
               {/* Headquarters */}
               <View style={styles.contactItem}>
                 <MapPin size={18} color={colors.textSecondary} />
-                <Text style={[styles.contactLabel, { color: colors.text }]}>
-                  Headquarters:
-                </Text>
+                <Text
+                  style={[styles.contactLabel, { color: colors.text }]}
+                ></Text>
                 <Text style={[styles.contactValue, { color: colors.text }]}>
                   {aboutUsInfo.contactInfo?.headquarters}
                 </Text>
@@ -171,11 +172,6 @@ export default function AboutScreen() {
                   onPress={() => handleContactPress('phone', phone)}
                 >
                   <Phone size={18} color={colors.textSecondary} />
-                  <Text style={[styles.contactLabel, { color: colors.text }]}>
-                    Phone{' '}
-                    {aboutUsInfo.contactInfo.phones.length > 1 ? index + 1 : ''}
-                    :
-                  </Text>
                   <Text
                     style={[styles.contactValue, { color: colors.primary }]}
                   >
@@ -192,11 +188,7 @@ export default function AboutScreen() {
                   onPress={() => handleContactPress('email', email)}
                 >
                   <Mail size={18} color={colors.textSecondary} />
-                  <Text style={[styles.contactLabel, { color: colors.text }]}>
-                    Email{' '}
-                    {aboutUsInfo.contactInfo.emails.length > 1 ? index + 1 : ''}
-                    :
-                  </Text>
+
                   <Text
                     style={[styles.contactValue, { color: colors.primary }]}
                   >
@@ -229,7 +221,7 @@ export default function AboutScreen() {
           </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaWrapper>
   );
 }
 
@@ -277,17 +269,16 @@ const styles = StyleSheet.create({
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
     paddingVertical: 4,
   },
   contactLabel: {
     fontSize: 14,
     fontWeight: '600',
-    marginLeft: 12,
-    marginRight: 8,
-    minWidth: 60,
+
+    minWidth: 5,
   },
-  contactValue: { fontSize: 14, flex: 1 },
+  contactValue: { fontSize: 14, flex: 1, marginLeft: 8 },
   footer: { alignItems: 'center', paddingVertical: 32 },
   footerText: { fontSize: 14, textAlign: 'center', marginBottom: 4 },
   footerSubtext: { fontSize: 12, textAlign: 'center', fontStyle: 'italic' },

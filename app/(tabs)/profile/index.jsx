@@ -34,7 +34,7 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     await logout();
-    router.replace('/(auth)/login');
+    router.replace('/(onboarding)');
   };
 
   const menuItems = [
@@ -85,7 +85,6 @@ export default function ProfileScreen() {
             </Text>
           </View>
           <View style={styles.languageInfo}>
-            <Text style={styles.languageFlag}>{currentLang?.flag}</Text>
             <Text
               style={[styles.languageName, { color: colors.textSecondary }]}
             >

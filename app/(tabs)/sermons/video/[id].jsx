@@ -11,13 +11,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import * as Clipboard from 'expo-clipboard';
 import { ArrowLeft, Share2 } from 'lucide-react-native';
-import { LanguageSwitcher } from '../../../components/LanguageSwitcher';
-import { useTheme } from '../../../contexts/ThemeContext';
-import { useLanguage } from '../../../contexts/LanguageContext';
-import { getVideo } from '../../../services/dataService';
+import { LanguageSwitcher } from '../../../../components/LanguageSwitcher';
+import { useTheme } from '../../../../contexts/ThemeContext';
+import { useLanguage } from '../../../../contexts/LanguageContext';
+import { getVideo } from '../../../../services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaWrapper } from '../../../components/ui/SafeAreaWrapper';
-import { TopNavigation } from '../../../components/TopNavigation';
+import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
+import { TopNavigation } from '../../../../components/TopNavigation';
 
 const SkeletonVideo = () => {
   const { colors } = useTheme();
@@ -138,7 +138,6 @@ export default function AnimationDetailScreen() {
     >
       {/* Header */}
       <TopNavigation showBackButton={true} />
-
       {/* Video Player - with native controls */}
       <View style={styles.videoContainer}>
         <VideoView
@@ -226,9 +225,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    marginBottom: 12,
     marginHorizontal: 'auto',
     textAlign: 'center',
-    marginBottom: 12,
   },
   metaInfo: {
     flexDirection: 'row',

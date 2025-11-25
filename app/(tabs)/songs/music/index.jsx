@@ -1,4 +1,4 @@
-// MusicScreen.js (Fixed with Better Error Handling - Pure JavaScript)
+// MusicScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -10,48 +10,25 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  ImageBackground,
 } from 'react-native';
+import { ArrowLeft, Mic2, Search } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Search, Play, Clock } from 'lucide-react-native';
 import { useLanguage } from '../../../../contexts/LanguageContext';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
-import { TopNavigation } from '../../../../components/TopNavigation';
+import { LanguageSwitcher } from '../../../../components/LanguageSwitcher';
 import {
   getSongsByCategoryPaginated,
   getSongsPaginated,
   searchContentPaginated,
 } from '../../../../services/dataService';
-import { LinearGradient } from 'expo-linear-gradient';
 import debounce from 'lodash.debounce';
+import { TopNavigation } from '../../../../components/TopNavigation';
 
-const SkeletonCard = () => {
-  const { colors } = useTheme();
-  return (
-    <View style={[styles.songCard, { backgroundColor: colors.card }]}>
-      <View style={styles.songInfo}>
-        <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
-          style={styles.skeletonTitle}
-        />
-        <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
-          style={styles.skeletonStyle}
-        />
-        <View style={styles.songMeta}>
-          <LinearGradient
-            colors={[colors.skeleton, colors.skeletonHighlight]}
-            style={styles.skeletonMeta}
-          />
-        </View>
-      </View>
-      <LinearGradient
-        colors={[colors.skeleton, colors.skeletonHighlight]}
-        style={styles.skeletonPlayButton}
-      />
-    </View>
-  );
-};
+// Placeholder for the image path (Ensure this path is correct in your project)
+const HEADER_IMAGE_URI =
+  'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/CHOIR.png?alt=media&token=92dd7301-75bd-4ea8-a042-371e94649186';
 
 export default function MusicScreen() {
   const { category } = useLocalSearchParams();
@@ -66,40 +43,24 @@ export default function MusicScreen() {
   const { translations } = useLanguage();
   const { colors } = useTheme();
 
-  // Load songs by category with pagination
+  // === DATA FETCHING LOGIC ===
+
   const loadSongs = async (isRefresh = false) => {
     try {
       if (isRefresh) {
         setRefreshing(true);
         setNextCursor(null);
       }
-
       setError(null);
-
-      // Log the category being requested
-      console.log('Loading songs for category:', category);
-
       let result;
-
       if (category && category !== 'all') {
-        // Try with category filter
         try {
           result = await getSongsByCategoryPaginated(
             category,
             15,
             isRefresh ? null : nextCursor
           );
-          console.log('Category result:', {
-            count: result.songs.length,
-            hasMore: result.hasMore,
-            nextCursor: result.nextCursor,
-          });
         } catch (categoryError) {
-          console.error(
-            'Category filter failed, falling back to all songs:',
-            categoryError
-          );
-          // Fallback: Get all songs and filter client-side
           const allSongsResult = await getSongsPaginated(
             15,
             isRefresh ? null : nextCursor
@@ -108,125 +69,100 @@ export default function MusicScreen() {
             songs: allSongsResult.songs.filter((s) => s.category === category),
             hasMore: allSongsResult.hasMore,
             nextCursor: allSongsResult.nextCursor,
-            totalCount: allSongsResult.totalCount,
           };
         }
       } else {
-        // Get all songs if no category specified
         result = await getSongsPaginated(15, isRefresh ? null : nextCursor);
-        console.log('All songs result:', {
-          count: result.songs.length,
-          hasMore: result.hasMore,
-          nextCursor: result.nextCursor,
-        });
       }
 
+      // When loading initial data or refreshing, replace the whole list
       if (isRefresh) {
         setSongs(result.songs);
       } else {
-        setSongs(result.songs);
+        // When initially loading (and not refreshing), ensure no duplicates are added
+        setSongs((prev) => {
+          const existingIds = new Set(prev.map((song) => song.id));
+          const uniqueNewSongs = result.songs.filter(
+            (song) => !existingIds.has(song.id)
+          );
+          return [...prev, ...uniqueNewSongs];
+        });
       }
 
       setHasMore(result.hasMore);
       setNextCursor(result.nextCursor);
     } catch (error) {
-      console.error('Error fetching songs:', error);
       setError(error.message || 'Failed to load songs');
       setSongs([]);
       setHasMore(false);
-
-      // Show user-friendly error
-      Alert.alert(
-        'Error Loading Songs',
-        'Unable to load songs. Please check your connection and try again.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', 'Unable to load songs. Please try again.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  // Load more songs
   const loadMoreSongs = async () => {
     if (loadingMore || !hasMore || !nextCursor || searchQuery) return;
-
+    setLoadingMore(true);
     try {
-      setLoadingMore(true);
-      console.log('Loading more songs with cursor:', nextCursor);
-
       let result;
-
       if (category && category !== 'all') {
         try {
           result = await getSongsByCategoryPaginated(category, 15, nextCursor);
-        } catch (categoryError) {
-          console.error(
-            'Category filter failed for pagination:',
-            categoryError
-          );
-          // Fallback: Get all songs and filter client-side
-          const allSongsResult = await getSongsPaginated(15, nextCursor);
+        } catch {
+          const all = await getSongsPaginated(15, nextCursor);
           result = {
-            songs: allSongsResult.songs.filter((s) => s.category === category),
-            hasMore: allSongsResult.hasMore,
-            nextCursor: allSongsResult.nextCursor,
-            totalCount: allSongsResult.totalCount,
+            songs: all.songs.filter((s) => s.category === category),
+            hasMore: all.hasMore,
+            nextCursor: all.nextCursor,
           };
         }
       } else {
         result = await getSongsPaginated(15, nextCursor);
       }
 
-      console.log('More songs loaded:', result.songs.length);
+      // === FIX for Duplicate Key Error ===
+      setSongs((prevSongs) => {
+        const existingIds = new Set(prevSongs.map((song) => song.id));
 
-      setSongs((prev) => [...prev, ...result.songs]);
+        // Filter out any new songs whose IDs already exist
+        const uniqueNewSongs = result.songs.filter(
+          (song) => !existingIds.has(song.id)
+        );
+
+        // Combine unique lists
+        return [...prevSongs, ...uniqueNewSongs];
+      });
+      // ====================================
+
       setHasMore(result.hasMore);
       setNextCursor(result.nextCursor);
-    } catch (error) {
-      console.error('Error loading more songs:', error);
+    } catch (e) {
       setHasMore(false);
     } finally {
       setLoadingMore(false);
     }
   };
 
-  useEffect(() => {
-    loadSongs();
-  }, [category]);
-
-  const onRefresh = () => {
-    loadSongs(true);
-  };
-
-  // Debounced search with pagination
   const debouncedSearch = useCallback(
     debounce(async (query) => {
       if (!query.trim()) {
-        // Refetch by category when search is cleared
         loadSongs(true);
         return;
       }
-
+      setLoading(true);
       try {
-        setLoading(true);
-        console.log('Searching for:', query, 'in category:', category);
-
-        const results = await searchContentPaginated(query, category, 50, null);
-        console.log('Search results:', results.songs.length);
-
+        const res = await searchContentPaginated(query, category, 50, null);
         const filtered =
           category && category !== 'all'
-            ? results.songs.filter((s) => s.category === category)
-            : results.songs;
-
+            ? res.songs.filter((s) => s.category === category)
+            : res.songs;
         setSongs(filtered);
-        setHasMore(false); // Disable infinite scroll during search
-        setNextCursor(null);
-      } catch (error) {
-        console.error('Search error:', error);
-        setSongs([]);
         setHasMore(false);
+        setNextCursor(null);
+      } catch {
+        setSongs([]);
       } finally {
         setLoading(false);
       }
@@ -235,327 +171,179 @@ export default function MusicScreen() {
   );
 
   useEffect(() => {
-    debouncedSearch(searchQuery);
+    loadSongs();
+  }, [category]);
 
-    return () => {
-      debouncedSearch.cancel();
-    };
-  }, [searchQuery, debouncedSearch]);
+  useEffect(() => {
+    debouncedSearch(searchQuery);
+    return debouncedSearch.cancel;
+  }, [searchQuery]);
+
+  const onRefresh = () => loadSongs(true);
+
+  const handleEndReached = () => {
+    if (!loading && !loadingMore && hasMore && !searchQuery.trim())
+      loadMoreSongs();
+  };
 
   const renderSongItem = ({ item }) => (
     <TouchableOpacity
-      style={[styles.songCard, { backgroundColor: colors.card }]}
+      style={styles.songCard}
       onPress={() => router.push(`/(tabs)/songs/music/${item.id}`)}
     >
-      <View style={styles.songInfo}>
-        <Text
-          style={[styles.songTitle, { color: colors.text }]}
-          numberOfLines={1}
-        >
-          {item.title || translations.noTitle}
-        </Text>
-        <Text style={[styles.songStyle, { color: colors.textSecondary }]}>
-          {item.style || translations.unknownStyle}
-        </Text>
-        <View style={styles.songMeta}>
-          <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-            •
-          </Text>
-          <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-            {item.category || translations.unknownCategory}
-          </Text>
-        </View>
+      <View style={styles.iconContainer}>
+        <Mic2 size={24} color={colors.primary} />
       </View>
-      <TouchableOpacity
-        style={[
-          styles.playButton,
-          { backgroundColor: colors.primaryLight || colors.primary },
-        ]}
-      >
-        <Play size={20} color="#FFFFFF" />
+      <View style={styles.titleContainer}>
+        <Text style={styles.songTitle}>{item.title || 'Untitled'}</Text>
+      </View>
+      <TouchableOpacity style={styles.playButton}>
+        <Text style={styles.playText}>Start Playing</Text>
       </TouchableOpacity>
     </TouchableOpacity>
   );
 
-  const renderFooter = () => {
-    if (!loadingMore) return null;
-
-    return (
-      <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-          Loading more songs...
-        </Text>
-      </View>
-    );
-  };
-
-  const renderSkeletonCards = () => (
-    <>
-      <SkeletonCard />
-      <SkeletonCard />
-      <SkeletonCard />
-    </>
-  );
-
-  const renderEmptyState = () => {
-    if (loading) return null;
-
-    return (
-      <View style={styles.emptyContainer}>
-        <Search size={64} color={colors.textSecondary} opacity={0.5} />
-        <Text style={[styles.emptyText, { color: colors.text }]}>
-          {searchQuery
-            ? 'No songs found'
-            : error
-            ? 'Unable to load songs'
-            : 'No songs available'}
-        </Text>
-        <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-          {error ||
-            (searchQuery ? 'Try a different search term' : 'Check back later')}
-        </Text>
-        {error && (
-          <TouchableOpacity
-            style={[styles.retryButton, { backgroundColor: colors.primary }]}
-            onPress={() => loadSongs(true)}
-          >
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-  };
-
-  const handleEndReached = () => {
-    if (!loading && !loadingMore && hasMore && !searchQuery.trim()) {
-      loadMoreSongs();
-    }
-  };
-
   return (
-    <SafeAreaWrapper>
-      <TopNavigation title={category || translations.music} />
-      <TouchableOpacity
-        onPress={() => router.push(`/(tabs)/songs`)}
-        style={styles.backButton}
-      >
-        <Text style={[styles.backText, { color: colors.primary }]}>
-          Return Back
-        </Text>
-      </TouchableOpacity>
+    <SafeAreaWrapper backgroundColor={colors.background}>
+      <TopNavigation showBackButton={true} />
 
-      <View
-        style={[styles.searchContainer, { backgroundColor: colors.surface }]}
+      <ImageBackground
+        source={{
+          uri: HEADER_IMAGE_URI,
+        }}
+        style={styles.headerImageContainer}
+        resizeMode="cover"
       >
-        <Search
-          size={20}
-          color={colors.textSecondary}
-          style={styles.searchIcon}
-        />
+        <View style={styles.headerOverlay} />
+        <Text style={styles.headerTitle}>
+          {category || 'Salem City Youth Choir'}
+        </Text>
+      </ImageBackground>
+
+      <View style={styles.searchWrapper}>
+        <Search size={20} color="#888" style={styles.searchIcon} />
         <TextInput
-          placeholder={translations.search || 'Search songs...'}
+          placeholder="Search songs..."
+          placeholderTextColor="#aaa"
+          style={styles.searchInput}
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholderTextColor={colors.textSecondary}
-          style={[styles.searchInput, { color: colors.text }]}
         />
       </View>
-
-      {/* Results Count */}
-      {!loading && songs.length > 0 && (
-        <View style={styles.resultsHeader}>
-          <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>
-            {songs.length} {songs.length === 1 ? 'song' : 'songs'}
-            {searchQuery ? ' found' : ' available'}
-            {hasMore && !searchQuery && '+'}
-          </Text>
-        </View>
-      )}
 
       <FlatList
         data={songs}
         renderItem={renderSongItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[
-          styles.listContainer,
-          { backgroundColor: colors.background },
-          songs.length === 0 && styles.listContainerEmpty,
-        ]}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          loading ? renderSkeletonCards() : renderEmptyState()
-        }
-        ListFooterComponent={renderFooter}
+        contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[colors.primary]}
             tintColor={colors.primary}
           />
         }
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}
-        removeClippedSubviews={true}
-        initialNumToRender={10}
-        maxToRenderPerBatch={10}
-        windowSize={10}
+        ListFooterComponent={
+          loadingMore && (
+            <ActivityIndicator style={{ margin: 20 }} color={colors.primary} />
+          )
+        }
+        ListEmptyComponent={
+          loading ? (
+            <ActivityIndicator />
+          ) : (
+            <Text style={styles.empty}>No songs found</Text>
+          )
+        }
       />
     </SafeAreaWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  searchContainer: {
+  headerImageContainer: {
+    height: 180,
+    justifyContent: 'flex-end',
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+  },
+  header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  headerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 20,
     width: '90%',
     marginHorizontal: 'auto',
-    borderRadius: 12,
   },
-  backButton: {
-    padding: 10,
-  },
-  backText: {
-    fontSize: 16,
-    marginHorizontal: 'auto',
-    marginVertical: 10,
-    fontWeight: '600',
-    textDecorationLine: 'underline',
-  },
-  searchIcon: {
-    position: 'absolute',
-    left: 36,
-    zIndex: 1,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    paddingLeft: 40,
-    paddingVertical: 8,
-    height: 40,
-  },
-  resultsHeader: {
+
+  backButton: { padding: 8 },
+  searchWrapper: {
+    marginHorizontal: 20,
+    marginTop: -30,
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    borderRadius: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
   },
-  resultsCount: {
-    fontSize: 14,
-    fontWeight: '600',
-    opacity: 0.8,
-  },
-  listContainer: {
-    padding: 20,
-  },
-  listContainerEmpty: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
+  searchIcon: { marginRight: 10 },
+  searchInput: { flex: 1, paddingVertical: 16, fontSize: 16 },
+  list: { paddingHorizontal: 20, paddingVertical: 20 },
   songCard: {
-    borderRadius: 12,
+    backgroundColor: '#fff',
+    borderLeftWidth: 4,
+    borderColor: '#1E3A8A',
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    flexDirection: 'row',
+    gap: 12,
+    flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'space-between',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  songInfo: {
-    flex: 1,
-  },
-  songTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  songStyle: {
-    fontSize: 14,
-    marginBottom: 8,
-    opacity: 0.9,
-  },
-  songMeta: {
-    flexDirection: 'row',
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
+    marginRight: 16,
   },
-  metaText: {
-    fontSize: 12,
-    opacity: 0.9,
-  },
+  titleContainer: { flex: 1 },
+  songTitle: { fontSize: 17, fontWeight: '600', color: '#1E3A8A' },
   playButton: {
+    backgroundColor: '#ffcc00',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderRadius: 25,
-    padding: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  skeletonTitle: {
-    height: 16,
-    width: '80%',
-    borderRadius: 4,
-    marginBottom: 4,
-  },
-  skeletonStyle: {
-    height: 14,
-    width: '60%',
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  skeletonMeta: {
-    height: 12,
-    width: 100,
-    borderRadius: 4,
-  },
-  skeletonPlayButton: {
-    height: 44,
-    width: 44,
-    borderRadius: 22,
-  },
-  footerLoader: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    marginTop: 8,
-    textAlign: 'center',
-    opacity: 0.7,
-  },
-  retryButton: {
-    marginTop: 20,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  playText: { color: '#000', fontWeight: '600', fontSize: 14 },
+  empty: { textAlign: 'center', marginTop: 50, color: '#888', fontSize: 16 },
 });

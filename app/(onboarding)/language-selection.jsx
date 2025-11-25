@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react'; // Added useMemo
 import {
   View,
   Text,
@@ -20,9 +20,16 @@ export default function LanguageSelectionScreen() {
   };
 
   const handleContinue = () => {
+    // Navigate to the next screen after language selection
     router.replace('/(auth)/login');
   };
 
+  // === 1. Sorting Logic ===
+  const sortedLanguages = useMemo(() => {
+    return [...LANGUAGES].sort((a, b) => a.name.localeCompare(b.name));
+  }, [LANGUAGES]);
+
+  // === 2. Updated renderLanguageItem to use initials and custom style ===
   const renderLanguageItem = ({ item }) => (
     <TouchableOpacity
       style={[
@@ -31,7 +38,22 @@ export default function LanguageSelectionScreen() {
       ]}
       onPress={() => handleLanguageSelect(item.code)}
     >
-      <Text style={styles.flag}>{item.flag}</Text>
+      {/* Replaced item.flag with a View containing initials */}
+      <View
+        style={[
+          styles.initialsContainer,
+          item.code === currentLanguage && styles.selectedInitialsContainer,
+        ]}
+      >
+        <Text
+          style={[
+            styles.initials,
+            item.code === currentLanguage && styles.selectedText,
+          ]}
+        >
+          {item.code.toUpperCase()}
+        </Text>
+      </View>
       <Text
         style={[
           styles.languageName,
@@ -53,7 +75,8 @@ export default function LanguageSelectionScreen() {
       </View>
 
       <FlatList
-        data={LANGUAGES}
+        // Use the new sorted array
+        data={sortedLanguages}
         renderItem={renderLanguageItem}
         keyExtractor={(item) => item.code}
         contentContainerStyle={styles.listContainer}
@@ -119,10 +142,28 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#1E3A8A',
   },
-  flag: {
-    fontSize: 28,
+  // === NEW STYLES for Initials ===
+  initialsContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#9CA3AF', // Default border color
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 16,
+    backgroundColor: '#F3F4F6',
   },
+  selectedInitialsContainer: {
+    borderColor: '#1E3A8A', // Primary color for selected state border
+    backgroundColor: '#FFFFFF', // White background for selected state
+  },
+  initials: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#374151',
+  },
+  // Removed old 'flag' style
   languageName: {
     fontSize: 18,
     color: '#374151',

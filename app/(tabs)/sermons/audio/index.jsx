@@ -9,101 +9,64 @@ import {
   ActivityIndicator,
   TextInput,
   RefreshControl,
+  ImageBackground,
+  Modal,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Search, Mic, Calendar } from 'lucide-react-native';
+import {
+  Search,
+  Mic,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
 import { TopNavigation } from '@/components/TopNavigation';
-import {
-  getSermonsPaginated,
-  searchContentPaginated,
-} from '@/services/dataService';
+import { getSermonsPaginated } from '@/services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const SkeletonItem = () => {
-  const { colors } = useTheme();
-  return (
-    <View style={[styles.item, { backgroundColor: colors.card }]}>
-      <LinearGradient
-        colors={[colors.skeleton, colors.skeletonHighlight]}
-        style={styles.skeletonTitle}
-      />
-      <LinearGradient
-        colors={[colors.skeleton, colors.skeletonHighlight]}
-        style={styles.skeletonDate}
-      />
-    </View>
-  );
-};
-
 export default function AudioSermonsScreen() {
-  const [sermons, setSermons] = useState([]);
+  const [allSermons, setAllSermons] = useState([]);
+  const [groupedByYear, setGroupedByYear] = useState({});
+  const [expandedYear, setExpandedYear] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [nextCursor, setNextCursor] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const { colors } = useTheme();
   const { translations } = useLanguage();
 
-  // Load audio sermons with pagination
+  // Fetch all audio sermons
   const loadSermons = async (isRefresh = false) => {
     try {
-      if (isRefresh) {
-        setRefreshing(true);
-        setNextCursor(null);
-      }
-
-      const result = await getSermonsPaginated(15, null);
+      if (isRefresh) setRefreshing(true);
+      const result = await getSermonsPaginated(1000, null); // large limit to get all
       const audioSermons = result.sermons.filter((s) => s.audioUrl);
 
-      if (isRefresh) {
-        setSermons(audioSermons);
-      } else {
-        setSermons(audioSermons);
-      }
+      // Group by year
+      const grouped = {};
+      audioSermons.forEach((sermon) => {
+        const date = sermon.date || '';
+        const year = date.split('-')[0] || 'Unknown';
+        if (!grouped[year]) grouped[year] = [];
+        grouped[year].push(sermon);
+      });
 
-      setHasMore(result.hasMore && audioSermons.length > 0);
-      setNextCursor(result.nextCursor);
+      // Sort years descending
+      const sortedYears = Object.keys(grouped).sort((a, b) =>
+        b.localeCompare(a)
+      );
+      const ordered = {};
+      sortedYears.forEach((y) => (ordered[y] = grouped[y]));
+
+      setGroupedByYear(ordered);
+      setAllSermons(audioSermons);
     } catch (error) {
-      console.error('Error fetching sermons:', error);
-      setSermons([]);
-      setHasMore(false);
+      console.error('Error loading sermons:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
-    }
-  };
-
-  // Load more sermons
-  const loadMoreSermons = async () => {
-    if (loadingMore || !hasMore || !nextCursor || searchQuery) return;
-
-    try {
-      setLoadingMore(true);
-      const result = await getSermonsPaginated(15, nextCursor);
-      const moreAudioSermons = result.sermons.filter((s) => s.audioUrl);
-
-      if (moreAudioSermons.length > 0) {
-        setSermons((prev) => [...prev, ...moreAudioSermons]);
-        setHasMore(result.hasMore);
-        setNextCursor(result.nextCursor);
-      } else {
-        // If no audio sermons in this batch but hasMore is true, try next batch
-        if (result.hasMore) {
-          setTimeout(() => loadMoreSermons(), 100);
-        } else {
-          setHasMore(false);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading more sermons:', error);
-      setHasMore(false);
-    } finally {
-      setLoadingMore(false);
     }
   };
 
@@ -111,104 +74,43 @@ export default function AudioSermonsScreen() {
     loadSermons();
   }, []);
 
-  const onRefresh = () => {
-    loadSermons(true);
+  const onRefresh = () => loadSermons(true);
+
+  const toggleYear = (year) => {
+    setExpandedYear(expandedYear === year ? null : year);
   };
 
-  // Handle search
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      const searchAudioSermons = async () => {
-        try {
-          setLoading(true);
-          const results = await searchContentPaginated(
-            searchQuery,
-            null,
-            50,
-            null
-          );
-          const audioSermons = results.sermons.filter((s) => s.audioUrl);
-          setSermons(audioSermons);
-          setHasMore(false); // Disable infinite scroll during search
-        } catch (error) {
-          console.error('Error searching sermons:', error);
-          setSermons([]);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      const timeoutId = setTimeout(searchAudioSermons, 500);
-      return () => clearTimeout(timeoutId);
-    } else {
-      // If search is cleared, reload paginated sermons
-      loadSermons(true);
-    }
-  }, [searchQuery]);
-
-  const filteredSermons = searchQuery.trim()
-    ? sermons.filter(
-        (s) =>
-          s.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          s.date?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : sermons;
-
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={[styles.item, { backgroundColor: colors.card }]}
-      onPress={() => router.push(`/sermons/audio/${item.id}`)}
-    >
-      <View style={styles.iconContainer}>
-        <Mic size={24} color={colors.primary} />
-      </View>
-      <View style={styles.textContainer}>
-        <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
-          {item.title || translations.noTitle}
-        </Text>
-        <View style={styles.dateRow}>
-          <Calendar size={16} color={colors.textSecondary} />
-          <Text style={[styles.date, { color: colors.textSecondary }]}>
-            {item.date || translations.unknownDate}
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const renderFooter = () => {
-    if (!loadingMore) return null;
-
-    return (
-      <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-          Loading more sermons...
-        </Text>
-      </View>
-    );
+  const openSermon = (id) => {
+    setExpandedYear(null);
+    router.push(`/sermons/audio/${id}`);
   };
 
-  const renderSkeleton = () => (
-    <>
-      <SkeletonItem />
-      <SkeletonItem />
-      <SkeletonItem />
-      <SkeletonItem />
-    </>
-  );
-
-  const handleEndReached = () => {
-    if (!loading && !loadingMore && hasMore && !searchQuery.trim()) {
-      loadMoreSermons();
-    }
-  };
+  const years = Object.keys(groupedByYear);
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title={translations.audioSermons || 'Audio Sermons'} />
+      <TopNavigation showBackButton={true} />
 
-      {/* Search Bar */}
+      <View style={styles.bannerContainer}>
+        <ImageBackground
+          source={{
+            uri: 'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/SERMON.png?alt=media&token=b288818c-4d0e-426b-b40a-dd8f532b0a75',
+          }}
+          style={styles.bannerImage}
+        >
+          <LinearGradient
+            colors={['transparent', 'black']}
+            style={styles.bannerGradient}
+          />
+          <View style={styles.bannerText}>
+            <Text style={styles.bannerTitle}>AUDIO SERMONS</Text>
+            <Text style={styles.bannerSubtitle}>
+              Learn the word of God with audio sermons, organized by year.
+            </Text>
+          </View>
+        </ImageBackground>
+      </View>
+
       <View
         style={[
           styles.searchContainer,
@@ -229,58 +131,122 @@ export default function AudioSermonsScreen() {
         />
       </View>
 
-      {/* Results Count */}
-      {!loading && filteredSermons.length > 0 && (
-        <View style={styles.resultsHeader}>
-          <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>
-            {filteredSermons.length}{' '}
-            {filteredSermons.length === 1 ? 'sermon' : 'sermons'}
-            {searchQuery ? ' found' : ' available'}
-            {hasMore && !searchQuery && '+'}
-          </Text>
-        </View>
-      )}
-
       {loading ? (
-        <View style={styles.listContainer}>{renderSkeleton()}</View>
-      ) : filteredSermons.length === 0 ? (
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : years.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Mic size={64} color={colors.textSecondary} />
           <Text style={[styles.emptyText, { color: colors.text }]}>
-            {searchQuery
-              ? translations.noSermonsFound || 'No sermons found'
-              : translations.noAudioSermons || 'No audio sermons available'}
+            No audio sermons available
           </Text>
-          {!searchQuery && (
-            <Text
-              style={[styles.emptySubtext, { color: colors.textSecondary }]}
-            >
-              Check back later for new audio content
-            </Text>
-          )}
         </View>
       ) : (
         <FlatList
-          data={filteredSermons}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
+          data={years}
+          keyExtractor={(item) => item}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
               colors={[colors.primary]}
-              tintColor={colors.primary}
             />
           }
-          ListFooterComponent={renderFooter}
-          onEndReached={handleEndReached}
-          onEndReachedThreshold={0.5}
-          removeClippedSubviews={true}
-          initialNumToRender={10}
-          maxToRenderPerBatch={10}
-          windowSize={10}
+          contentContainerStyle={styles.listContainer}
+          renderItem={({ item: year }) => {
+            const sermons = groupedByYear[year];
+            const filtered = searchQuery
+              ? sermons.filter((s) =>
+                  s.title?.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+              : sermons;
+
+            if (filtered.length === 0 && searchQuery) return null;
+
+            return (
+              <View style={styles.yearSection}>
+                <TouchableOpacity
+                  style={[styles.yearHeader, { backgroundColor: colors.card }]}
+                  onPress={() => toggleYear(year)}
+                >
+                  <View style={styles.yearInfo}>
+                    <Calendar size={20} color={colors.primary} />
+                    <Text style={[styles.yearText, { color: colors.text }]}>
+                      {year}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.countText,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      {filtered.length} sermon{filtered.length !== 1 ? 's' : ''}
+                    </Text>
+                  </View>
+                  {expandedYear === year ? (
+                    <ChevronUp size={24} color={colors.textSecondary} />
+                  ) : (
+                    <ChevronDown size={24} color={colors.textSecondary} />
+                  )}
+                </TouchableOpacity>
+
+                <Modal
+                  visible={expandedYear === year}
+                  transparent
+                  animationType="slide"
+                  onRequestClose={() => setExpandedYear(null)}
+                >
+                  <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                      <View style={styles.modalHeader}>
+                        <Text style={styles.modalTitle}>
+                          {year} Sermons ({filtered.length})
+                        </Text>
+                        <TouchableOpacity onPress={() => setExpandedYear(null)}>
+                          <Text
+                            style={{
+                              fontSize: 36,
+                              color: colors.textSecondary,
+                              marginTop: -8,
+                            }}
+                          >
+                            ×
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <FlatList
+                        data={filtered}
+                        keyExtractor={(item) => item.id}
+                        renderItem={({ item: sermon }) => (
+                          <TouchableOpacity
+                            style={styles.sermonItem}
+                            onPress={() => openSermon(sermon.id)}
+                          >
+                            <Mic size={22} color={colors.primary} />
+                            <View style={styles.sermonText}>
+                              <Text
+                                style={styles.sermonTitle}
+                                numberOfLines={2}
+                              >
+                                {sermon.title || 'Untitled Sermon'}
+                              </Text>
+                              <Text style={styles.sermonDate}>
+                                {sermon.date || 'No date'}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        )}
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={{ paddingBottom: 20 }}
+                      />
+                    </View>
+                  </View>
+                </Modal>
+              </View>
+            );
+          }}
         />
       )}
     </SafeAreaWrapper>
@@ -288,64 +254,120 @@ export default function AudioSermonsScreen() {
 }
 
 const styles = StyleSheet.create({
+  bannerContainer: { overflow: 'hidden', height: 180, marginBottom: 10 },
+  bannerImage: {
+    width: '100%',
+    height: 180,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bannerGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 300,
+  },
+  bannerText: { paddingHorizontal: 40, alignItems: 'center', zIndex: 1 },
+  bannerTitle: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  bannerSubtitle: {
+    color: '#fff',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
   searchContainer: {
+    marginHorizontal: 20,
+    marginTop: -30,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    borderRadius: 30,
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
-    marginVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  searchIcon: { marginRight: 8 },
-  searchInput: {
-    flex: 1,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  resultsHeader: {
     paddingHorizontal: 20,
-    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
   },
-  resultsCount: {
-    fontSize: 14,
-    fontWeight: '600',
-    opacity: 0.8,
-  },
-  listContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  item: {
+  searchIcon: { marginRight: 10 },
+  searchInput: { flex: 1, paddingVertical: 16, fontSize: 16 },
+  listContainer: { paddingHorizontal: 20, paddingBottom: 40 },
+  yearSection: { marginBottom: 16 },
+  yearHeader: {
     flexDirection: 'row',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 18,
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  iconContainer: {
-    marginRight: 16,
-    justifyContent: 'center',
-  },
-  textContainer: {
+  yearInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  yearText: { fontSize: 18, fontWeight: 'bold' },
+  countText: { fontSize: 14, marginLeft: 8 },
+  modalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center', // Center vertically
+    paddingHorizontal: 20,
+    paddingBottom: 100,
+    marginBottom: 12, // Safe space from bottom tab bar
   },
-  title: {
-    fontSize: 16,
+  modalContent: {
+    maxHeight: '88%', // Prevent touching edges
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E3A8A',
+  },
+  modalTitle: {
+    fontSize: 22,
     fontWeight: 'bold',
+    color: '#1E3A8A',
+  },
+  sermonItem: {
+    flexDirection: 'row',
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#9b9b9bff',
+    alignItems: 'center',
+    gap: 16,
+  },
+  sermonText: { flex: 1 },
+  sermonTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#3b3c3dff',
     marginBottom: 4,
   },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  date: {
+  sermonDate: {
     fontSize: 14,
+    color: '#3b3c3dff',
+    opacity: 0.8,
   },
   emptyContainer: {
     flex: 1,
@@ -358,33 +380,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 16,
     fontWeight: '600',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 8,
-    opacity: 0.7,
-  },
-  skeletonTitle: {
-    height: 16,
-    width: '80%',
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  skeletonDate: {
-    height: 14,
-    width: '50%',
-    borderRadius: 4,
-  },
-  footerLoader: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 14,
-    fontWeight: '500',
   },
 });

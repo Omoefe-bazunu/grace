@@ -144,7 +144,21 @@ export default function QuizResourcesScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title="Quiz" />
+      <TopNavigation showBackButton={true} />
+      <View>
+        <Text
+          style={[
+            {
+              marginHorizontal: 'auto',
+              fontWeight: 'bold',
+              fontSize: 24,
+              marginVertical: 12,
+            },
+          ]}
+        >
+          Quiz Resources
+        </Text>
+      </View>
       <View
         style={[styles.searchContainer, { backgroundColor: colors.surface }]}
       >
@@ -167,12 +181,6 @@ export default function QuizResourcesScreen() {
           />
         )}
       </View>
-      <TouchableOpacity
-        onPress={() => router.push(`/(tabs)/profile`)}
-        style={styles.backButton}
-      >
-        <Text style={styles.backText}>Return Back</Text>
-      </TouchableOpacity>
 
       <FlatList
         data={quizzes}

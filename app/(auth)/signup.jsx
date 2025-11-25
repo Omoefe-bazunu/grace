@@ -7,16 +7,19 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useAuth } from '../../contexts/AuthContext'; // ← New JWT context
+import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 
+const { width, height } = Dimensions.get('window');
+
 export default function SignupScreen() {
-  const { signup } = useAuth(); // ← From JWT AuthContext
+  const { signup } = useAuth();
   const { translations } = useLanguage();
 
   const [email, setEmail] = useState('');
@@ -54,6 +57,7 @@ export default function SignupScreen() {
     try {
       const success = await signup(trimmedEmail, password);
       if (success) {
+        // You might navigate to a verification screen instead of home
         router.replace('/(tabs)/home');
       } else {
         Alert.alert('Error', 'Signup failed. Try again.');
@@ -68,49 +72,85 @@ export default function SignupScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      {/* Top Left Curve Placeholder */}
+      <View style={styles.topLeftCurve} />
+
+      {/* Language Switcher - Positioned top right */}
+      <View style={styles.languageSwitcherContainer}>
         <LanguageSwitcher />
       </View>
+
       <View style={styles.content}>
-        <View style={styles.logoContainer}>
-          <Text style={styles.appName}>Haven</Text>
-        </View>
-        <Text style={styles.title}>Create Account</Text>
+        {/* Title */}
+        <Text style={styles.title}>
+          {translations.createAccountTitle || 'Create Account'}
+        </Text>
 
         <View style={styles.form}>
+          {/* Email Input */}
+          <Text style={styles.inputLabel}>{translations.email || 'Email'}</Text>
           <Input
-            label="Email"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
-            placeholder="you@example.com"
+            placeholder={translations.enterEmail || 'Enter your email'}
+            style={styles.inputField}
+            placeholderTextColor="#888"
           />
+
+          {/* Password Input */}
+          <Text style={styles.inputLabel}>
+            {translations.password || 'Password'}
+          </Text>
           <Input
-            label="Password"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
-            placeholder="••••••••"
+            placeholder={translations.enterPassword || 'Enter your password'}
+            style={styles.inputField}
+            placeholderTextColor="#888"
           />
+
+          {/* Confirm Password Input */}
+          <Text style={styles.inputLabel}>
+            {translations.confirmPassword || 'Confirm Password'}
+          </Text>
           <Input
-            label="Confirm Password"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
-            placeholder="••••••••"
+            placeholder={
+              translations.confirmPasswordPlaceholder || 'Confirm your password'
+            }
+            style={styles.inputField}
+            placeholderTextColor="#888"
           />
+
+          {/* Sign Up Button */}
           <Button
-            title={isLoading ? 'Creating...' : 'Sign Up'}
+            title={
+              isLoading
+                ? translations.creating || 'Creating...'
+                : translations.signup || 'Sign Up'
+            }
             onPress={handleSignup}
             disabled={isLoading}
-            size="large"
+            style={styles.signupButton}
+            textStyle={styles.signupButtonText}
           />
         </View>
 
-        <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+        {/* Login Link */}
+        <TouchableOpacity
+          onPress={() => router.push('/(auth)/login')}
+          disabled={isLoading}
+        >
           <Text style={styles.loginText}>
-            Already have account? <Text style={styles.linkText}>Log in</Text>
+            {translations.alreadyHaveAccount || 'Already have account?'}{' '}
+            <Text style={styles.linkText}>
+              {translations.login || 'Log in'}
+            </Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -119,26 +159,100 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { flexDirection: 'row', justifyContent: 'flex-end', padding: 16 },
-  content: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
-  logoContainer: { alignItems: 'center', marginBottom: 32 },
-  logo: { fontSize: 64, marginBottom: 8 },
-  appName: { fontSize: 32, fontWeight: 'bold', color: '#1E3A8A' },
+  container: {
+    flex: 1,
+    backgroundColor: '#0d326f', // Deep blue background
+  },
+  // --- Top Left Curve ---
+  topLeftCurve: {
+    position: 'absolute',
+    top: -50,
+    left: -50,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  // --- Language Switcher ---
+  languageSwitcherContainer: {
+    position: 'absolute',
+    top: 30,
+    right: 30,
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+  },
+  // --- Main Content Area ---
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    justifyContent: 'center',
+    paddingTop: height * 0.1,
+  },
+  // --- Title ---
   title: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
+    color: '#FFFFFF', // White text
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 40,
   },
-  subtitle: {
+  // --- Form Elements ---
+  form: {
+    marginBottom: 24,
+    width: '100%',
+    alignItems: 'center',
+  },
+  inputLabel: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#FFFFFF', // White text
+    marginBottom: 8,
+    textAlign: 'center',
+    width: '90%',
+  },
+  inputField: {
+    backgroundColor: '#FFFFFF', // White background
+    borderRadius: 30,
+    height: 55,
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    width: 300,
     fontSize: 16,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 32,
+    color: '#333333',
   },
-  form: { marginBottom: 24 },
-  resendText: { textAlign: 'center', color: '#6B7280' },
-  loginText: { textAlign: 'center', color: '#6B7280' },
-  linkText: { color: '#1E3A8A', fontWeight: '600' },
+  // --- Sign Up Button ---
+  signupButton: {
+    marginTop: 10,
+    backgroundColor: '#ffc700', // Yellow/Gold background
+    borderRadius: 30,
+    height: 55,
+    width: '90%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  signupButtonText: {
+    color: '#333333', // Dark text for contrast on yellow
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  // --- Login Link ---
+  loginText: {
+    textAlign: 'center',
+    color: '#FFFFFF', // White text
+    fontSize: 16,
+  },
+  linkText: {
+    color: '#ffc700', // Yellow/Gold link
+    fontWeight: '600',
+  },
+  // Removing unused original styles
+  header: { display: 'none' }, // Replaced by absolute positioned switcher
+  logoContainer: { display: 'none' },
+  appName: { display: 'none' },
+  subtitle: { display: 'none' },
+  resendText: { display: 'none' },
 });

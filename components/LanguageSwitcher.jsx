@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react'; // Added useMemo
 import {
   View,
   Text,
@@ -17,11 +17,22 @@ export function LanguageSwitcher() {
   const { currentLanguage, setLanguage } = useLanguage();
   const { colors } = useTheme();
 
-  const currentLang = LANGUAGES.find((lang) => lang.code === currentLanguage);
+  // 1. Create a sorted and augmented list of languages
+  const sortedLanguages = useMemo(() => {
+    return [...LANGUAGES].sort((a, b) => a.name.localeCompare(b.name));
+  }, [LANGUAGES]);
+
+  // Use the initials of the current language code instead of flag
+  const currentLangCodeDisplay = currentLanguage.toUpperCase();
 
   const handleLanguageSelect = async (languageCode) => {
     await setLanguage(languageCode);
     setIsVisible(false);
+  };
+
+  const renderLanguageInitials = (code) => {
+    // Helper function to render the initials
+    return code.toUpperCase();
   };
 
   return (
@@ -32,7 +43,10 @@ export function LanguageSwitcher() {
         activeOpacity={0.8}
       >
         <Globe size={20} color={colors.primary} />
-        <Text style={styles.buttonText}>{currentLang?.flag}</Text>
+        {/* Changed from currentLang?.flag to language initials */}
+        <Text style={[styles.buttonText, { color: colors.text }]}>
+          {currentLangCodeDisplay}
+        </Text>
       </TouchableOpacity>
 
       <Modal
@@ -47,7 +61,8 @@ export function LanguageSwitcher() {
               Select Language
             </Text>
             <FlatList
-              data={LANGUAGES}
+              // Use the new sorted array
+              data={sortedLanguages}
               keyExtractor={(item) => item.code}
               renderItem={({ item }) => (
                 <TouchableOpacity
@@ -59,7 +74,32 @@ export function LanguageSwitcher() {
                   ]}
                   onPress={() => handleLanguageSelect(item.code)}
                 >
-                  <Text style={styles.flag}>{item.flag}</Text>
+                  {/* Changed from item.flag to language initials */}
+                  <View
+                    style={[
+                      styles.initialsContainer,
+                      {
+                        borderColor:
+                          item.code === currentLanguage
+                            ? colors.primary
+                            : colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.initials,
+                        {
+                          color:
+                            item.code === currentLanguage
+                              ? colors.primary
+                              : colors.text,
+                        },
+                      ]}
+                    >
+                      {renderLanguageInitials(item.code)}
+                    </Text>
+                  </View>
                   <Text
                     style={[
                       styles.languageName,
@@ -91,6 +131,7 @@ export function LanguageSwitcher() {
   );
 }
 
+// Updated and added styles for the initials
 const styles = StyleSheet.create({
   button: {
     flexDirection: 'row',
@@ -108,8 +149,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   buttonText: {
-    marginLeft: 4,
-    fontSize: 16,
+    marginLeft: 8, // Increased margin for better spacing with initials
+    fontSize: 14, // Adjusted size to better fit initials
+    fontWeight: 'bold', // Added bold for better visibility
   },
   overlay: {
     flex: 1,
@@ -137,12 +179,24 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 4,
   },
-  flag: {
-    fontSize: 24,
+  // NEW STYLES for Initials display
+  initialsContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 4,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
+  initials: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  // Removed old 'flag' style as it's no longer used for emojis
   languageName: {
     fontSize: 16,
+    flex: 1, // Added flex to push name to the left
   },
   closeButton: {
     marginTop: 16,

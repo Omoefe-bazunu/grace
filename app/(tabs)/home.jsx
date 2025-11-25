@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -6,614 +6,240 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
-// ADDED: Import the Video component for the home screen preview
-import { Video } from 'expo-av';
-
-import { useLanguage } from '../../contexts/LanguageContext';
-import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../components/TopNavigation';
-import { getRecentContent } from '../../services/dataService';
 import {
   ChevronRight,
-  Play,
-  Clock,
-  Sparkles,
-  Music2,
+  Mic,
   Music,
-  Music2Icon,
-  BookAIcon,
+  Film,
+  HandCoins,
+  Video,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Book, Music3Icon } from 'lucide-react';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
-const SkeletonCard = ({ type }) => {
-  const { colors } = useTheme();
-  return (
-    <View
-      style={[
-        styles.card,
-        type === 'video' ? styles.videoCard : {},
-        { backgroundColor: colors.card },
-      ]}
-    >
-      {type === 'video' && (
-        <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
-          style={styles.videoThumbnail}
-        />
-      )}
-      <View style={type === 'video' ? styles.videoInfo : {}}>
-        <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
-          style={styles.skeletonTitle}
-        />
-        <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
-          style={styles.skeletonSubtitle}
-        />
-        {type !== 'video' && (
-          <View style={styles.cardFooter}>
-            <LinearGradient
-              colors={[colors.skeleton, colors.skeletonHighlight]}
-              style={styles.skeletonAction}
-            />
-          </View>
-        )}
-      </View>
-    </View>
-  );
-};
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = width - 40;
+const CARD_IMAGE_HEIGHT = 200;
+
+const cards = [
+  {
+    title: 'Songs of Praises',
+    subtitle: 'Enjoy rich songs in worship to God.',
+    image:
+      'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/CHOIR.png?alt=media&token=92dd7301-75bd-4ea8-a042-371e94649186',
+    path: '/songs',
+    icon: Music,
+  },
+  {
+    title: 'Edifying Sermons',
+    subtitle: 'Grow the knowledge of God with sound sermons.',
+    image:
+      'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/SERMON.png?alt=media&token=b288818c-4d0e-426b-b40a-dd8f532b0a75',
+    path: '/sermons',
+    icon: Mic,
+  },
+
+  {
+    title: 'Bible-based Stories',
+    subtitle: 'Get inspired & informed by stories of spiritual values.',
+    image:
+      'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/ANIMATIONS.png?alt=media&token=2e09351a-c50c-4dd8-8ea3-a093f8768ff1',
+    path: '/animations',
+    icon: Film,
+  },
+  {
+    title: 'Tithes & Offering',
+    subtitle: 'Support the work of God with your donations.',
+    image:
+      'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/PAYMENTS.png?alt=media&token=21f61afe-a674-4520-b346-f5617468d0b5',
+    path: '/donations',
+    icon: HandCoins,
+  },
+  {
+    title: 'Live Events',
+    subtitle: 'Join live services and events.',
+    image:
+      'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/STREAM.png?alt=media&token=9378a13e-7695-4aff-b5d9-002ce2033b68',
+    path: '/live',
+    icon: Video,
+  },
+];
 
 export default function HomeScreen() {
-  const { translations, currentLanguage } = useLanguage();
-  const { user } = useAuth();
   const { colors } = useTheme();
-  const [content, setContent] = useState({
-    sermons: [],
-    songs: [],
-    videos: [],
-  });
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadContent();
-  }, []);
+  const renderCard = (card, index) => {
+    const cardScale = useSharedValue(1);
+    const imageScale = useSharedValue(1);
+    const Icon = card.icon;
 
-  const loadContent = async () => {
-    try {
-      console.log('Fetching recent content...');
-      const data = await getRecentContent();
-      console.log('Content loaded:', data);
-      setContent(data);
-    } catch (error) {
-      console.error('Error fetching recent content:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+    const animatedCardStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: cardScale.value }],
+    }));
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadContent();
-  };
+    const animatedImageStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: imageScale.value }],
+    }));
 
-  const getTranslatedContent = (item) => {
-    return (
-      item.translations?.[currentLanguage] || item.translations?.en || item
-    );
-  };
+    const handlePressIn = () => {
+      cardScale.value = withTiming(1.05, { duration: 200 });
+      imageScale.value = withTiming(1.1, { duration: 200 });
+    };
 
-  const renderSermonCard = (sermon) => {
-    const content = getTranslatedContent(sermon);
+    const handlePressOut = () => {
+      cardScale.value = withTiming(1, { duration: 200 });
+      imageScale.value = withTiming(1, { duration: 200 });
+    };
+
     return (
       <TouchableOpacity
-        key={sermon.id}
-        style={[styles.card, { backgroundColor: colors.card }]}
-        onPress={() => router.push(`/(tabs)/sermons/${sermon.id}`)}
+        key={index}
+        onPress={() => router.push(card.path)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         activeOpacity={0.7}
       >
-        <LinearGradient
-          colors={[colors.primary + '15', 'transparent']}
-          style={styles.cardGradient}
-        />
-        <View style={styles.cardContent}>
-          <View style={[styles.iconBadge, { backgroundColor: colors.primary }]}>
-            <BookAIcon size={18} color="#fff" />
+        <Animated.View
+          style={[styles.card, animatedCardStyle, { backgroundColor: '#fff' }]}
+        >
+          <Animated.View
+            style={[styles.cardImageContainer, animatedImageStyle]}
+          >
+            <Image source={{ uri: card.image }} style={styles.cardImage} />
+          </Animated.View>
+          <View
+            style={[styles.iconCircle, { backgroundColor: colors.primary }]}
+          >
+            <Icon size={18} color="#fff" />
           </View>
-          <Text
-            style={[styles.cardTitle, { color: colors.text }]}
-            numberOfLines={2}
-          >
-            {content.title}
-          </Text>
-          <Text
-            style={[styles.cardSubtitle, { color: colors.textSecondary }]}
-            numberOfLines={2}
-          >
-            {content.content || translations.noContent}
-          </Text>
-          <View style={styles.cardFooter}>
-            <View
-              style={[
-                styles.actionButton,
-                { backgroundColor: colors.primary + '15' },
-              ]}
+          <View style={styles.cardTextContainer}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>
+              {card.title}
+            </Text>
+            <Text
+              style={[styles.cardSubtitle, { color: colors.textSecondary }]}
             >
-              <Text style={[styles.cardAction, { color: colors.primary }]}>
-                Start studying
-              </Text>
-              <ChevronRight size={14} color={colors.primary} />
-            </View>
+              {card.subtitle}
+            </Text>
+            <ChevronRight
+              size={20}
+              color={colors.textSecondary}
+              style={styles.arrow}
+            />
           </View>
-        </View>
+        </Animated.View>
       </TouchableOpacity>
     );
   };
 
-  const renderSongCard = (song) => (
-    <TouchableOpacity
-      key={song.id}
-      style={[styles.card, { backgroundColor: colors.card }]}
-      onPress={() => router.push(`/(tabs)/songs/music/${song.id}`)}
-      activeOpacity={0.7}
-    >
-      <LinearGradient
-        colors={[colors.primary + '15', 'transparent']}
-        style={styles.cardGradient}
-      />
-      <View style={styles.cardContent}>
-        <View style={[styles.iconBadge, { backgroundColor: colors.primary }]}>
-          <Music2 size={18} color="#fff" fill={colors.primary} />
-        </View>
-        <Text
-          style={[styles.cardTitle, { color: colors.text }]}
-          numberOfLines={2}
-        >
-          {song.title}
-        </Text>
-        <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-          {song.category || translations.unknownCategory}
-        </Text>
-        <View style={styles.cardFooter}>
-          <View
-            style={[
-              styles.actionButton,
-              { backgroundColor: colors.primary + '15' },
-            ]}
-          >
-            <Text style={[styles.cardAction, { color: colors.primary }]}>
-              Play now
-            </Text>
-            <ChevronRight size={14} color={colors.primary} />
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const renderVideoCard = (video) => (
-    <TouchableOpacity
-      key={video.id}
-      style={[styles.videoCard, { backgroundColor: colors.card }]}
-      onPress={() => router.push(`/(tabs)/animations/${video.id}`)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.videoThumbnailContainer}>
-        {/* MODIFIED: Using Video component for auto-playing preview */}
-        <Video
-          source={{ uri: video.videoUrl }}
-          style={styles.videoThumbnail}
-          resizeMode="cover"
-          shouldPlay={true} // Auto-play the video snippet
-          isLooping={true} // Loop the video
-          isMuted={true} // Mute for automatic playback
-          useNativeControls={false} // Hide controls for a cleaner snippet look
-          onError={(e) => {
-            console.error('Video load error:', e.error);
-          }}
-          // Fallback poster image can be used if video fails to load immediately
-          // posterSource={{ uri: video.thumbnailUrl }}
-          // usePoster={true}
-        />
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.7)']}
-          style={styles.videoGradientOverlay}
-        />
-        <View style={styles.playButtonOverlay}>
-          <View
-            style={[styles.playButton, { backgroundColor: colors.primary }]}
-          >
-            <Play size={24} color="#fff" fill="#fff" />
-          </View>
-        </View>
-      </View>
-      <View style={styles.videoInfo}>
-        <Text
-          style={[styles.cardTitle, { color: colors.text }]}
-          numberOfLines={2}
-        >
-          {video.title}
-        </Text>
-        <View style={styles.cardFooter}>
-          <View
-            style={[
-              styles.actionButton,
-              { backgroundColor: colors.primary + '15' },
-            ]}
-          >
-            <Text style={[styles.cardAction, { color: colors.primary }]}>
-              Watch Now
-            </Text>
-            <ChevronRight size={14} color={colors.primary} />
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const renderSkeletonCards = (type) => (
-    <>
-      <SkeletonCard type={type} />
-      <SkeletonCard type={type} />
-      <SkeletonCard type={type} />
-    </>
-  );
-
   return (
     <SafeAreaWrapper>
       <TopNavigation title="Grace" />
-      <ScrollView
-        style={[styles.content, { backgroundColor: colors.background }]}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[colors.primary]}
-            tintColor={colors.primary}
-          />
-        }
-      >
-        <View style={styles.welcomeSection}>
-          <LinearGradient
-            colors={[colors.primary + '10', 'transparent']}
-            style={styles.welcomeGradient}
-          />
-          <Text style={[styles.welcomeTitle, { color: colors.text }]}>
-            Welcome back
+      <View style={styles.banner}>
+        <Image
+          source={{
+            uri: 'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/SHEPHARD.png?alt=media&token=6662b885-56ef-4dc5-8961-d3ef8f8c4565',
+          }}
+          style={styles.bannerImage}
+        />
+        <LinearGradient
+          colors={['rgba(0,0,0,0.6)', 'transparent']}
+          style={styles.bannerGradient}
+        />
+        <View style={styles.bannerText}>
+          <Text style={styles.bannerSociety}>God's Kingdom Society</Text>
+          <Text style={styles.bannerChurch}>The Church of The Living God</Text>
+          <Text style={styles.bannerTitle}>
+            Towards God's Perfect Government
           </Text>
-          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
-            {user?.email || translations.guest}
+          <Text style={styles.bannerDesc}>
+            Read, Listen, and grow in faith anytime, anywhere.
           </Text>
         </View>
-
-        {/* Sermons section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View>
-              <Text style={[styles.sectionTitle, { color: colors.primary }]}>
-                {translations.latestSermons}
-              </Text>
-              <View
-                style={[
-                  styles.sectionUnderline,
-                  { backgroundColor: colors.primary },
-                ]}
-              />
-            </View>
-            <TouchableOpacity
-              onPress={() => router.push('/(tabs)/sermons')}
-              style={styles.seeAllButton}
-            >
-              <View style={styles.seeAllContainer}>
-                <Text style={[styles.seeAll, { color: colors.primary }]}>
-                  {translations.seeAll}
-                </Text>
-                <ChevronRight size={18} color={colors.primary} />
-              </View>
-            </TouchableOpacity>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.horizontalScroll}
-            contentContainerStyle={styles.scrollContent}
-          >
-            {loading || content.sermons.length === 0
-              ? renderSkeletonCards('sermon')
-              : content.sermons.map(renderSermonCard)}
-          </ScrollView>
-        </View>
-
-        {/* Recent Music section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View>
-              <Text style={[styles.sectionTitle, { color: colors.primary }]}>
-                {translations.recentMusic}
-              </Text>
-              <View
-                style={[
-                  styles.sectionUnderline,
-                  { backgroundColor: colors.primary },
-                ]}
-              />
-            </View>
-            <TouchableOpacity
-              onPress={() => router.push('/(tabs)/songs')}
-              style={styles.seeAllButton}
-            >
-              <View style={styles.seeAllContainer}>
-                <Text style={[styles.seeAll, { color: colors.primary }]}>
-                  {translations.seeAll}
-                </Text>
-                <ChevronRight size={18} color={colors.primary} />
-              </View>
-            </TouchableOpacity>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.horizontalScroll}
-            contentContainerStyle={styles.scrollContent}
-          >
-            {loading || content.songs.length === 0
-              ? renderSkeletonCards('song')
-              : content.songs.map(renderSongCard)}
-          </ScrollView>
-        </View>
-
-        {/* Animations section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View>
-              <Text style={[styles.sectionTitle, { color: colors.primary }]}>
-                {translations.recentAnimations}
-              </Text>
-              <View
-                style={[
-                  styles.sectionUnderline,
-                  { backgroundColor: colors.primary },
-                ]}
-              />
-            </View>
-            <TouchableOpacity
-              onPress={() => router.push('/(tabs)/animations')}
-              style={styles.seeAllButton}
-            >
-              <View style={styles.seeAllContainer}>
-                <Text style={[styles.seeAll, { color: colors.primary }]}>
-                  {translations.seeAll}
-                </Text>
-                <ChevronRight size={18} color={colors.primary} />
-              </View>
-            </TouchableOpacity>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.horizontalScroll}
-            contentContainerStyle={styles.scrollContent}
-          >
-            {loading || content.videos.length === 0
-              ? renderSkeletonCards('video')
-              : content.videos.map(renderVideoCard)}
-          </ScrollView>
-        </View>
-        <View style={styles.bottomSpacer} />
+      </View>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.cardsContainer}>{cards.map(renderCard)}</View>
       </ScrollView>
     </SafeAreaWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
+  banner: {
+    height: 250,
+    position: 'relative',
+    borderBottomWidth: 4,
+    borderColor: '#fff',
+  },
+  bannerImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  bannerGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  bannerText: {
+    position: 'absolute',
+    top: 40,
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  welcomeSection: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 20,
-    position: 'relative',
-  },
-  welcomeGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 120,
-    borderRadius: 24,
-  },
-  welcomeTitle: {
+  bannerSociety: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  bannerChurch: { color: '#fff', fontSize: 12 },
+  bannerTitle: {
+    color: '#FFD700',
     fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-    marginBottom: 4,
+    fontWeight: 'bold',
+    marginTop: 8,
+    textAlign: 'center',
+    lineHeight: 28,
   },
-  userEmail: {
-    fontSize: 15,
-    opacity: 0.7,
-    fontWeight: '500',
+  bannerDesc: {
+    color: '#fff',
+    fontSize: 14,
+    marginTop: 8,
+    width: '80%',
+    textAlign: 'center',
   },
-  section: {
-    marginBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-  sectionUnderline: {
-    height: 3,
-    width: 40,
-    borderRadius: 2,
-    marginTop: 6,
-  },
-  seeAllButton: {
-    padding: 4,
-  },
-  seeAllContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  seeAll: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  horizontalScroll: {
-    paddingLeft: 20,
-  },
-  scrollContent: {
-    paddingRight: 20,
-  },
+  content: { flex: 1 },
+  cardsContainer: { flexDirection: 'column', padding: 20, gap: 16 },
   card: {
+    width: CARD_WIDTH,
     borderRadius: 20,
-    marginRight: 16,
-    marginVertical: 4,
-    width: 240,
-
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 8 },
-    // shadowOpacity: 0.12,
-    // shadowRadius: 16,
-    elevation: 8,
     overflow: 'hidden',
-  },
-  // cardGradient: {
-  //   position: 'absolute',
-  //   top: 0,
-  //   left: 0,
-  //   right: 0,
-  //   height: '100%',
-  //   borderRadius: 20,
-  // },
-  cardContent: {
-    padding: 20,
-    flexGrow: 1,
-  },
-  iconBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    marginBottom: 8,
-    lineHeight: 24,
-  },
-  cardSubtitle: {
-    fontSize: 12,
-    lineHeight: 20,
-    opacity: 0.75,
-    marginBottom: 16,
-    fontWeight: '500',
-    flexGrow: 1,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    gap: 6,
-  },
-  cardAction: {
-    fontSize: 14,
-    fontWeight: '600',
-    letterSpacing: -0.2,
-  },
-  videoCard: {
-    borderRadius: 20,
-    marginRight: 16,
-    marginVertical: 4,
-    width: 260,
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 8 },
-    // shadowOpacity: 0.12,
-    // shadowRadius: 16,
-    elevation: 8,
-    overflow: 'hidden',
-  },
-  videoThumbnailContainer: {
     position: 'relative',
   },
-  videoThumbnail: {
+  cardImageContainer: {
     width: '100%',
-    height: 160,
+    height: CARD_IMAGE_HEIGHT,
+    overflow: 'hidden',
   },
-  videoGradientOverlay: {
+  cardImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  iconCircle: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 80,
-  },
-  playButtonOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: 20,
+    left: 20,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
+    borderColor: '#fff',
   },
-  playButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  videoInfo: {
-    padding: 16,
-  },
-  skeletonTitle: {
-    height: 20,
-    width: '80%',
-    borderRadius: 6,
-    marginBottom: 8,
-  },
-  skeletonSubtitle: {
-    height: 16,
-    width: '60%',
-    borderRadius: 6,
-    marginBottom: 12,
-  },
-  skeletonAction: {
-    height: 16,
-    width: 60,
-    borderRadius: 6,
-  },
-  bottomSpacer: {
-    height: 32,
-  },
+  cardTextContainer: { padding: 16 },
+  cardTitle: { fontSize: 18, fontWeight: 'bold' },
+  cardSubtitle: { fontSize: 14, opacity: 0.8, width: '80%' },
+  arrow: { position: 'absolute', top: 20, right: 16 },
 });

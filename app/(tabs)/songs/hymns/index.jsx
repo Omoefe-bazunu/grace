@@ -7,18 +7,19 @@ import {
   FlatList,
   Text,
   StyleSheet,
+  ImageBackground,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
+// import { Picker } from '@react-native-picker/picker'; // REMOVED
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { Search } from 'lucide-react-native';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react-native';
 import { useLanguage } from '../../../../contexts/LanguageContext';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
+import { LanguageSwitcher } from '../../../../components/LanguageSwitcher';
 import { TopNavigation } from '../../../../components/TopNavigation';
-import { AudioPlayer } from '../../../../components/AudioPlayer';
 
 // Import language-specific data
 const hymnData = {
@@ -35,61 +36,72 @@ const psalmData = {
   zu: require('../../../../assets/data/psalms_zu.json'),
   sw: require('../../../../assets/data/psalms_sw.json'),
   ig: require('../../../../assets/data/psalms_ig.json'),
-  sw: require('../../../../assets/data/psalms_sw.json'),
   ha: require('../../../../assets/data/psalms_ha.json'),
   ur: require('../../../../assets/data/psalms_ur.json'),
 };
 
-// Separate caches
-const createCache = (dataType) => ({
+// Single combined cache
+const combinedCache = {
   data: null,
   timestamp: 0,
   get: function () {
+    // Cache expiry of 5 minutes (300000ms)
     return Date.now() - this.timestamp < 300000 ? this.data : null;
   },
-  set: function (data) {
-    this.data = data.map((item, index) => ({
+  set: function (hymnList, psalmList) {
+    // 1. Tag hymns and create unique IDs
+    const taggedHymns = hymnList.map((item, index) => ({
       ...item,
-      uniqueId: `${dataType}_${item.tsp_number || item.psalm_number}_${index}`,
+      type: 'tsps', // Added type
+      uniqueId: `tsps_${item.tsp_number}_${index}`,
     }));
+
+    // 2. Tag psalms and create unique IDs
+    const taggedPsalms = psalmList.map((item, index) => ({
+      ...item,
+      type: 'psalms', // Added type
+      uniqueId: `psalms_${item.psalm_number}_${index}`,
+    }));
+
+    // 3. Combine them: HYMNS FIRST, then PSALMS
+    this.data = [...taggedHymns, ...taggedPsalms];
     this.timestamp = Date.now();
   },
-});
+};
 
 export default function HymnsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [dataType, setDataType] = useState('tsps'); // "tsps" for hymns, "psalms" for psalms
+  // Removed dataType state
 
   const { translations, currentLanguage } = useLanguage();
   const { colors } = useTheme();
 
-  const cache = useMemo(
-    () => createCache(dataType),
-    [dataType, currentLanguage]
-  );
-
+  // Load items now loads both types
   const loadItems = useCallback(async () => {
     try {
       setLoading(true);
-      const cachedData = cache.get();
+      const cachedData = combinedCache.get();
       if (cachedData) {
         setItems(cachedData);
         return;
       }
 
-      const dataSource = dataType === 'tsps' ? hymnData : psalmData;
-      const langData = dataSource[currentLanguage] || dataSource.en;
-      cache.set(langData);
-      setItems(cache.get());
+      // Load Hymns
+      const hymns = hymnData[currentLanguage] || hymnData.en;
+      // Load Psalms
+      const psalms = psalmData[currentLanguage] || psalmData.en;
+
+      combinedCache.set(hymns, psalms);
+      setItems(combinedCache.get());
     } catch (error) {
-      console.error(`Failed to load ${dataType}:`, error);
+      console.error('Failed to load combined hymns/psalms:', error);
     } finally {
       setLoading(false);
     }
-  }, [dataType, currentLanguage, cache]);
+  }, [currentLanguage]); // Simplified dependencies
 
   useFocusEffect(
     useCallback(() => {
@@ -102,20 +114,24 @@ export default function HymnsScreen() {
 
     const searchTerm = searchQuery.toLowerCase();
     return items.filter((item) => {
+      // Determine the correct number field based on item type
       const number =
-        (dataType === 'tsps' ? item.tsp_number : item.psalm_number)
+        (item.type === 'tsps' ? item.tsp_number : item.psalm_number)
           ?.toString()
           .toLowerCase() || '';
       const title = item.title?.toLowerCase() || '';
       return number.includes(searchTerm) || title.includes(searchTerm);
     });
-  }, [items, searchQuery, dataType]);
+  }, [items, searchQuery]); // Removed dataType dependency
 
   const renderItem = useCallback(
     ({ item }) => {
       const isExpanded = expandedId === item.uniqueId;
-      const number = dataType === 'tsps' ? item.tsp_number : item.psalm_number;
-      const label = dataType === 'tsps' ? `TSP ${number}` : `Psalm ${number}`;
+
+      // Determine label and number based on item.type
+      const isHymn = item.type === 'tsps';
+      const number = isHymn ? item.tsp_number : item.psalm_number;
+      const label = isHymn ? `TSP ${number}` : `Psalm ${number}`;
 
       return (
         <View style={[styles.hymnContainer, { backgroundColor: colors.card }]}>
@@ -148,9 +164,13 @@ export default function HymnsScreen() {
                   {item.subtitle}
                 </Text>
               )}
-              <Text style={[styles.hymnMeter, { color: colors.textSecondary }]}>
-                {item.meter}
-              </Text>
+              {item.meter && ( // Meter only exists for hymns
+                <Text
+                  style={[styles.hymnMeter, { color: colors.textSecondary }]}
+                >
+                  {item.meter}
+                </Text>
+              )}
               {item.stanzas.map((stanza, index) => (
                 <View
                   key={`${item.uniqueId}_stanza_${index}`}
@@ -169,21 +189,30 @@ export default function HymnsScreen() {
                   </Text>
                 </View>
               ))}
-              <AudioPlayer url={item.audio} title={label} />
             </View>
           )}
         </View>
       );
     },
-    [expandedId, dataType, colors]
+    [expandedId, colors] // Removed dataType dependency
   );
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title={translations.hymns} />
-      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <Text style={styles.backText}>Return Back</Text>
-      </TouchableOpacity>
+      <TopNavigation showBackButton={true} />
+      <View>
+        <ImageBackground
+          source={{
+            uri: 'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/CHOIR.png?alt=media&token=92dd7301-75bd-4ea8-a042-371e94649186',
+          }}
+          style={styles.headerImageContainer}
+          resizeMode="cover"
+        >
+          <View style={styles.headerOverlay} />
+          <Text style={styles.headerTitle}>{'Theocratic Songs of Praise'}</Text>
+        </ImageBackground>
+      </View>
+
       <View
         style={[
           styles.controlsContainer,
@@ -199,30 +228,14 @@ export default function HymnsScreen() {
             style={styles.searchIcon}
           />
           <TextInput
-            placeholder="Search by number"
+            placeholder="Search by number or title"
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor={colors.textSecondary}
             style={[styles.searchInput, { color: colors.text }]}
           />
         </View>
-        <Picker
-          selectedValue={dataType}
-          onValueChange={(value) => {
-            setDataType(value);
-            setItems([]);
-            setSearchQuery('');
-            setExpandedId(null);
-          }}
-          style={[
-            styles.picker,
-            { backgroundColor: colors.surface, color: colors.text },
-          ]}
-          itemStyle={[styles.pickerItem, { color: colors.text }]}
-        >
-          <Picker.Item label="Hymns (TSPs)" value="tsps" />
-          <Picker.Item label="Psalms" value="psalms" />
-        </Picker>
+        {/* REMOVED PICKER COMPONENT */}
       </View>
 
       {loading && !items.length ? (
@@ -240,7 +253,7 @@ export default function HymnsScreen() {
           ]}
           ListEmptyComponent={
             <Text style={[styles.emptyText, { color: colors.text }]}>
-              No {dataType === 'tsps' ? 'Hymns' : 'Psalms'} found
+              No Hymns or Psalms found matching your search.
             </Text>
           }
         />
@@ -250,45 +263,56 @@ export default function HymnsScreen() {
 }
 
 const styles = StyleSheet.create({
-  controlsContainer: {
-    marginHorizontal: 20,
-    marginVertical: 10,
+  headerImageContainer: {
+    height: 180,
+    justifyContent: 'flex-end',
+    paddingBottom: 30,
+    paddingHorizontal: 20,
   },
-  backText: {
-    color: '#1E3A8A',
-    fontSize: 16,
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  headerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 20,
+    width: '90%',
     marginHorizontal: 'auto',
-    marginVertical: 10,
-    fontWeight: '600',
-    textDecorationLine: 'underline',
   },
+
   searchContainer: {
+    marginHorizontal: 20,
+    marginTop: -30,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    borderRadius: 30,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
   },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    paddingVertical: 8,
-    color: '#000', // fallback
-    height: 40,
-  },
-  picker: {
-    height: 55,
-    borderRadius: 8,
-    marginTop: 10,
-  },
-  pickerItem: {
-    fontSize: 16,
-  },
+  searchIcon: { marginRight: 10 },
+  searchInput: { flex: 1, paddingVertical: 16, fontSize: 16 },
   scrollContainer: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    paddingTop: 4,
   },
   hymnContainer: {
     marginBottom: 16,

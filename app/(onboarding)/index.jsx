@@ -5,111 +5,63 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
+  Image,
+  FlatList,
+  Animated,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Heart, Music, BookOpen, Globe } from 'lucide-react-native';
-import { Button } from '../../components/ui/Button'; // Assuming your Button component is a styled element
-
-// Import Reanimated components and hooks
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  interpolateColor,
-  runOnJS,
-} from 'react-native-reanimated';
-import { FlashList } from '@shopify/flash-list'; // Using FlashList for potentially better performance
+import { ArrowRight } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 
-// --- Updated Color Palette and Icons ---
-// Using more sophisticated and spiritually resonant colors
+// --- Slides Data ---
 const slides = [
   {
     id: '1',
-    title: 'Welcome to Grace',
+    subtitle: 'Welcome to the',
+    title: "God's Kingdom Society",
     description:
-      'Your spiritual journey begins here with multilingual worship and biblical content designed to bring you closer to God.',
-    icon: <Heart size={80} color="#FFFFFF" />,
-    backgroundColor: '#0d0a38ff', // Deep Charcoal/Near-Black for a premium feel
+      "A Christian Organization where the truth of God's word is preached and practiced in pursuance of the salvation of God in His Kingdom",
+    backgroundColor: '#0d326f',
+    imageSrc:
+      'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/logo%201.png?alt=media&token=63f2b45b-8e01-423e-a9ca-2384f329d4c9',
   },
   {
     id: '2',
-    title: 'Rich Content',
+    subtitle: "Grow in God's word with",
+    title: 'Edifying Sermons',
     description:
-      'Access spiritually edifying hymns, inspiring sermons, gospel music, and animated Bible stories.',
-    icon: <BookOpen size={80} color="#FFFFFF" />,
-    backgroundColor: '#1C3AA2', // A richer, deep indigo
+      'Get easy access to sermons of the GKS in text, audio and video formats and learn the word of God as it is in the Bible.',
+    backgroundColor: '#388338',
+    imageSrc:
+      'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/mic%201.png?alt=media&token=2f7584e0-3a71-4a24-b534-03f57dee9d7e',
   },
   {
     id: '3',
-    title: 'Beautiful Music',
+    subtitle: 'Worship God with',
+    title: 'Graceful Songs',
     description:
-      'Enjoy our collection of instrumentals and a cappella performances.',
-    icon: <Music size={80} color="#FFFFFF" />,
-    backgroundColor: '#723BBA', // A luxurious, deep violet
-  },
-  {
-    id: '4',
-    title: 'Multiple Languages',
-    description:
-      'Experience worship in English, Yoruba, Igbo, Urhobo, Hausa, French, Chinese, Swahili, and other supported languages.',
-    icon: <Globe size={80} color="#FFFFFF" />, // Changed Palette to Globe for language/world theme
-    backgroundColor: '#B5740F', // A sophisticated, dark gold/bronze
+      'Join fellow believers around the word to give honour to God and Christ through melodious songs of praise.',
+    backgroundColor: '#e7713d',
+    imageSrc:
+      'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/MUSCI.png?alt=media&token=8629841c-01b7-4f61-8b1e-9b97708e0cbe',
   },
 ];
-
-// Reanimated FlatList (FlashList)
-const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
 
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef(null);
+  const scrollX = useRef(new Animated.Value(0)).current;
 
-  // Shared Value for background color interpolation
-  const scrollOffset = useSharedValue(0);
+  const onViewableItemsChanged = useRef(({ viewableItems }) => {
+    if (viewableItems.length > 0) {
+      setCurrentIndex(viewableItems[0].index || 0);
+    }
+  }).current;
 
-  // Shared Value for footer/button visibility animation (optional)
-  const footerY = useSharedValue(height);
-
-  // --- Animation Hooks ---
-
-  // Animate the footer's position on mount
-  React.useEffect(() => {
-    footerY.value = withSpring(0, { damping: 15, stiffness: 100 });
-  }, []);
-
-  const footerAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: footerY.value }],
-    };
-  });
-
-  // Animated style for the main container background color
-  const backgroundAnimatedStyle = useAnimatedStyle(() => {
-    const backgroundColor = interpolateColor(
-      scrollOffset.value,
-      slides.map((_, i) => i * width), // Input range based on scroll position
-      slides.map((slide) => slide.backgroundColor) // Output colors
-    );
-
-    return {
-      backgroundColor: backgroundColor,
-    };
-  });
-
-  // --- Handlers ---
-
-  const onScroll = (event) => {
-    scrollOffset.value = event.nativeEvent.contentOffset.x;
-  };
-
-  const onMomentumScrollEnd = (event) => {
-    const index = Math.round(event.nativeEvent.contentOffset.x / width);
-    // Use runOnJS to update the state on the main thread
-    runOnJS(setCurrentIndex)(index);
-  };
+  const viewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 50,
+  }).current;
 
   const navigateToNextScreen = () => {
     router.replace('/(onboarding)/language-selection');
@@ -117,178 +69,221 @@ export default function OnboardingScreen() {
 
   const handleNext = () => {
     if (currentIndex < slides.length - 1) {
-      const nextIndex = currentIndex + 1;
-      flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
-      setCurrentIndex(nextIndex);
-    } else {
-      // Animate the footer off-screen before navigating
-      footerY.value = withTiming(height, { duration: 300 }, (isFinished) => {
-        if (isFinished) {
-          runOnJS(navigateToNextScreen)();
-        }
+      flatListRef.current?.scrollToIndex({
+        index: currentIndex + 1,
+        animated: true,
       });
+    } else {
+      navigateToNextScreen();
     }
   };
 
   const handleSkip = () => {
-    footerY.value = withTiming(height, { duration: 300 }, (isFinished) => {
-      if (isFinished) {
-        runOnJS(navigateToNextScreen)();
-      }
-    });
+    navigateToNextScreen();
   };
 
-  // --- Components ---
+  const renderSlide = ({ item, index }) => {
+    const inputRange = [
+      (index - 1) * width,
+      index * width,
+      (index + 1) * width,
+    ];
 
-  const renderSlide = ({ item }) => (
-    // Note: The background color is now applied to the main Animated.View container
-    <View style={styles.slide}>
-      <View style={styles.content}>
-        <View style={styles.iconContainer}>{item.icon}</View>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.description}>{item.description}</Text>
-      </View>
-    </View>
-  );
-
-  const Indicator = ({ index }) => {
-    const activeWidth = 24;
-    const inactiveWidth = 8;
-    const activeColor = '#FFFFFF';
-    const inactiveColor = 'rgba(255, 255, 255, 0.4)';
-
-    const indicatorAnimatedStyle = useAnimatedStyle(() => {
-      const isCurrent = index === currentIndex;
-      return {
-        width: withTiming(isCurrent ? activeWidth : inactiveWidth, {
-          duration: 200,
-        }),
-        backgroundColor: withTiming(isCurrent ? activeColor : inactiveColor, {
-          duration: 200,
-        }),
-      };
+    const opacity = scrollX.interpolate({
+      inputRange,
+      outputRange: [0.3, 1, 0.3],
+      extrapolate: 'clamp',
     });
 
-    return <Animated.View style={[styles.indicator, indicatorAnimatedStyle]} />;
+    const scale = scrollX.interpolate({
+      inputRange,
+      outputRange: [0.8, 1, 0.8],
+      extrapolate: 'clamp',
+    });
+
+    return (
+      <View style={[styles.slide, { backgroundColor: item.backgroundColor }]}>
+        {/* Top Left Curve */}
+        <View style={styles.topLeftCurve} />
+
+        {/* Skip Button */}
+        <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+          <View style={styles.skipButtonInner}>
+            <Text style={styles.skipText}>Skip</Text>
+          </View>
+        </TouchableOpacity>
+
+        <Animated.View
+          style={[styles.content, { opacity, transform: [{ scale }] }]}
+        >
+          {/* Icon Circle with Image */}
+          <View style={styles.iconWrapper}>
+            <View style={styles.iconCircle}>
+              <Image
+                source={{ uri: item.imageSrc }}
+                style={styles.iconImage}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+
+          {/* Title and Description */}
+          <Text style={styles.description}>{item.subtitle}</Text>
+          <Text style={styles.title}>{item.title}</Text>
+          <Text style={styles.description}>{item.description}</Text>
+
+          {/* Indicator Dots */}
+          <View style={styles.indicators}>
+            {slides.map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.indicator,
+                  {
+                    width: currentIndex === i ? 24 : 8,
+                    backgroundColor:
+                      currentIndex === i
+                        ? '#FFFFFF'
+                        : 'rgba(255, 255, 255, 0.5)',
+                  },
+                ]}
+              />
+            ))}
+          </View>
+        </Animated.View>
+
+        {/* Bottom Right Arrow Button */}
+        <TouchableOpacity onPress={handleNext} style={styles.nextArrowButton}>
+          <ArrowRight size={24} color={item.backgroundColor} />
+        </TouchableOpacity>
+      </View>
+    );
   };
 
   return (
-    <Animated.View style={[styles.container, backgroundAnimatedStyle]}>
-      <AnimatedFlashList
+    <View style={styles.container}>
+      <FlatList
         ref={flatListRef}
         data={slides}
         renderItem={renderSlide}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        estimatedItemSize={width}
         keyExtractor={(item) => item.id}
-        onScroll={onScroll} // Use the Reanimated onScroll handler
-        onMomentumScrollEnd={onMomentumScrollEnd}
-        scrollEventThrottle={16} // Important for smooth animation updates
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+          { useNativeDriver: false }
+        )}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        scrollEventThrottle={16}
+        bounces={false}
+        decelerationRate="fast"
       />
-
-      <Animated.View style={[styles.footer, footerAnimatedStyle]}>
-        <View style={styles.indicators}>
-          {slides.map((_, index) => (
-            <Indicator key={index} index={index} />
-          ))}
-        </View>
-
-        <View style={styles.buttons}>
-          <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-            <Text style={styles.skipText}>Skip</Text>
-          </TouchableOpacity>
-
-          {/* Using a primary button style for maximum impact */}
-          <Button
-            title={currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}
-            onPress={handleNext}
-            variant="primary" // Assuming 'primary' is a high-contrast style
-            style={styles.nextButton}
-          />
-        </View>
-      </Animated.View>
-    </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // Background color is dynamically set by backgroundAnimatedStyle
   },
   slide: {
     width,
-    height: height * 0.8, // Take up most of the screen
+    height,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
+  },
+  topLeftCurve: {
+    position: 'absolute',
+    top: -50,
+    left: -50,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  skipButton: {
+    position: 'absolute',
+    top: 50,
+    right: 30,
+    zIndex: 10,
+  },
+  skipButtonInner: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+  },
+  skipText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333333',
   },
   content: {
     alignItems: 'center',
     paddingHorizontal: 40,
+    justifyContent: 'center',
   },
-  iconContainer: {
-    marginBottom: 40,
-    // Add a slight elevation or shadow for depth
+  iconWrapper: {
+    marginBottom: 20,
+    borderWidth: 5,
+    borderRadius: 100,
+    padding: 20,
+    borderColor: '#fff',
+  },
+  iconCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    // backgroundColor: '#FFFFFF',
+  },
+  iconImage: {
+    width: 120,
+    height: 120,
   },
   title: {
-    fontSize: 34,
-    fontWeight: '800', // Extra bold for a professional look
+    fontSize: 24,
+    fontWeight: '700',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 12,
-    letterSpacing: 0.5,
+    marginBottom: 10,
+    lineHeight: 30,
   },
   description: {
-    fontSize: 17,
-    color: 'rgba(255, 255, 255, 0.8)', // Slightly transparent white
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 22,
     maxWidth: 300,
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 30,
-    paddingTop: 20,
-    paddingBottom: 40,
-    backgroundColor: '#FFFFFF', // Clean white footer
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
   },
   indicators: {
     flexDirection: 'row',
-    justifyContent: 'flex-start', // Align left for a modern look
-    marginBottom: 20,
+    justifyContent: 'center',
+    marginTop: 40,
   },
   indicator: {
     height: 8,
     borderRadius: 4,
-    marginHorizontal: 4,
+    marginHorizontal: 3,
   },
-  buttons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  nextArrowButton: {
+    position: 'absolute',
+    bottom: 50,
+    right: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
     alignItems: 'center',
-  },
-  skipButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-  },
-  skipText: {
-    fontSize: 16,
-    color: '#6B7280',
-    fontWeight: '600',
-  },
-  nextButton: {
-    minWidth: 150, // Give the button a solid, professional size
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
 });

@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { TopNavigation } from '@/components/TopNavigation';
+import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 
 // Component for the skeleton loading state
 const SkeletonQuizDetail = ({ colors }) => (
@@ -124,13 +125,10 @@ export default function QuizDetailScreen() {
   }
 
   return (
-    <SafeAreaView
+    <SafeAreaWrapper
       style={[styles.container, { backgroundColor: colors.background }]}
     >
-      <TopNavigation
-        showBackButton={true}
-        onPress={() => router.push(`/(tabs)/profile`)}
-      />
+      <TopNavigation showBackButton={true} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={[styles.title, { color: colors.text }]}>
@@ -228,7 +226,7 @@ export default function QuizDetailScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </SafeAreaWrapper>
   );
 }
 
