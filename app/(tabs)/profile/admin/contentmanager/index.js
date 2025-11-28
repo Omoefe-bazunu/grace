@@ -1,4 +1,3 @@
-// app/(tabs)/admin/ContentManager.jsx
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -18,9 +17,15 @@ import { SafeAreaWrapper } from '../../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../../components/TopNavigation';
 import { useTheme } from '../../../../../contexts/ThemeContext';
 import { useLanguage } from '../../../../../contexts/LanguageContext';
-import { getSermons, getSongs, getVideos } from '@/services/dataService';
+import {
+  getSermons,
+  getSongs,
+  getVideos,
+  getSermonVideos,
+  getDailyDevotionals,
+} from '@/services/dataService';
 import apiClient from '../../../../../utils/api';
-import { Edit2, Trash2, X } from 'lucide-react-native';
+import { Edit2, Trash2, X, Video, BookOpen } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ContentManager() {
@@ -31,16 +36,25 @@ export default function ContentManager() {
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [form, setForm] = useState({ title: '', content: '', category: '' });
+  const [form, setForm] = useState({
+    title: '',
+    content: '',
+    category: '',
+    mainText: '',
+    date: '',
+  });
   const [saving, setSaving] = useState(false);
 
   const fetchAllContent = async () => {
     try {
-      const [sermons, songs, videos] = await Promise.all([
-        getSermons(),
-        getSongs(),
-        getVideos(),
-      ]);
+      const [sermons, songs, videos, sermonVideos, devotionals] =
+        await Promise.all([
+          getSermons(),
+          getSongs(),
+          getVideos(),
+          getSermonVideos(),
+          getDailyDevotionals(),
+        ]);
 
       const formatted = [
         ...sermons.map((s) => ({
@@ -50,6 +64,7 @@ export default function ContentManager() {
           category: s.category,
           content: s.content,
           date: s.date || s.createdAt.split('T')[0],
+          icon: '📖',
         })),
         ...songs.map((s) => ({
           id: s.id,
@@ -57,12 +72,30 @@ export default function ContentManager() {
           type: 'song',
           category: s.category,
           date: s.createdAt.split('T')[0],
+          icon: '🎵',
         })),
         ...videos.map((v) => ({
           id: v.id,
           title: v.title,
           type: 'video',
           date: v.createdAt.split('T')[0],
+          icon: '🎬',
+        })),
+        ...sermonVideos.map((v) => ({
+          id: v.id,
+          title: v.title,
+          type: 'sermonVideo',
+          category: v.category,
+          date: v.date || v.createdAt.split('T')[0],
+          icon: '🎥',
+        })),
+        ...devotionals.map((d) => ({
+          id: d.id,
+          title: d.title,
+          type: 'dailyDevotional',
+          mainText: d.mainText,
+          date: d.date || d.createdAt.split('T')[0],
+          icon: '📅',
         })),
       ];
 
@@ -84,6 +117,17 @@ export default function ContentManager() {
     fetchAllContent();
   };
 
+  const getCollectionName = (type) => {
+    const collections = {
+      sermon: 'sermons',
+      song: 'songs',
+      video: 'videos',
+      sermonVideo: 'sermonVideos',
+      dailyDevotional: 'dailyDevotionals',
+    };
+    return collections[type] || 'sermons';
+  };
+
   const handleDelete = (item) => {
     Alert.alert(`Delete ${item.type}`, `Delete "${item.title}"?`, [
       { text: 'Cancel', style: 'cancel' },
@@ -92,12 +136,7 @@ export default function ContentManager() {
         style: 'destructive',
         onPress: async () => {
           try {
-            const collection =
-              item.type === 'sermon'
-                ? 'sermons'
-                : item.type === 'song'
-                ? 'songs'
-                : 'videos';
+            const collection = getCollectionName(item.type);
             await apiClient.delete(collection, item.id);
             setContent((prev) => prev.filter((c) => c.id !== item.id));
           } catch {
@@ -114,6 +153,8 @@ export default function ContentManager() {
       title: item.title,
       content: item.content || '',
       category: item.category || '',
+      mainText: item.mainText || '',
+      date: item.date || '',
     });
     setModalVisible(true);
   };
@@ -121,7 +162,7 @@ export default function ContentManager() {
   const closeModal = () => {
     setModalVisible(false);
     setEditingItem(null);
-    setForm({ title: '', content: '', category: '' });
+    setForm({ title: '', content: '', category: '', mainText: '', date: '' });
   };
 
   const handleSave = async () => {
@@ -132,16 +173,22 @@ export default function ContentManager() {
 
     setSaving(true);
     try {
-      const collection =
-        editingItem.type === 'sermon'
-          ? 'sermons'
-          : editingItem.type === 'song'
-          ? 'songs'
-          : 'videos';
+      const collection = getCollectionName(editingItem.type);
 
       const payload = { title: form.title };
-      if (editingItem.type === 'sermon') payload.content = form.content;
-      if (editingItem.type === 'song') payload.category = form.category;
+
+      // Add type-specific fields
+      if (editingItem.type === 'sermon') {
+        payload.content = form.content;
+      } else if (
+        editingItem.type === 'song' ||
+        editingItem.type === 'sermonVideo'
+      ) {
+        payload.category = form.category;
+      } else if (editingItem.type === 'dailyDevotional') {
+        payload.mainText = form.mainText;
+        payload.date = form.date;
+      }
 
       await apiClient.put(collection, editingItem.id, payload);
 
@@ -153,6 +200,8 @@ export default function ContentManager() {
                 title: form.title,
                 content: form.content,
                 category: form.category,
+                mainText: form.mainText,
+                date: form.date,
               }
             : c
         )
@@ -167,6 +216,28 @@ export default function ContentManager() {
     }
   };
 
+  const getTypeIcon = (type) => {
+    const icons = {
+      sermon: '📖',
+      song: '🎵',
+      video: '🎬',
+      sermonVideo: '🎥',
+      dailyDevotional: '📅',
+    };
+    return icons[type] || '📄';
+  };
+
+  const getTypeColor = (type) => {
+    const colorsMap = {
+      sermon: '#3B82F6', // Blue
+      song: '#8B5CF6', // Purple
+      video: '#EF4444', // Red
+      sermonVideo: '#10B981', // Green
+      dailyDevotional: '#F59E0B', // Amber
+    };
+    return colorsMap[type] || colors.primary;
+  };
+
   if (loading) {
     return (
       <SafeAreaWrapper>
@@ -179,7 +250,7 @@ export default function ContentManager() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title="Manage Content" />
+      <TopNavigation showBackButton={true} />
       <ScrollView
         style={{ backgroundColor: colors.background }}
         refreshControl={
@@ -191,66 +262,79 @@ export default function ContentManager() {
             No content available
           </Text>
         ) : (
-          content.map((item) => (
-            <View
-              key={item.id}
-              style={[styles.item, { backgroundColor: colors.card }]}
-            >
-              <LinearGradient
-                colors={[colors.primary + '10', 'transparent']}
-                style={styles.itemGradient}
-              />
-              <View style={styles.itemContent}>
-                <View style={styles.itemHeader}>
-                  <View
-                    style={[
-                      styles.typeBadge,
-                      { backgroundColor: colors.primary },
-                    ]}
-                  >
-                    <Text style={styles.typeText}>
-                      {item.type[0].toUpperCase()}
-                    </Text>
+          content.map((item) => {
+            const typeColor = getTypeColor(item.type);
+            return (
+              <View
+                key={item.id}
+                style={[styles.item, { backgroundColor: colors.card }]}
+              >
+                <LinearGradient
+                  colors={[typeColor + '20', 'transparent']}
+                  style={styles.itemGradient}
+                />
+                <View style={styles.itemContent}>
+                  <View style={styles.itemHeader}>
+                    <View
+                      style={[styles.typeBadge, { backgroundColor: typeColor }]}
+                    >
+                      <Text style={styles.typeText}>
+                        {getTypeIcon(item.type)}
+                      </Text>
+                    </View>
+                    <View style={styles.titleContainer}>
+                      <Text
+                        style={[styles.itemTitle, { color: colors.text }]}
+                        numberOfLines={2}
+                      >
+                        {item.title}
+                      </Text>
+                      <Text style={[styles.itemType, { color: typeColor }]}>
+                        {item.type}
+                      </Text>
+                    </View>
                   </View>
-                  <Text
-                    style={[styles.itemTitle, { color: colors.text }]}
-                    numberOfLines={2}
-                  >
-                    {item.title}
-                  </Text>
+
+                  {(item.category || item.date) && (
+                    <View style={styles.metaContainer}>
+                      {item.category && (
+                        <Text
+                          style={[
+                            styles.itemCategory,
+                            { color: colors.textSecondary },
+                          ]}
+                        >
+                          {item.category}
+                        </Text>
+                      )}
+                      <Text
+                        style={[
+                          styles.itemDate,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {item.date}
+                      </Text>
+                    </View>
+                  )}
                 </View>
-                {item.category && (
-                  <Text
-                    style={[
-                      styles.itemCategory,
-                      { color: colors.textSecondary },
-                    ]}
+                <View style={styles.actions}>
+                  <TouchableOpacity
+                    onPress={() => openEditModal(item)}
+                    style={styles.actionBtn}
                   >
-                    {item.category}
-                  </Text>
-                )}
-                <Text
-                  style={[styles.itemDate, { color: colors.textSecondary }]}
-                >
-                  {item.date}
-                </Text>
+                    <Edit2 size={18} color={colors.primary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleDelete(item)}
+                    style={styles.actionBtn}
+                  >
+                    <Trash2 size={18} color="#e74c3c" />
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={styles.actions}>
-                <TouchableOpacity
-                  onPress={() => openEditModal(item)}
-                  style={styles.actionBtn}
-                >
-                  <Edit2 size={18} color={colors.primary} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleDelete(item)}
-                  style={styles.actionBtn}
-                >
-                  <Trash2 size={18} color="#e74c3c" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))
+            );
+          })
         )}
         <View style={styles.bottomSpacer} />
       </ScrollView>
@@ -305,7 +389,8 @@ export default function ContentManager() {
                 />
               )}
 
-              {editingItem?.type === 'song' && (
+              {(editingItem?.type === 'song' ||
+                editingItem?.type === 'sermonVideo') && (
                 <TextInput
                   value={form.category}
                   onChangeText={(t) => setForm({ ...form, category: t })}
@@ -315,6 +400,30 @@ export default function ContentManager() {
                     { backgroundColor: colors.card, color: colors.text },
                   ]}
                 />
+              )}
+
+              {editingItem?.type === 'dailyDevotional' && (
+                <>
+                  <TextInput
+                    value={form.date}
+                    onChangeText={(t) => setForm({ ...form, date: t })}
+                    placeholder="Date (YYYY-MM-DD)"
+                    style={[
+                      styles.input,
+                      { backgroundColor: colors.card, color: colors.text },
+                    ]}
+                  />
+                  <TextInput
+                    value={form.mainText}
+                    onChangeText={(t) => setForm({ ...form, mainText: t })}
+                    placeholder="Main Text"
+                    multiline
+                    style={[
+                      styles.textarea,
+                      { backgroundColor: colors.card, color: colors.text },
+                    ]}
+                  />
+                </>
               )}
             </ScrollView>
 
@@ -372,33 +481,43 @@ const styles = StyleSheet.create({
   itemHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   typeBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 12,
   },
   typeText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 12,
+    fontSize: 14,
+  },
+  titleContainer: {
+    flex: 1,
   },
   itemTitle: {
     fontSize: 16,
     fontWeight: '600',
-    flex: 1,
+    marginBottom: 2,
+  },
+  itemType: {
+    fontSize: 12,
+    fontWeight: '500',
+    textTransform: 'capitalize',
+  },
+  metaContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   itemCategory: {
     fontSize: 13,
-    marginTop: 2,
+    flex: 1,
   },
   itemDate: {
     fontSize: 12,
-    marginTop: 6,
     opacity: 0.7,
   },
   actions: {

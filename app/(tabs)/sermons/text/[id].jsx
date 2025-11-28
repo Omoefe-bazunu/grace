@@ -12,8 +12,7 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
-  ArrowLeft,
-  Calendar,
+  Copy,
   Play,
   Pause,
   Square,
@@ -22,12 +21,12 @@ import {
 } from 'lucide-react-native';
 import { Audio } from 'expo-av';
 import { useLanguage } from '../../../../contexts/LanguageContext';
-import { LanguageSwitcher } from '../../../../components/LanguageSwitcher';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { AudioPlayer } from '../../../../components/AudioPlayer';
 import { getSermon } from '../../../../services/dataService';
 import { apiClient } from '../../../../utils/api';
 import { TopNavigation } from '../../../../components/TopNavigation';
+import * as Clipboard from 'expo-clipboard';
 
 // Constants
 const MAX_CHARS_PER_CHUNK = 4000; // Safe limit for Google TTS
@@ -217,6 +216,28 @@ export default function SermonDetailScreen() {
     }
   };
 
+  //Copy text to Clipboard
+  const handleCopyToClipboard = async () => {
+    try {
+      if (!content?.content) {
+        Alert.alert('No Content', 'There is no content to copy.');
+        return;
+      }
+
+      await Clipboard.setStringAsync(content.content);
+
+      // Show success feedback
+      Alert.alert(
+        'Copied!',
+        'Sermon content has been copied to your clipboard.',
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      Alert.alert('Error', 'Failed to copy content to clipboard.');
+    }
+  };
+
   const handleSpeak = async () => {
     if (isSpeaking && !isPaused) {
       await handlePause();
@@ -380,6 +401,28 @@ export default function SermonDetailScreen() {
             marginBottom: 40,
           }}
         >
+          {/* COPY TO CLIPBOARD BUTTON - ADD THIS BLOCK */}
+          <TouchableOpacity
+            onPress={handleCopyToClipboard}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.primary + '15',
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderRadius: 8,
+              marginBottom: 16,
+              gap: 8,
+            }}
+          >
+            <Copy size={18} color={colors.primary} />
+            <Text
+              style={{ color: colors.primary, fontWeight: '600', fontSize: 14 }}
+            >
+              Copy Text to Clipboard
+            </Text>
+          </TouchableOpacity>
           {/* TTS Controls */}
           <View style={{ marginBottom: 16 }}>
             <Text

@@ -1,5 +1,12 @@
 import { Tabs } from 'expo-router';
-import { Home as HomeIcon, Music, Mic, Video, User } from 'lucide-react-native';
+import {
+  Home as HomeIcon,
+  Music,
+  Mic,
+  Video,
+  User,
+  Podcast,
+} from 'lucide-react-native';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -60,6 +67,16 @@ export default function TabLayout() {
         options={{
           title: translations.animations,
           tabBarIcon: ({ size, color }) => <Video size={size} color={color} />,
+        }}
+      />
+      {/* Live Stream tab */}
+      <Tabs.Screen
+        name="live"
+        options={{
+          title: translations.stream,
+          tabBarIcon: ({ size, color }) => (
+            <Podcast size={size} color={color} />
+          ),
         }}
       />
       {/* Profile tab */}

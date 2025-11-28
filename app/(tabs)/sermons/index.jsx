@@ -23,6 +23,7 @@ import { TopNavigation } from '../../../components/TopNavigation';
 // Removed unused data service imports as core logic is moving
 import debounce from 'lodash.debounce';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Lightbulb } from 'lucide-react';
 
 // We only need the categories list for the new Text Sermons screen
 const SERMON_CATEGORIES = [
@@ -167,6 +168,15 @@ export default function SermonsScreen() {
             }
             icon={Video}
             onPress={() => router.push('/(tabs)/sermons/video')} // You will create this screen
+            colors={colors}
+          />
+
+          {/* 4. Daily Devotional Tile */}
+          <FeatureTile
+            title={translations.dailyGuide || 'Daily Guide'}
+            subtitle={translations.dailyGuide || "Study God's word daily"}
+            icon={BookOpen}
+            onPress={() => router.push('/(tabs)/sermons/daily-guide')} // You will create this screen
             colors={colors}
           />
         </View>

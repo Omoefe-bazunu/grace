@@ -1,3 +1,4 @@
+// api.js (updated - sermon videos and daily devotionals added)
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -134,6 +135,215 @@ export const subscribeToSermons = (callback) => {
     try {
       const response = await get('/api/sermons');
       callback(response.sermons || []);
+    } catch {
+      callback([]);
+    }
+  };
+
+  fetchData();
+  const interval = setInterval(fetchData, 10000);
+  return () => clearInterval(interval);
+};
+
+// === SERMON VIDEOS ===
+export const getSermonVideos = async () => {
+  try {
+    const response = await get('/api/sermonVideos');
+    return response.sermonVideos || [];
+  } catch (error) {
+    console.error('Error fetching sermon videos:', error);
+    return [];
+  }
+};
+
+export const getSermonVideosByCategory = async (category, limit = null) => {
+  try {
+    const params = { category };
+    if (limit) params.limit = limit;
+    const response = await get('/api/sermonVideos', params);
+    return response.sermonVideos || [];
+  } catch (error) {
+    console.error('Error fetching sermon videos by category:', error);
+    return [];
+  }
+};
+
+// Paginated sermon videos
+export const getSermonVideosPaginated = async (limit = 12, after = null) => {
+  try {
+    const params = {
+      limit,
+      sort: 'createdAt',
+      order: 'desc',
+    };
+
+    if (after) params.after = after;
+
+    const data = await get('/api/sermonVideos', params);
+
+    return {
+      sermonVideos: data.sermonVideos || [],
+      hasMore: data.pagination?.hasMore || false,
+      nextCursor: data.pagination?.nextCursor || null,
+      totalCount: data.pagination?.count || 0,
+    };
+  } catch (error) {
+    console.error('Error fetching paginated sermon videos:', error);
+    return {
+      sermonVideos: [],
+      hasMore: false,
+      nextCursor: null,
+      totalCount: 0,
+    };
+  }
+};
+
+// Paginated sermon videos by category
+export const getSermonVideosByCategoryPaginated = async (
+  category,
+  limit = 10,
+  after = null
+) => {
+  try {
+    const params = {
+      category,
+      limit,
+      sort: 'createdAt',
+      order: 'desc',
+    };
+
+    if (after) params.after = after;
+
+    const data = await get('/api/sermonVideos', params);
+
+    return {
+      sermonVideos: data.sermonVideos || [],
+      hasMore: data.pagination?.hasMore || false,
+      nextCursor: data.pagination?.nextCursor || null,
+      totalCount: data.pagination?.count || 0,
+    };
+  } catch (error) {
+    console.error('Error fetching paginated sermon videos by category:', error);
+
+    // Fallback: fetch all and filter client-side
+    if (error.message?.includes('index')) {
+      console.warn('Index not ready, using fallback');
+      try {
+        const allVideos = await getSermonVideosPaginated(100, null);
+        const filtered = allVideos.sermonVideos.filter(
+          (v) => v.category === category
+        );
+        return {
+          sermonVideos: filtered.slice(0, limit),
+          hasMore: filtered.length > limit,
+          nextCursor: filtered[limit - 1]?.id || null,
+          totalCount: filtered.length,
+        };
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+      }
+    }
+
+    return {
+      sermonVideos: [],
+      hasMore: false,
+      nextCursor: null,
+      totalCount: 0,
+    };
+  }
+};
+
+export const getSermonVideo = async (videoId) => {
+  try {
+    const video = await get(`/api/sermonVideos/${videoId}`);
+    return video ? formatSermonVideo(video) : null;
+  } catch {
+    return null;
+  }
+};
+
+export const subscribeToSermonVideos = (callback) => {
+  const fetchData = async () => {
+    try {
+      const response = await get('/api/sermonVideos');
+      callback(response.sermonVideos || []);
+    } catch {
+      callback([]);
+    }
+  };
+
+  fetchData();
+  const interval = setInterval(fetchData, 10000);
+  return () => clearInterval(interval);
+};
+
+// === DAILY DEVOTIONALS ===
+export const getDailyDevotionals = async () => {
+  try {
+    const response = await get('/api/dailyDevotionals');
+    return response.dailyDevotionals || [];
+  } catch (error) {
+    console.error('Error fetching daily devotionals:', error);
+    return [];
+  }
+};
+
+// Paginated daily devotionals
+export const getDailyDevotionalsPaginated = async (
+  limit = 10,
+  after = null
+) => {
+  try {
+    const params = {
+      limit,
+      sort: 'date',
+      order: 'desc',
+    };
+
+    if (after) params.after = after;
+
+    const data = await get('/api/dailyDevotionals', params);
+
+    return {
+      dailyDevotionals: data.dailyDevotionals || [],
+      hasMore: data.pagination?.hasMore || false,
+      nextCursor: data.pagination?.nextCursor || null,
+      totalCount: data.pagination?.count || 0,
+    };
+  } catch (error) {
+    console.error('Error fetching paginated daily devotionals:', error);
+    return {
+      dailyDevotionals: [],
+      hasMore: false,
+      nextCursor: null,
+      totalCount: 0,
+    };
+  }
+};
+
+export const getDailyDevotional = async (devotionalId) => {
+  try {
+    const devotional = await get(`/api/dailyDevotionals/${devotionalId}`);
+    return devotional ? formatDailyDevotional(devotional) : null;
+  } catch {
+    return null;
+  }
+};
+
+export const getDailyDevotionalByDate = async (date) => {
+  try {
+    const devotionals = await getDailyDevotionals();
+    return devotionals.find((devotional) => devotional.date === date) || null;
+  } catch {
+    return null;
+  }
+};
+
+export const subscribeToDailyDevotionals = (callback) => {
+  const fetchData = async () => {
+    try {
+      const response = await get('/api/dailyDevotionals');
+      callback(response.dailyDevotionals || []);
     } catch {
       callback([]);
     }
@@ -496,11 +706,14 @@ export const subscribeToContactMessages = (callback) => {
 // === RECENT CONTENT ===
 export const getRecentContent = async () => {
   try {
-    const [sermonsRes, songsRes, videosRes] = await Promise.all([
-      get('/api/sermons', { limit: 3 }),
-      get('/api/songs', { limit: 3 }),
-      get('/api/videos', { limit: 3 }),
-    ]);
+    const [sermonsRes, songsRes, videosRes, sermonVideosRes, devotionalsRes] =
+      await Promise.all([
+        get('/api/sermons', { limit: 3 }),
+        get('/api/songs', { limit: 3 }),
+        get('/api/videos', { limit: 3 }),
+        get('/api/sermonVideos', { limit: 3 }),
+        get('/api/dailyDevotionals', { limit: 3 }),
+      ]);
 
     // FILTER: Only text sermons (client-side, safe)
     const textSermons = (sermonsRes.sermons || [])
@@ -512,10 +725,20 @@ export const getRecentContent = async () => {
       sermons: textSermons,
       songs: (songsRes.songs || []).map(formatSong),
       videos: (videosRes.videos || []).map(formatVideo),
+      sermonVideos: (sermonVideosRes.sermonVideos || []).map(formatSermonVideo),
+      dailyDevotionals: (devotionalsRes.dailyDevotionals || []).map(
+        formatDailyDevotional
+      ),
     };
   } catch (error) {
     console.error('getRecentContent ERROR:', error.response || error);
-    return { sermons: [], songs: [], videos: [] };
+    return {
+      sermons: [],
+      songs: [],
+      videos: [],
+      sermonVideos: [],
+      dailyDevotionals: [],
+    };
   }
 };
 
@@ -523,11 +746,14 @@ export const getRecentContent = async () => {
 export const searchContent = async (searchTerm, category = null) => {
   try {
     const term = searchTerm.toLowerCase();
-    const [allSermons, allSongs, allVideos] = await Promise.all([
-      getSermons(),
-      getSongs(),
-      getVideos(),
-    ]);
+    const [allSermons, allSongs, allVideos, allSermonVideos, allDevotionals] =
+      await Promise.all([
+        getSermons(),
+        getSongs(),
+        getVideos(),
+        getSermonVideos(),
+        getDailyDevotionals(),
+      ]);
 
     return {
       sermons: allSermons.filter(
@@ -541,9 +767,23 @@ export const searchContent = async (searchTerm, category = null) => {
           (!category || s.category === category)
       ),
       videos: allVideos.filter((v) => v.title.toLowerCase().includes(term)),
+      sermonVideos: allSermonVideos.filter((v) =>
+        v.title.toLowerCase().includes(term)
+      ),
+      dailyDevotionals: allDevotionals.filter(
+        (d) =>
+          d.title.toLowerCase().includes(term) ||
+          d.mainText.toLowerCase().includes(term)
+      ),
     };
   } catch {
-    return { sermons: [], songs: [], videos: [] };
+    return {
+      sermons: [],
+      songs: [],
+      videos: [],
+      sermonVideos: [],
+      dailyDevotionals: [],
+    };
   }
 };
 
@@ -558,10 +798,18 @@ export const searchContentPaginated = async (
     const term = searchTerm.toLowerCase();
 
     // Fetch more items initially for better search results
-    const [sermonsData, songsData, videosData] = await Promise.all([
+    const [
+      sermonsData,
+      songsData,
+      videosData,
+      sermonVideosData,
+      devotionalsData,
+    ] = await Promise.all([
       getSermonsPaginated(100, null),
       getSongsPaginated(100, null),
       getVideosPaginated(100, null),
+      getSermonVideosPaginated(100, null),
+      getDailyDevotionalsPaginated(100, null),
     ]);
 
     const filteredSermons = sermonsData.sermons.filter(
@@ -580,11 +828,23 @@ export const searchContentPaginated = async (
       v.title.toLowerCase().includes(term)
     );
 
+    const filteredSermonVideos = sermonVideosData.sermonVideos.filter((v) =>
+      v.title.toLowerCase().includes(term)
+    );
+
+    const filteredDevotionals = devotionalsData.dailyDevotionals.filter(
+      (d) =>
+        d.title.toLowerCase().includes(term) ||
+        d.mainText.toLowerCase().includes(term)
+    );
+
     // Combine and sort all results
     const allResults = [
       ...filteredSermons.map((s) => ({ ...s, type: 'sermon' })),
       ...filteredSongs.map((s) => ({ ...s, type: 'song' })),
       ...filteredVideos.map((v) => ({ ...v, type: 'video' })),
+      ...filteredSermonVideos.map((v) => ({ ...v, type: 'sermonVideo' })),
+      ...filteredDevotionals.map((d) => ({ ...d, type: 'dailyDevotional' })),
     ].sort((a, b) => a.title.localeCompare(b.title));
 
     // Apply cursor-based pagination
@@ -605,6 +865,12 @@ export const searchContentPaginated = async (
       videos: paginatedResults
         .filter((item) => item.type === 'video')
         .map(({ type, ...item }) => item),
+      sermonVideos: paginatedResults
+        .filter((item) => item.type === 'sermonVideo')
+        .map(({ type, ...item }) => item),
+      dailyDevotionals: paginatedResults
+        .filter((item) => item.type === 'dailyDevotional')
+        .map(({ type, ...item }) => item),
     };
 
     const lastItem = paginatedResults[paginatedResults.length - 1];
@@ -623,9 +889,127 @@ export const searchContentPaginated = async (
       sermons: [],
       songs: [],
       videos: [],
+      sermonVideos: [],
+      dailyDevotionals: [],
       pagination: { hasMore: false, nextCursor: null, totalCount: 0 },
     };
   }
+};
+
+// === LIVE STREAMS ===
+export const getLiveStreams = async () => {
+  try {
+    const response = await get('/api/liveStreams');
+    return response.liveStreams || [];
+  } catch (error) {
+    console.error('Error fetching live streams:', error);
+    return [];
+  }
+};
+
+export const getActiveLiveStreams = async () => {
+  try {
+    // First try the specific active endpoint
+    try {
+      const response = await get('/api/liveStreams/active');
+      return response.liveStreams || [];
+    } catch (activeError) {
+      // If active endpoint fails, get all and filter client-side
+      console.log('Active endpoint failed, filtering client-side');
+      const allStreams = await getLiveStreams();
+      return allStreams.filter((stream) => stream.isActive === true);
+    }
+  } catch (error) {
+    console.error('Error fetching active live streams:', error);
+    return [];
+  }
+};
+
+export const getLiveStream = async (streamId) => {
+  try {
+    const stream = await get(`/api/liveStreams/${streamId}`);
+    return stream ? formatLiveStream(stream) : null;
+  } catch {
+    return null;
+  }
+};
+
+export const createLiveStream = async (streamData) => {
+  try {
+    const response = await post('/api/liveStreams', streamData);
+    return response;
+  } catch (error) {
+    console.error('Error creating live stream:', error);
+    throw error;
+  }
+};
+
+export const updateLiveStream = async (streamId, streamData) => {
+  try {
+    const response = await put(`/api/liveStreams/${streamId}`, streamData);
+    return response;
+  } catch (error) {
+    console.error('Error updating live stream:', error);
+    throw error;
+  }
+};
+
+export const deleteLiveStream = async (streamId) => {
+  try {
+    const response = await del(`/api/liveStreams/${streamId}`);
+    return response;
+  } catch (error) {
+    console.error('Error deleting live stream:', error);
+    throw error;
+  }
+};
+
+export const subscribeToLiveStreams = (callback) => {
+  const fetchData = async () => {
+    try {
+      const response = await get('/api/liveStreams/active');
+      callback(response.liveStreams || []);
+    } catch {
+      callback([]);
+    }
+  };
+
+  fetchData();
+  const interval = setInterval(fetchData, 30000); // Update every 30 seconds
+  return () => clearInterval(interval);
+};
+
+// Format live stream data
+const formatLiveStream = (stream) => ({
+  id: stream.id,
+  title: stream.title,
+  description: stream.description,
+  streamUrl: stream.streamUrl,
+  streamType: stream.streamType || 'hls',
+  isActive: stream.isActive || false,
+  schedule: stream.schedule || '',
+  thumbnailUrl: stream.thumbnailUrl,
+  customData: stream.customData || {},
+  uploadedBy: stream.uploadedBy,
+  createdAt: stream.createdAt,
+  updatedAt: stream.updatedAt,
+});
+
+// Helper to generate platform-specific URLs
+export const generateStreamUrl = (streamType, customData) => {
+  const generators = {
+    youtube: (data) => `https://www.youtube.com/embed/${data.videoId}`,
+    facebook: (data) =>
+      `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(
+        data.videoUrl
+      )}`,
+    hls: (data) => data.streamUrl,
+    rtmp: (data) => data.streamUrl,
+    obs: (data) => data.streamUrl,
+  };
+
+  const generator = generators[streamType] || generators.hls;
+  return generator(customData);
 };
 
 // === FORMATTERS ===
@@ -640,6 +1024,32 @@ const formatSermon = (s) => ({
   duration: s.duration || null,
   uploadedBy: s.uploadedBy,
   createdAt: s.createdAt,
+});
+
+const formatSermonVideo = (v) => ({
+  id: v.id,
+  title: v.title,
+  category: v.category || null,
+  videoUrl: v.videoUrl,
+  date:
+    v.date ||
+    v.createdAt?.split('T')[0] ||
+    new Date().toISOString().split('T')[0],
+  duration: v.duration || null,
+  uploadedBy: v.uploadedBy,
+  createdAt: v.createdAt,
+});
+
+const formatDailyDevotional = (d) => ({
+  id: d.id,
+  title: d.title,
+  mainText: d.mainText || '',
+  date:
+    d.date ||
+    d.createdAt?.split('T')[0] ||
+    new Date().toISOString().split('T')[0],
+  uploadedBy: d.uploadedBy,
+  createdAt: d.createdAt,
 });
 
 const formatSong = (s) => ({

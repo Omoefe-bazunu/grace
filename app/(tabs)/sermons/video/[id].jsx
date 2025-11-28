@@ -10,11 +10,11 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import * as Clipboard from 'expo-clipboard';
-import { ArrowLeft, Share2 } from 'lucide-react-native';
+import { ArrowLeft, Share2, Calendar, Folder } from 'lucide-react-native';
 import { LanguageSwitcher } from '../../../../components/LanguageSwitcher';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { useLanguage } from '../../../../contexts/LanguageContext';
-import { getVideo } from '../../../../services/dataService';
+import { getVideo, getSermonVideo } from '../../../../services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
@@ -68,6 +68,7 @@ export default function AnimationDetailScreen() {
   const { id } = useLocalSearchParams();
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [videoType, setVideoType] = useState('video'); // 'video' or 'sermonVideo'
   const { translations } = useLanguage();
   const { colors } = useTheme();
 
@@ -77,11 +78,37 @@ export default function AnimationDetailScreen() {
   useEffect(() => {
     const fetchVideo = async () => {
       try {
-        const videoData = await getVideo(id);
-        setVideo(videoData);
+        // Try to fetch as regular video first
+        let videoData = await getVideo(id);
+
+        if (videoData) {
+          setVideo(videoData);
+          setVideoType('video');
+        } else {
+          // If not found, try as sermon video
+          videoData = await getSermonVideo(id);
+          if (videoData) {
+            setVideo(videoData);
+            setVideoType('sermonVideo');
+          } else {
+            setVideo(null);
+          }
+        }
       } catch (error) {
         console.error('Error fetching video:', error);
-        setVideo(null);
+        // Try alternative approach - check if it's a sermon video
+        try {
+          const sermonVideoData = await getSermonVideo(id);
+          if (sermonVideoData) {
+            setVideo(sermonVideoData);
+            setVideoType('sermonVideo');
+          } else {
+            setVideo(null);
+          }
+        } catch (secondError) {
+          console.error('Error fetching sermon video:', secondError);
+          setVideo(null);
+        }
       } finally {
         setLoading(false);
       }
@@ -107,12 +134,45 @@ export default function AnimationDetailScreen() {
 
   const handleShare = async () => {
     try {
+      const shareMessage =
+        videoType === 'sermonVideo'
+          ? `Sermon Video: ${video.title}\nCategory: ${
+              video.category || 'No category'
+            }\n${video.videoUrl}`
+          : `${video.title || translations.noTitle}: ${video.videoUrl}`;
+
       await Share.share({
-        message: `${video.title || translations.noTitle}: ${video.videoUrl}`,
-        title: translations.shareVideo || 'Share Video',
+        message: shareMessage,
+        title:
+          videoType === 'sermonVideo' ? 'Share Sermon Video' : 'Share Video',
       });
     } catch (error) {
       console.error('Error sharing video:', error);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown date';
+
+    try {
+      // Assuming dateString is in YYYY-MM-DD format
+      const [year, month, day] = dateString.split('-');
+
+      // Create date object (month is 0-indexed in JavaScript)
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return dateString;
+      }
+
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    } catch {
+      return dateString;
     }
   };
 
@@ -138,14 +198,16 @@ export default function AnimationDetailScreen() {
     >
       {/* Header */}
       <TopNavigation showBackButton={true} />
+
       {/* Video Player - with native controls */}
       <View style={styles.videoContainer}>
         <VideoView
           style={styles.videoPlayer}
           player={player}
-          // THIS IS THE KEY CHANGE
           nativeControls={true}
           contentFit="contain"
+          allowsFullscreen={true}
+          allowsPictureInPicture={true}
         />
       </View>
 
@@ -154,15 +216,50 @@ export default function AnimationDetailScreen() {
         <Text style={[styles.title, { color: colors.text }]}>
           {video.title || translations.noTitle}
         </Text>
+
+        {/* Sermon Video Specific Info */}
+        {videoType === 'sermonVideo' && (
+          <View style={styles.sermonMeta}>
+            {video.category && (
+              <View
+                style={[
+                  styles.metaItem,
+                  { backgroundColor: colors.primary + '15' },
+                ]}
+              >
+                <Folder size={16} color={colors.primary} />
+                <Text style={[styles.metaItemText, { color: colors.primary }]}>
+                  {video.category}
+                </Text>
+              </View>
+            )}
+            {video.date && (
+              <View
+                style={[
+                  styles.metaItem,
+                  { backgroundColor: colors.primary + '15' },
+                ]}
+              >
+                <Calendar size={16} color={colors.primary} />
+                <Text style={[styles.metaItemText, { color: colors.primary }]}>
+                  {formatDate(video.date)}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
         <View style={styles.metaInfo}>
-          {/* <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-            {translations.duration}:{' '}
-            {video.duration || translations.unknownDuration}
-          </Text> */}
-          {/* <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-            {translations.language}:{' '}
-            {video.languageCategory || translations.unknownCategory}
-          </Text> */}
+          {video.duration && (
+            <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+              Duration: {video.duration}
+            </Text>
+          )}
+          {video.languageCategory && videoType === 'video' && (
+            <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+              Language: {video.languageCategory}
+            </Text>
+          )}
         </View>
       </View>
 
@@ -225,13 +322,33 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 12,
-    marginHorizontal: 'auto',
+    marginBottom: 16,
     textAlign: 'center',
+    lineHeight: 28,
+  },
+  sermonMeta: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+    justifyContent: 'center',
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  metaItemText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   metaInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   metaText: {
     fontSize: 14,
@@ -252,6 +369,7 @@ const styles = StyleSheet.create({
   controlText: {
     fontSize: 12,
     fontWeight: '600',
+    marginTop: 4,
   },
   error: {
     fontSize: 18,

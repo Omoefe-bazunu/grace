@@ -1,4 +1,4 @@
-// UploadScreen.tsx (updated - sermon categories added)
+// UploadScreen.tsx (updated - sermon videos and daily devotional added)
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -35,6 +35,7 @@ export default function UploadScreen() {
   const [formData, setFormData] = useState({});
   const [isUploading, setIsUploading] = useState(false);
   const [songCategories, setSongCategories] = useState([]);
+  const [sermonVideoCategories, setSermonVideoCategories] = useState([]);
   const [newCategory, setNewCategory] = useState('');
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
@@ -44,6 +45,8 @@ export default function UploadScreen() {
   useEffect(() => {
     if (type === 'song') {
       fetchSongCategories();
+    } else if (type === 'sermonVideo') {
+      fetchSermonVideoCategories();
     }
   }, [type]);
 
@@ -51,7 +54,6 @@ export default function UploadScreen() {
     try {
       const res = await apiClient.get('songs');
       const categories = new Set();
-      // Backend now returns { songs: [...], pagination: {...} }
       const songs = res.data.songs || res.data || [];
       songs.forEach((song) => {
         if (song.category?.trim()) categories.add(song.category.trim());
@@ -60,6 +62,21 @@ export default function UploadScreen() {
     } catch (err) {
       console.error('Failed to load categories:', err);
       Alert.alert('Error', 'Failed to load song categories');
+    }
+  };
+
+  const fetchSermonVideoCategories = async () => {
+    try {
+      const res = await apiClient.get('sermonVideos');
+      const categories = new Set();
+      const sermonVideos = res.data.sermonVideos || res.data || [];
+      sermonVideos.forEach((video) => {
+        if (video.category?.trim()) categories.add(video.category.trim());
+      });
+      setSermonVideoCategories(Array.from(categories).sort());
+    } catch (err) {
+      console.error('Failed to load sermon video categories:', err);
+      Alert.alert('Error', 'Failed to load sermon video categories');
     }
   };
 
@@ -88,7 +105,7 @@ export default function UploadScreen() {
     }
   };
 
-  const pickVideo = async () => {
+  const pickVideo = async (field = 'videoUrl') => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: ['video/*'],
@@ -97,7 +114,7 @@ export default function UploadScreen() {
       if (result.canceled) return;
       const file = result.assets[0];
       await uploadFile(
-        'videoUrl',
+        field,
         file.uri,
         file.name,
         file.mimeType,
@@ -124,6 +141,8 @@ export default function UploadScreen() {
           ? 'songs'
           : type === 'sermonAudio'
           ? 'sermons'
+          : type === 'sermonVideo'
+          ? 'sermonVideos'
           : 'videos';
       const destinationPath = `${folder}/${Date.now()}_${fileName}`;
       const uploadResponse = await apiClient.upload(
@@ -149,11 +168,21 @@ export default function UploadScreen() {
       Alert.alert('Invalid Category', 'Category name cannot be empty');
       return;
     }
-    if (songCategories.includes(categoryName)) {
-      Alert.alert('Category Exists', 'This category already exists');
-      return;
+
+    if (type === 'song') {
+      if (songCategories.includes(categoryName)) {
+        Alert.alert('Category Exists', 'This category already exists');
+        return;
+      }
+      setSongCategories((prev) => [...prev, categoryName].sort());
+    } else if (type === 'sermonVideo') {
+      if (sermonVideoCategories.includes(categoryName)) {
+        Alert.alert('Category Exists', 'This category already exists');
+        return;
+      }
+      setSermonVideoCategories((prev) => [...prev, categoryName].sort());
     }
-    setSongCategories((prev) => [...prev, categoryName].sort());
+
     updateField('category', categoryName);
     setNewCategory('');
     setShowAddCategory(false);
@@ -173,6 +202,19 @@ export default function UploadScreen() {
       return (
         formData.title?.trim() && formData.date?.trim() && formData.audioUrl
       );
+    if (type === 'sermonVideo')
+      return (
+        formData.title?.trim() &&
+        formData.date?.trim() &&
+        formData.videoUrl &&
+        formData.category
+      );
+    if (type === 'dailyDevotional')
+      return (
+        formData.title?.trim() &&
+        formData.date?.trim() &&
+        formData.mainText?.trim()
+      );
     if (type === 'quiz') return formData.title?.trim();
     return false;
   };
@@ -188,6 +230,7 @@ export default function UploadScreen() {
         title: formData.title?.trim() || '',
         category: formData.category || '',
         content: formData.content?.trim() || '',
+        mainText: formData.mainText?.trim() || '',
         date: formData.date || '',
         audioUrl: formData.audioUrl || '',
         videoUrl: formData.videoUrl || '',
@@ -198,6 +241,8 @@ export default function UploadScreen() {
       if (type === 'song') collectionName = 'songs';
       else if (type === 'sermon' || type === 'sermonAudio')
         collectionName = 'sermons';
+      else if (type === 'sermonVideo') collectionName = 'sermonVideos';
+      else if (type === 'dailyDevotional') collectionName = 'dailyDevotionals';
       else collectionName = `${type}s`;
 
       const response = await apiClient.post(collectionName, payload);
@@ -212,7 +257,6 @@ export default function UploadScreen() {
             {
               text: 'OK',
               onPress: async () => {
-                // Trigger audio generation in background (don't wait)
                 apiClient
                   .generateSermonAudio(sermonId, 'en-US', 'en-US-Neural2-F')
                   .then(() => console.log('TTS generated for sermon', sermonId))
@@ -326,6 +370,122 @@ export default function UploadScreen() {
             <Text style={styles.uploadButtonText}>Select Audio File *</Text>
           </TouchableOpacity>
           {getUploadStatusUI('audioUrl')}
+        </View>
+      );
+    }
+
+    if (type === 'sermonVideo') {
+      return (
+        <View style={styles.fieldBlock}>
+          <Text style={styles.label}>Category *</Text>
+          <ScrollView
+            horizontal
+            style={styles.categoryScroll}
+            showsHorizontalScrollIndicator={false}
+          >
+            {sermonVideoCategories.map((category) => (
+              <TouchableOpacity
+                key={category}
+                style={[
+                  styles.categoryChip,
+                  formData.category === category && styles.categoryChipActive,
+                ]}
+                onPress={() => updateField('category', category)}
+                disabled={isUploading}
+              >
+                <Text
+                  style={[
+                    styles.categoryChipText,
+                    formData.category === category &&
+                      styles.categoryChipTextActive,
+                  ]}
+                >
+                  {category}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={styles.addCategoryButton}
+              onPress={() => setShowAddCategory(true)}
+              disabled={isUploading}
+            >
+              <Plus size={16} color="#1E3A8A" />
+              <Text style={styles.addCategoryText}>Add</Text>
+            </TouchableOpacity>
+          </ScrollView>
+          {showAddCategory && (
+            <View style={styles.addCategoryRow}>
+              <TextInput
+                placeholder="Enter new category name"
+                value={newCategory}
+                onChangeText={setNewCategory}
+                style={styles.categoryInput}
+                autoFocus
+                editable={!isUploading}
+              />
+              <TouchableOpacity
+                onPress={addCategory}
+                style={styles.categoryAddButton}
+                disabled={isUploading}
+              >
+                <Text style={styles.categoryAddButtonText}>Add</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowAddCategory(false);
+                  setNewCategory('');
+                }}
+                disabled={isUploading}
+              >
+                <X size={20} color="#666" />
+              </TouchableOpacity>
+            </View>
+          )}
+          <Text style={styles.label}>Date *</Text>
+          <TextInput
+            placeholder="YYYY-MM-DD"
+            value={formData.date || ''}
+            onChangeText={(value) => updateField('date', value)}
+            style={styles.dateInput}
+            editable={!isUploading}
+          />
+          <Text style={styles.infoText}>
+            Max file size: {FILE_SIZE_LIMITS.video}MB
+          </Text>
+          <TouchableOpacity
+            style={[styles.uploadButton, isUploading && styles.disabled]}
+            onPress={() => pickVideo('videoUrl')}
+            disabled={isUploading}
+          >
+            <Upload size={20} color="#1E3A8A" />
+            <Text style={styles.uploadButtonText}>Select Video File *</Text>
+          </TouchableOpacity>
+          {getUploadStatusUI('videoUrl')}
+        </View>
+      );
+    }
+
+    if (type === 'dailyDevotional') {
+      return (
+        <View style={styles.fieldBlock}>
+          <Text style={styles.label}>Date *</Text>
+          <TextInput
+            placeholder="YYYY-MM-DD"
+            value={formData.date || ''}
+            onChangeText={(value) => updateField('date', value)}
+            style={styles.dateInput}
+            editable={!isUploading}
+          />
+          <Input
+            label="Main Text *"
+            value={formData.mainText || ''}
+            onChangeText={(value) => updateField('mainText', value)}
+            multiline
+            numberOfLines={6}
+            placeholder="Enter daily devotional main text..."
+            style={styles.textArea}
+            editable={!isUploading}
+          />
         </View>
       );
     }
@@ -466,8 +626,10 @@ export default function UploadScreen() {
       notice: 'Add Notice',
       sermon: 'Add Text Sermon',
       sermonAudio: 'Upload Sermon Audio',
+      sermonVideo: 'Upload Sermon Video',
       song: 'Upload Song',
       video: 'Upload Animation Video',
+      dailyDevotional: 'Add Daily Devotional',
       quiz: 'Add Quiz Resource',
     };
     return titles[type] || 'Upload';

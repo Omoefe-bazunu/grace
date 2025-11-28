@@ -19,6 +19,9 @@ import {
   Bell,
   Mic,
   FileText,
+  PlayCircle,
+  BookOpen,
+  Podcast,
 } from 'lucide-react-native';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { LanguageSwitcher } from '../../../../components/LanguageSwitcher';
@@ -79,6 +82,21 @@ export default function AdminDashboardScreen() {
       onPress: () => router.push('/(tabs)/profile/admin/upload/sermonAudio'),
     },
     {
+      id: 'upload-sermon-video',
+      title: 'Upload Sermon Video',
+      description: 'Add sermon videos with categories',
+      icon: <PlayCircle size={32} color="#1E3A8A" />,
+      onPress: () => router.push('/(tabs)/profile/admin/upload/sermonVideo'),
+    },
+    {
+      id: 'upload-daily-devotional',
+      title: 'Daily Devotional',
+      description: 'Add daily devotional guides',
+      icon: <BookOpen size={32} color="#1E3A8A" />,
+      onPress: () =>
+        router.push('/(tabs)/profile/admin/upload/dailyDevotional'),
+    },
+    {
       id: 'view-messages',
       title: 'View Messages',
       description: 'Check contact form submissions',
@@ -112,6 +130,13 @@ export default function AdminDashboardScreen() {
       description: 'View, edit, and delete all contents',
       icon: <FileText size={32} color="#7C3AED" />,
       onPress: () => router.push('/(tabs)/profile/admin/contentmanager'),
+    },
+    {
+      id: 'manage-live-streams',
+      title: 'Live Streams',
+      description: 'Manage live streaming services',
+      icon: <Podcast size={32} color="#1E3A8A" />,
+      onPress: () => router.push('/(tabs)/profile/admin/livestreammanager'),
     },
     {
       id: 'reset-onboarding',
