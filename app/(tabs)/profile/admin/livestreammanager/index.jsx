@@ -19,8 +19,6 @@ import {
   Edit2,
   Trash2,
   X,
-  Play,
-  Pause,
   Youtube,
   Facebook,
   Video,
@@ -35,7 +33,6 @@ import {
   createLiveStream,
   updateLiveStream,
   deleteLiveStream,
-  generateStreamUrl,
 } from '../../../../../services/dataService';
 
 const STREAM_TYPES = [
@@ -62,7 +59,7 @@ export default function LiveStreamManager() {
     isActive: false,
     schedule: '',
     thumbnailUrl: '',
-    customData: { videoId: '', videoUrl: '' },
+    customData: {},
   });
 
   useEffect(() => {
@@ -91,7 +88,7 @@ export default function LiveStreamManager() {
       isActive: false,
       schedule: '',
       thumbnailUrl: '',
-      customData: { videoId: '', videoUrl: '' },
+      customData: {},
     });
     setModalVisible(true);
   };
@@ -106,7 +103,7 @@ export default function LiveStreamManager() {
       isActive: stream.isActive,
       schedule: stream.schedule,
       thumbnailUrl: stream.thumbnailUrl,
-      customData: stream.customData || { videoId: '', videoUrl: '' },
+      customData: stream.customData || {},
     });
     setModalVisible(true);
   };
@@ -181,8 +178,6 @@ export default function LiveStreamManager() {
   };
 
   const renderFormFields = () => {
-    const streamType = getStreamTypeConfig(form.streamType);
-
     return (
       <ScrollView style={styles.formContent}>
         {/* Stream Type Selection */}
@@ -253,10 +248,12 @@ export default function LiveStreamManager() {
           onChangeText={(text) => setForm({ ...form, description: text })}
           style={[
             styles.input,
+            styles.textArea,
             { backgroundColor: colors.card, color: colors.text },
           ]}
           placeholderTextColor={colors.textSecondary}
           multiline
+          numberOfLines={4}
         />
 
         {/* Platform-specific URL Fields */}
@@ -499,7 +496,7 @@ export default function LiveStreamManager() {
           <View
             style={[
               styles.modalContent,
-              { backgroundColor: colors.background, marginBottom: 20 },
+              { backgroundColor: colors.background },
             ]}
           >
             <View style={styles.modalHeader}>
@@ -534,13 +531,7 @@ export default function LiveStreamManager() {
                 {saving ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text
-                    style={{
-                      color: '#fff',
-                      fontWeight: '600',
-                      marginBottom: 12,
-                    }}
-                  >
+                  <Text style={{ color: '#fff', fontWeight: '600' }}>
                     {editingStream ? 'Update' : 'Create'}
                   </Text>
                 )}
@@ -720,6 +711,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 16,
     fontSize: 16,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
   },
   switchContainer: {
     flexDirection: 'row',

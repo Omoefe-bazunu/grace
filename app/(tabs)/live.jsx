@@ -1,5 +1,5 @@
-// app/(tabs)/live/LiveStreamScreen.jsx
-import React, { useState, useEffect } from 'react';
+// app/(tabs)/live/LiveStreamScreen.jsx - COMPLETELY FIXED
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,54 +7,86 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  RefreshControl,
   Alert,
+  Linking,
+  Platform,
+  Dimensions,
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
+import { RefreshCw, ExternalLink, Play } from 'lucide-react-native';
+import { WebView } from 'react-native-webview';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../components/TopNavigation';
 import { useTheme } from '../../contexts/ThemeContext';
-import { getActiveLiveStreams } from '../../services/dataService';
+import {
+  getActiveLiveStreams,
+  getYouTubeVideoId,
+} from '../../services/dataService';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 export default function LiveStreamScreen() {
   const { colors } = useTheme();
   const [streams, setStreams] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [videoLoading, setVideoLoading] = useState({});
   const [videoErrors, setVideoErrors] = useState({});
+  const webViewRefs = useRef({});
 
   useEffect(() => {
-    const loadStreams = async () => {
-      try {
-        setError(null);
-        const activeStreams = await getActiveLiveStreams();
-        setStreams(activeStreams);
-
-        // Initialize video loading states
-        const loadingStates = {};
-        const errorStates = {};
-        activeStreams.forEach((stream) => {
-          loadingStates[stream.id] = true;
-          errorStates[stream.id] = false;
-        });
-        setVideoLoading(loadingStates);
-        setVideoErrors(errorStates);
-      } catch (error) {
-        console.error('Error loading streams:', error);
-        setError('Failed to load streams. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
     loadStreams();
   }, []);
 
+  const loadStreams = async () => {
+    try {
+      setError(null);
+      console.log('Loading active streams...');
+
+      const activeStreams = await getActiveLiveStreams();
+      console.log('Loaded streams:', activeStreams);
+
+      setStreams(activeStreams);
+
+      // Initialize video loading states
+      const loadingStates = {};
+      const errorStates = {};
+      activeStreams.forEach((stream) => {
+        loadingStates[stream.id] = true;
+        errorStates[stream.id] = false;
+      });
+      setVideoLoading(loadingStates);
+      setVideoErrors(errorStates);
+    } catch (error) {
+      console.error('Error loading streams:', error);
+      setError('Failed to load streams. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadStreams();
+    } catch (error) {
+      console.error('Error refreshing streams:', error);
+      Alert.alert('Refresh Failed', 'Could not refresh streams');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const handleVideoLoadStart = (streamId) => {
+    console.log(`Video load start: ${streamId}`);
     setVideoLoading((prev) => ({ ...prev, [streamId]: true }));
     setVideoErrors((prev) => ({ ...prev, [streamId]: false }));
   };
 
   const handleVideoLoad = (streamId) => {
+    console.log(`Video loaded successfully: ${streamId}`);
     setVideoLoading((prev) => ({ ...prev, [streamId]: false }));
   };
 
@@ -62,6 +94,164 @@ export default function LiveStreamScreen() {
     console.error(`Video error for stream ${streamId}:`, error);
     setVideoLoading((prev) => ({ ...prev, [streamId]: false }));
     setVideoErrors((prev) => ({ ...prev, [streamId]: true }));
+  };
+
+  const openInBrowser = (url) => {
+    Linking.openURL(url).catch((err) =>
+      Alert.alert('Error', 'Could not open link')
+    );
+  };
+
+  const renderYouTubePlayer = (stream) => {
+    const videoId = getYouTubeVideoId(stream.streamUrl) || stream.originalUrl;
+    if (!videoId) return renderFallbackPlayer(stream);
+
+    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0&modestbranding=1&fs=1`;
+
+    return (
+      <View style={styles.videoContainer}>
+        <WebView
+          key={`yt-${stream.id}`}
+          source={{ uri: embedUrl }}
+          style={styles.webView}
+          allowsInlineMediaPlayback={true}
+          mediaPlaybackRequiresUserAction={false}
+          allowsFullscreenVideo={true}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          startInLoadingState={true}
+          scrollEnabled={false}
+          bounces={false}
+          overScrollMode="never"
+          scalesPageToFit={false}
+          mixedContentMode="compatibility"
+          onLoadStart={() => handleVideoLoadStart(stream.id)}
+          onLoadEnd={() => setTimeout(() => handleVideoLoad(stream.id), 2000)}
+          onError={(e) => handleVideoError(stream.id, e.nativeEvent)}
+          onHttpError={(e) => handleVideoError(stream.id, e.nativeEvent)}
+          userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1"
+        />
+        {videoLoading[stream.id] && (
+          <View style={styles.videoLoadingOverlay}>
+            <ActivityIndicator size="large" color="#fff" />
+            <Text style={styles.videoLoadingText}>Loading stream...</Text>
+          </View>
+        )}
+        {videoErrors[stream.id] && (
+          <View style={styles.videoErrorOverlay}>
+            <Text style={styles.videoErrorText}>Stream unavailable</Text>
+            <TouchableOpacity
+              style={styles.openBrowserButton}
+              onPress={() =>
+                openInBrowser(`https://youtube.com/watch?v=${videoId}`)
+              }
+            >
+              <ExternalLink size={16} color="#fff" />
+              <Text style={styles.openBrowserText}>Open in YouTube</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderHLSPlayer = (stream) => {
+    return (
+      <View style={styles.videoContainer}>
+        <Video
+          source={{ uri: stream.streamUrl }}
+          style={styles.videoPlayer}
+          resizeMode={ResizeMode.CONTAIN}
+          shouldPlay={true}
+          isLooping={false}
+          isMuted={false}
+          useNativeControls={true}
+          onLoadStart={() => handleVideoLoadStart(stream.id)}
+          onReadyForDisplay={() => handleVideoLoad(stream.id)}
+          onError={(error) => {
+            console.error('Video component error:', error);
+            handleVideoError(stream.id, error);
+          }}
+        />
+
+        {videoLoading[stream.id] && (
+          <View style={styles.videoLoadingOverlay}>
+            <ActivityIndicator size="large" color="#fff" />
+            <Text style={styles.videoLoadingText}>Loading HLS stream...</Text>
+          </View>
+        )}
+
+        {videoErrors[stream.id] && (
+          <View style={styles.videoErrorOverlay}>
+            <Text style={styles.videoErrorText}>HLS Stream unavailable</Text>
+            <Text style={styles.videoErrorSubtext}>
+              Could not load this stream
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderStreamPlayer = (stream) => {
+    const { streamType } = stream;
+
+    switch (streamType) {
+      case 'youtube':
+        return renderYouTubePlayer(stream);
+
+      case 'hls':
+        return renderHLSPlayer(stream);
+
+      case 'facebook':
+      case 'rtmp':
+      case 'obs':
+      default:
+        return renderFallbackPlayer(stream);
+    }
+  };
+
+  const renderFallbackPlayer = (stream) => {
+    const videoId = getYouTubeVideoId(stream.streamUrl) || stream.originalUrl;
+
+    return (
+      <View style={styles.videoContainer}>
+        <View style={styles.externalStreamContainer}>
+          <Play size={48} color="#fff" opacity={0.8} />
+          <Text style={styles.externalStreamText}>
+            {stream.streamType?.toUpperCase() || 'EXTERNAL'} Stream
+          </Text>
+          <Text style={styles.externalStreamSubtext}>
+            {stream.streamType === 'youtube'
+              ? 'Tap below to watch in YouTube app'
+              : 'This stream type must be opened externally'}
+          </Text>
+          <TouchableOpacity
+            style={[
+              styles.openBrowserButtonLarge,
+              {
+                backgroundColor:
+                  stream.streamType === 'youtube' ? '#FF0000' : '#3B82F6',
+              },
+            ]}
+            onPress={() => {
+              if (stream.streamType === 'youtube' && videoId) {
+                openInBrowser(`https://www.youtube.com/watch?v=${videoId}`);
+              } else {
+                openInBrowser(stream.originalUrl || stream.streamUrl);
+              }
+            }}
+          >
+            <ExternalLink size={20} color="#fff" />
+            <Text style={styles.openBrowserTextLarge}>
+              {stream.streamType === 'youtube'
+                ? 'Open in YouTube'
+                : 'Watch in Browser'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   };
 
   if (loading) {
@@ -99,6 +289,13 @@ export default function LiveStreamScreen() {
           <Text style={[styles.errorSubtext, { color: colors.textSecondary }]}>
             Please check your connection and try again.
           </Text>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: colors.primary }]}
+            onPress={loadStreams}
+          >
+            <RefreshCw size={20} color="#fff" />
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaWrapper>
     );
@@ -107,13 +304,42 @@ export default function LiveStreamScreen() {
   return (
     <SafeAreaWrapper>
       <TopNavigation title="Live Stream" showBackButton={true} />
-      <ScrollView style={{ backgroundColor: colors.background }}>
+
+      <View
+        style={[styles.headerActions, { backgroundColor: colors.background }]}
+      >
+        <TouchableOpacity
+          style={[styles.refreshButton, { backgroundColor: colors.card }]}
+          onPress={onRefresh}
+          disabled={refreshing}
+        >
+          <RefreshCw
+            size={18}
+            color={colors.primary}
+            style={refreshing && styles.refreshingIcon}
+          />
+          <Text style={[styles.refreshButtonText, { color: colors.primary }]}>
+            {refreshing ? 'Refreshing...' : 'Refresh Streams'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        style={{ backgroundColor: colors.background }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
         {streams.map((stream) => (
           <View
             key={stream.id}
             style={[styles.streamCard, { backgroundColor: colors.card }]}
           >
-            {/* Stream Header */}
             <View style={styles.streamHeader}>
               <Text style={[styles.streamTitle, { color: colors.text }]}>
                 {stream.title}
@@ -123,8 +349,8 @@ export default function LiveStreamScreen() {
                   styles.statusBadge,
                   {
                     backgroundColor: stream.isActive
-                      ? '#10B981' + '20'
-                      : '#6B7280' + '20',
+                      ? '#10B98120'
+                      : '#6B728020',
                   },
                 ]}
               >
@@ -147,61 +373,34 @@ export default function LiveStreamScreen() {
               </View>
             </View>
 
-            {/* Video Player - Only show for active streams with URLs */}
-            {stream.isActive && stream.streamUrl && (
-              <View style={styles.videoContainer}>
-                <Video
-                  source={{ uri: stream.streamUrl }}
-                  style={styles.videoPlayer}
-                  resizeMode={ResizeMode.CONTAIN}
-                  shouldPlay={false}
-                  isMuted={true}
-                  useNativeControls={true}
-                  onLoadStart={() => handleVideoLoadStart(stream.id)}
-                  onReadyForDisplay={() => handleVideoLoad(stream.id)}
-                  onError={(error) => handleVideoError(stream.id, error)}
-                />
-
-                {/* Loading Overlay */}
-                {videoLoading[stream.id] && (
-                  <View style={styles.videoLoadingOverlay}>
-                    <ActivityIndicator size="large" color="#fff" />
-                    <Text style={styles.videoLoadingText}>
-                      Loading stream...
-                    </Text>
-                  </View>
-                )}
-
-                {/* Error Overlay */}
-                {videoErrors[stream.id] && (
-                  <View style={styles.videoErrorOverlay}>
-                    <Text style={styles.videoErrorText}>
-                      Stream unavailable
-                    </Text>
-                    <Text style={styles.videoErrorSubtext}>
-                      Could not load this stream
-                    </Text>
-                  </View>
-                )}
+            {stream.isActive && stream.streamUrl ? (
+              renderStreamPlayer(stream)
+            ) : (
+              <View style={styles.offlineContainer}>
+                <Text style={styles.offlineText}>Stream Offline</Text>
+                <Text style={styles.offlineSubtext}>
+                  This stream is currently not active
+                </Text>
               </View>
             )}
 
-            {/* Stream Info */}
             <View style={styles.streamInfo}>
-              <Text
-                style={[
-                  styles.streamDescription,
-                  { color: colors.textSecondary },
-                ]}
-              >
-                {stream.description}
-              </Text>
+              {stream.description && (
+                <Text
+                  style={[
+                    styles.streamDescription,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  {stream.description}
+                </Text>
+              )}
 
               {stream.schedule && (
                 <Text
                   style={[styles.streamSchedule, { color: colors.primary }]}
                 >
-                  Schedule: {stream.schedule}
+                  📅 {stream.schedule}
                 </Text>
               )}
 
@@ -224,6 +423,16 @@ export default function LiveStreamScreen() {
             >
               Check back later for live streams
             </Text>
+            <TouchableOpacity
+              style={[
+                styles.refreshButtonLarge,
+                { backgroundColor: colors.primary },
+              ]}
+              onPress={onRefresh}
+            >
+              <RefreshCw size={20} color="#fff" />
+              <Text style={styles.refreshButtonLargeText}>Refresh</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -251,6 +460,40 @@ const styles = StyleSheet.create({
   errorSubtext: {
     fontSize: 14,
     textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  headerActions: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+  },
+  refreshButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  refreshingIcon: {
+    transform: [{ rotate: '360deg' }],
   },
   streamCard: {
     margin: 16,
@@ -293,7 +536,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   videoContainer: {
-    height: 200,
+    height: 220,
     backgroundColor: '#000',
     position: 'relative',
   },
@@ -301,11 +544,16 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  webView: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
   videoLoadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 10,
   },
   videoLoadingText: {
     color: '#fff',
@@ -314,20 +562,88 @@ const styles = StyleSheet.create({
   },
   videoErrorOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    backgroundColor: 'rgba(0,0,0,0.9)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
+    zIndex: 10,
   },
   videoErrorText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   videoErrorSubtext: {
     color: '#fff',
     fontSize: 14,
     opacity: 0.8,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  externalStreamContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    padding: 20,
+  },
+  externalStreamText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  externalStreamSubtext: {
+    color: '#fff',
+    fontSize: 14,
+    opacity: 0.7,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  openBrowserButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    gap: 8,
+  },
+  openBrowserText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  openBrowserButtonLarge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  openBrowserTextLarge: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  offlineContainer: {
+    height: 220,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  offlineText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 8,
+  },
+  offlineSubtext: {
+    fontSize: 14,
+    color: '#999',
   },
   streamInfo: {
     padding: 16,
@@ -360,5 +676,19 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     fontSize: 14,
     textAlign: 'center',
+    marginBottom: 20,
+  },
+  refreshButtonLarge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  refreshButtonLargeText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

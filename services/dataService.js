@@ -18,6 +18,22 @@ const get = (path, params = {}) => {
     .then((res) => res.data);
 };
 
+// Helper: GET without authentication (for public endpoints)
+const getPublic = (path, params = {}) => {
+  return axios
+    .get(`${API_BASE_URL}${path}`, {
+      params,
+      transformRequest: [
+        (data, headers) => {
+          // Remove auth header for public endpoints
+          delete headers.Authorization;
+          return data;
+        },
+      ],
+    })
+    .then((res) => res.data);
+};
+
 // Helper: POST
 const post = (path, data) => {
   return axios.post(`${API_BASE_URL}${path}`, data).then((res) => res.data);
@@ -896,31 +912,138 @@ export const searchContentPaginated = async (
   }
 };
 
-// === LIVE STREAMS ===
-export const getLiveStreams = async () => {
+// === LIVE STREAMS === (Replace existing functions)
+// api.js - FIXED YouTube URL Conversion
+
+// Convert YouTube URLs to direct stream format
+// Convert YouTube URLs to direct stream format
+const convertYouTubeUrl = (url) => {
   try {
-    const response = await get('/api/liveStreams');
-    return response.liveStreams || [];
+    let videoId = '';
+
+    console.log('Converting YouTube URL:', url); // Handle different YouTube URL formats
+
+    if (url.includes('youtube.com/watch')) {
+      // Format: https://www.youtube.com/watch?v=VIDEO_ID
+      const urlObj = new URL(url);
+      videoId = urlObj.searchParams.get('v');
+    } else if (url.includes('youtu.be/')) {
+      // Format: https://youtu.be/VIDEO_ID
+      videoId = url.split('youtu.be/')[1]?.split('?')[0]?.split('&')[0];
+    } else if (url.includes('youtube.com/embed/')) {
+      // Format: https://www.youtube.com/embed/VIDEO_ID
+      videoId = url.split('embed/')[1]?.split('?')[0]?.split('&')[0];
+    } else if (url.includes('youtube.com/live/')) {
+      // Format: https://www.youtube.com/live/VIDEO_ID
+      videoId = url.split('live/')[1]?.split('?')[0]?.split('&')[0];
+    } else if (url.includes('youtube.com/v/')) {
+      // Format: https://www.youtube.com/v/VIDEO_ID
+      videoId = url.split('/v/')[1]?.split('?')[0]?.split('&')[0];
+    } else if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+      // Assume it's already a video ID
+      videoId = url.split('?')[0].split('&')[0];
+    }
+
+    if (!videoId) {
+      console.warn('Could not extract YouTube video ID from:', url);
+      return url;
+    } // Clean the video ID (remove any remaining query params or fragments)
+
+    videoId = videoId.split('#')[0].split('&')[0].trim();
+
+    console.log('Extracted video ID:', videoId); // 👇 CORRECTED LINE: Added playsinline=1, modestbranding=1, and rel=0
+
+    const embedUrl = `https://www.youtube.com/embed/${videoId}?playsinline=1&modestbranding=1&rel=0`;
+    console.log('Generated embed URL:', embedUrl);
+
+    return embedUrl;
   } catch (error) {
-    console.error('Error fetching live streams:', error);
-    return [];
+    console.error('Error converting YouTube URL:', error);
+    return url;
   }
 };
 
-export const getActiveLiveStreams = async () => {
+// Convert stream URLs to formats compatible with expo-av
+const convertStreamUrl = (url, streamType) => {
+  if (!url) return '';
+
   try {
-    // First try the specific active endpoint
-    try {
-      const response = await get('/api/liveStreams/active');
-      return response.liveStreams || [];
-    } catch (activeError) {
-      // If active endpoint fails, get all and filter client-side
-      console.log('Active endpoint failed, filtering client-side');
-      const allStreams = await getLiveStreams();
-      return allStreams.filter((stream) => stream.isActive === true);
+    switch (streamType) {
+      case 'youtube':
+        return convertYouTubeUrl(url);
+
+      case 'facebook':
+        // Facebook live streams are difficult to embed
+        console.warn('Facebook streams may not work directly in expo-av');
+        return url;
+
+      case 'hls':
+        // HLS streams should work directly
+        return url;
+
+      case 'rtmp':
+        // RTMP streams need to be converted to HLS
+        console.warn('RTMP streams need server-side conversion to HLS');
+        return url;
+
+      case 'obs':
+        // OBS typically outputs to RTMP or HLS
+        return url;
+
+      default:
+        return url;
     }
   } catch (error) {
+    console.error('Error converting stream URL:', error);
+    return url;
+  }
+};
+
+// Format live stream data and convert URLs to compatible formats
+const formatLiveStream = (stream) => {
+  const formatted = {
+    id: stream.id,
+    title: stream.title,
+    description: stream.description,
+    streamUrl: convertStreamUrl(stream.streamUrl, stream.streamType),
+    originalUrl: stream.streamUrl, // Keep original for reference
+    streamType: stream.streamType || 'youtube',
+    isActive: stream.isActive || false,
+    schedule: stream.schedule || '',
+    thumbnailUrl: stream.thumbnailUrl || '',
+    customData: stream.customData || {},
+    uploadedBy: stream.uploadedBy,
+    createdAt: stream.createdAt,
+    updatedAt: stream.updatedAt,
+  };
+
+  console.log('Formatted stream:', formatted);
+  return formatted;
+};
+
+// === LIVE STREAMS FUNCTIONS ===
+
+export const getActiveLiveStreams = async () => {
+  try {
+    const response = await getPublic('/api/liveStreams/active');
+    return (response.liveStreams || []).map(formatLiveStream);
+  } catch (error) {
     console.error('Error fetching active live streams:', error);
+    try {
+      const allStreams = await getLiveStreams();
+      return allStreams.filter((stream) => stream.isActive === true);
+    } catch {
+      return [];
+    }
+  }
+};
+
+export const getLiveStreams = async () => {
+  try {
+    const response = await get('/api/liveStreams');
+    return (response.liveStreams || []).map(formatLiveStream);
+  } catch (error) {
+    console.error('Error fetching live streams:', error);
     return [];
   }
 };
@@ -931,6 +1054,31 @@ export const getLiveStream = async (streamId) => {
     return stream ? formatLiveStream(stream) : null;
   } catch {
     return null;
+  }
+};
+
+// Additional helper to check if stream is playable
+export const isStreamPlayable = (streamType) => {
+  const playableTypes = ['hls', 'youtube'];
+  return playableTypes.includes(streamType);
+};
+
+// Helper to get video ID from any YouTube URL (useful for UI display)
+export const getYouTubeVideoId = (url) => {
+  try {
+    if (url.includes('youtube.com/watch')) {
+      const urlObj = new URL(url);
+      return urlObj.searchParams.get('v');
+    } else if (url.includes('youtu.be/')) {
+      return url.split('youtu.be/')[1]?.split('?')[0]?.split('&')[0];
+    } else if (url.includes('youtube.com/embed/')) {
+      return url.split('embed/')[1]?.split('?')[0]?.split('&')[0];
+    } else if (url.includes('youtube.com/live/')) {
+      return url.split('live/')[1]?.split('?')[0]?.split('&')[0];
+    }
+    return url;
+  } catch {
+    return url;
   }
 };
 
@@ -956,7 +1104,7 @@ export const updateLiveStream = async (streamId, streamData) => {
 
 export const deleteLiveStream = async (streamId) => {
   try {
-    const response = await del(`/api/liveStreams/${streamId}`);
+    const response = await del('/api/liveStreams', streamId);
     return response;
   } catch (error) {
     console.error('Error deleting live stream:', error);
@@ -979,33 +1127,22 @@ export const subscribeToLiveStreams = (callback) => {
   return () => clearInterval(interval);
 };
 
-// Format live stream data
-const formatLiveStream = (stream) => ({
-  id: stream.id,
-  title: stream.title,
-  description: stream.description,
-  streamUrl: stream.streamUrl,
-  streamType: stream.streamType || 'hls',
-  isActive: stream.isActive || false,
-  schedule: stream.schedule || '',
-  thumbnailUrl: stream.thumbnailUrl,
-  customData: stream.customData || {},
-  uploadedBy: stream.uploadedBy,
-  createdAt: stream.createdAt,
-  updatedAt: stream.updatedAt,
-});
-
 // Helper to generate platform-specific URLs
 export const generateStreamUrl = (streamType, customData) => {
   const generators = {
-    youtube: (data) => `https://www.youtube.com/embed/${data.videoId}`,
-    facebook: (data) =>
-      `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(
+    youtube: (data) => {
+      if (!data.videoId) return '';
+      return `https://www.youtube.com/embed/${data.videoId}`;
+    },
+    facebook: (data) => {
+      if (!data.videoUrl) return '';
+      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(
         data.videoUrl
-      )}`,
-    hls: (data) => data.streamUrl,
-    rtmp: (data) => data.streamUrl,
-    obs: (data) => data.streamUrl,
+      )}`;
+    },
+    hls: (data) => data.streamUrl || '',
+    rtmp: (data) => data.streamUrl || '',
+    obs: (data) => data.streamUrl || '',
   };
 
   const generator = generators[streamType] || generators.hls;
