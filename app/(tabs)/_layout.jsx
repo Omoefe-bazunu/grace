@@ -73,7 +73,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="live"
         options={{
-          title: translations.stream,
+          title: 'Live',
           tabBarIcon: ({ size, color }) => (
             <Podcast size={size} color={color} />
           ),

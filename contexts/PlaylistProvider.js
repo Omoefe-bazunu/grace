@@ -1,6 +1,6 @@
 // import React, { useState, useEffect, useCallback, useMemo } from 'react';
 // import AsyncStorage from '@react-native-async-storage/async-storage';
-// import PlaylistContext from './PlayListContext';
+// import PlaylistContext from './PlaylistContext';
 
 // const PLAYLIST_STORAGE_KEY = '@app_playlist';
 

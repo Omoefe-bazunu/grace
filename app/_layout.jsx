@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '../hooks/useFrameworkReady';
 import { LanguageProvider } from '../contexts/LanguageContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
-import { AuthProvider } from '../contexts/AuthContext'; // ← JWT Auth
+import { AuthProvider } from '../contexts/AuthContext';
 import { SafeAreaWrapper } from '../components/ui/SafeAreaWrapper';
 import { Audio } from 'expo-av';
 import ErrorBoundary from '../components/ErrorBoundary';

@@ -1,5 +1,4 @@
-// app/sermons/audio/[id].tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +6,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Animated, // <-- New Import
+  Easing, // <-- New Import
+  Alert,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
@@ -16,6 +18,7 @@ import {
   FastForward,
   Rewind,
   Calendar,
+  Mic, // <-- New Import for the visualizer
 } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -25,6 +28,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
 import { TopNavigation } from '../../../../components/TopNavigation';
 
+// --- Placeholder/Skeleton Component (Updated to include visual) ---
 const SkeletonSermon = () => {
   const { colors } = useTheme();
   return (
@@ -44,6 +48,11 @@ const SkeletonSermon = () => {
           colors={[colors.skeleton, colors.skeletonHighlight]}
           style={styles.skeletonDate}
         />
+        {/* Skeleton for the new visual element */}
+        <LinearGradient
+          colors={[colors.skeleton, colors.skeletonHighlight]}
+          style={styles.skeletonVisual}
+        />
         <LinearGradient
           colors={[colors.skeleton, colors.skeletonHighlight]}
           style={styles.skeletonAudio}
@@ -57,13 +66,104 @@ export default function SermonAudioDetailScreen() {
   const { id } = useLocalSearchParams();
   const { translations } = useLanguage();
   const { colors } = useTheme();
+
   const [sermon, setSermon] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sound, setSound] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
+
+  // --- ANIMATION STATE ---
+  const pulse = useRef(new Animated.Value(1)).current;
+  const animationRef = useRef(null);
+
   const isMounted = useRef(true);
+
+  // --- PULSE ANIMATION LOGIC ---
+
+  const startPulse = useCallback(() => {
+    if (animationRef.current) {
+      animationRef.current.stop();
+    }
+    pulse.setValue(1); // Reset to original size
+
+    animationRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1.1, // Scale slightly up
+          duration: 700, // Speed of one pulse direction
+          easing: Easing.ease,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 1, // Scale back down
+          duration: 700,
+          easing: Easing.ease,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [pulse]);
+
+  const stopPulse = useCallback(() => {
+    if (animationRef.current) {
+      animationRef.current.stop();
+      animationRef.current = null;
+      pulse.setValue(1); // Reset scale to 1 when stopping
+    }
+  }, [pulse]);
+
+  // --- AUDIO LOGIC ---
+
+  const onPlaybackStatusUpdate = useCallback(
+    (status) => {
+      if (!isMounted.current) return;
+
+      if (status.isLoaded) {
+        // Integrate pulse logic here
+        if (status.isPlaying !== isPlaying) {
+          if (status.isPlaying) {
+            startPulse();
+          } else {
+            stopPulse();
+          }
+        }
+
+        setIsPlaying(status.isPlaying);
+        setPosition(status.positionMillis);
+        if (status.durationMillis) setDuration(status.durationMillis);
+        if (status.didJustFinish) {
+          setIsPlaying(false);
+          setPosition(0);
+          sound.setPositionAsync(0);
+          stopPulse(); // Stop pulse on finish
+        }
+      } else if (status.error) {
+        console.error('Audio load error:', status.error);
+        if (isMounted.current)
+          Alert.alert('Audio Error', 'Could not load sermon audio.');
+        stopPulse();
+      }
+    },
+    [isPlaying, startPulse, stopPulse, sound]
+  );
+
+  const loadAudio = async (url) => {
+    try {
+      if (sound) await sound.unloadAsync();
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: url },
+        { shouldPlay: false },
+        onPlaybackStatusUpdate
+      );
+      if (isMounted.current) setSound(newSound);
+    } catch (error) {
+      console.error('Audio load error:', error);
+      if (isMounted.current)
+        Alert.alert('Load Error', 'Failed to load audio source.');
+    }
+  };
 
   useEffect(() => {
     isMounted.current = true;
@@ -89,38 +189,21 @@ export default function SermonAudioDetailScreen() {
     return () => {
       isMounted.current = false;
       if (sound) sound.unloadAsync();
+      stopPulse(); // Cleanup animation on unmount
     };
-  }, [id]);
+  }, [id, stopPulse]);
 
-  const loadAudio = async (url) => {
-    try {
-      if (sound) await sound.unloadAsync();
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: url },
-        { shouldPlay: false },
-        onPlaybackStatusUpdate
-      );
-      if (isMounted.current) setSound(newSound);
-    } catch (error) {
-      console.error('Audio load error:', error);
-    }
-  };
-
-  const onPlaybackStatusUpdate = (status) => {
-    if (!isMounted.current) return;
-    setIsPlaying(status.isPlaying);
-    setPosition(status.positionMillis);
-    if (status.durationMillis) setDuration(status.durationMillis);
-    if (status.didJustFinish) {
-      setIsPlaying(false);
-      setPosition(0);
-      sound.setPositionAsync(0);
-    }
-  };
+  // --- PLAYER CONTROLS ---
 
   const handlePlayPause = async () => {
     if (sound) {
-      isPlaying ? await sound.pauseAsync() : await sound.playAsync();
+      if (isPlaying) {
+        await sound.pauseAsync();
+        stopPulse();
+      } else {
+        await sound.playAsync();
+        startPulse();
+      }
     }
   };
 
@@ -139,7 +222,7 @@ export default function SermonAudioDetailScreen() {
   };
 
   const formatTime = (millis) => {
-    if (!millis) return '0:00';
+    if (!millis || isNaN(millis) || millis < 0) return '0:00';
     const mins = Math.floor(millis / 60000);
     const secs = Math.floor((millis % 60000) / 1000);
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -173,6 +256,30 @@ export default function SermonAudioDetailScreen() {
             {sermon.date || translations.unknownDate}
           </Text>
         </View>
+
+        {/* --- Pulsing Visualizer --- */}
+        <View style={styles.audioVisualContainer}>
+          <Animated.View
+            style={[
+              styles.audioVisualDisc,
+              {
+                transform: [{ scale: pulse }], // Apply pulse animation here
+                backgroundColor: colors.primary + '20', // Light background for pulse halo
+                borderColor: colors.primary + '50',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.micIconContainer,
+                { backgroundColor: colors.primary, borderColor: colors.card },
+              ]}
+            >
+              <Mic size={60} color={colors.card} />
+            </View>
+          </Animated.View>
+        </View>
+        {/* --- End Pulsing Visualizer --- */}
 
         <View style={styles.audioControls}>
           <TouchableOpacity onPress={handleRewind} style={styles.controlButton}>
@@ -249,7 +356,7 @@ const styles = StyleSheet.create({
   },
   content: { flex: 1, paddingHorizontal: 20, paddingTop: 20 },
   title: {
-    fontSize: 28,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
     textAlign: 'center',
@@ -262,6 +369,30 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   date: { fontSize: 16 },
+  // --- New Styles for Visualizer ---
+  audioVisualContainer: {
+    alignItems: 'center',
+    marginVertical: 40,
+    height: 150, // Fixed height for container
+  },
+  audioVisualDisc: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    opacity: 0.8,
+  },
+  micIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 5,
+  },
+  // --- End New Styles ---
   audioControls: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -305,6 +436,14 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginBottom: 20,
     alignSelf: 'center',
+  },
+  // Skeleton for the new visual element
+  skeletonVisual: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    alignSelf: 'center',
+    marginVertical: 40,
   },
   skeletonAudio: {
     height: 40,

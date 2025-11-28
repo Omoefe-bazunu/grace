@@ -22,6 +22,7 @@ import {
   PlayCircle,
   BookOpen,
   Podcast,
+  Image,
 } from 'lucide-react-native';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { LanguageSwitcher } from '../../../../components/LanguageSwitcher';
@@ -139,6 +140,13 @@ export default function AdminDashboardScreen() {
       onPress: () => router.push('/(tabs)/profile/admin/livestreammanager'),
     },
     {
+      id: 'gallery-management',
+      title: 'Gallery Management',
+      description: 'Upload pictures, videos & ministers data',
+      icon: <Image size={32} color="#1E3A8A" />,
+      onPress: () => router.push('(tabs)/profile/admin/gallery'),
+    },
+    {
       id: 'reset-onboarding',
       title: 'Reset Onboarding',
       description: 'Clear onboarding state for testing',
@@ -149,7 +157,7 @@ export default function AdminDashboardScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation />
+      <TopNavigation showBackButton={true} />
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <TouchableOpacity
           onPress={() => router.push(`/(tabs)/profile`)}

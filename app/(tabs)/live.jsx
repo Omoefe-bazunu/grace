@@ -257,7 +257,7 @@ export default function LiveStreamScreen() {
   if (loading) {
     return (
       <SafeAreaWrapper>
-        <TopNavigation title="Live Stream" showBackButton={true} />
+        <TopNavigation showBackButton={true} />
         <View
           style={[
             styles.centerContainer,
@@ -276,7 +276,7 @@ export default function LiveStreamScreen() {
   if (error) {
     return (
       <SafeAreaWrapper>
-        <TopNavigation title="Live Stream" showBackButton={true} />
+        <TopNavigation showBackButton={true} />
         <View
           style={[
             styles.centerContainer,
@@ -303,7 +303,7 @@ export default function LiveStreamScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title="Live Stream" showBackButton={true} />
+      <TopNavigation showBackButton={true} />
 
       <View
         style={[styles.headerActions, { backgroundColor: colors.background }]}

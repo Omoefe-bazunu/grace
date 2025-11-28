@@ -293,6 +293,104 @@ export const subscribeToSermonVideos = (callback) => {
   return () => clearInterval(interval);
 };
 
+// === GALLERY PICTURES ===
+export const getGalleryPictures = async () => {
+  try {
+    const res = await get('/api/galleryPictures');
+    return res.galleryPictures || [];
+  } catch {
+    return [];
+  }
+};
+
+export const uploadGalleryPicture = async (
+  file,
+  { event, description = '' }
+) => {
+  const dest = `galleryPictures/${Date.now()}_${file.name}`;
+  const formData = new FormData();
+  formData.append('file', {
+    uri: file.uri,
+    name: file.name,
+    type: file.type || 'image/jpeg',
+  });
+  formData.append('path', dest);
+
+  const uploadRes = await axios.post(`${API_BASE_URL}/upload`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 180000,
+  });
+
+  await post('/api/galleryPictures', {
+    event: event.trim(),
+    description: description.trim().slice(0, 200),
+    url: uploadRes.data.url,
+  });
+};
+
+// === GALLERY VIDEOS ===
+export const getGalleryVideos = async () => {
+  try {
+    const res = await get('/api/galleryVideos');
+    return res.galleryVideos || [];
+  } catch {
+    return [];
+  }
+};
+
+export const uploadGalleryVideo = async (file, { event, description = '' }) => {
+  const dest = `galleryVideos/${Date.now()}_${file.name}`;
+  const formData = new FormData();
+  formData.append('file', {
+    uri: file.uri,
+    name: file.name,
+    type: file.type || 'video/mp4',
+  });
+  formData.append('path', dest);
+
+  const uploadRes = await axios.post(`${API_BASE_URL}/upload`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 300000,
+  });
+
+  await post('/api/galleryVideos', {
+    event: event.trim(),
+    description: description.trim().slice(0, 200),
+    url: uploadRes.data.url,
+  });
+};
+
+// === MINISTERS ===
+export const getMinisters = async () => {
+  try {
+    const res = await get('/api/ministers');
+    return res.ministers || [];
+  } catch {
+    return [];
+  }
+};
+
+export const uploadMinister = async (file, ministerData) => {
+  const dest = `ministers/${Date.now()}_${file.name}`;
+  const formData = new FormData();
+  formData.append('file', {
+    uri: file.uri,
+    name: file.name,
+    type: file.type || 'image/jpeg',
+  });
+  formData.append('path', dest);
+
+  const uploadRes = await axios.post(`${API_BASE_URL}/upload`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 180000,
+  });
+
+  await post('/api/ministers', {
+    ...ministerData,
+    imageUrl: uploadRes.data.url,
+  });
+};
+
 // === DAILY DEVOTIONALS ===
 export const getDailyDevotionals = async () => {
   try {

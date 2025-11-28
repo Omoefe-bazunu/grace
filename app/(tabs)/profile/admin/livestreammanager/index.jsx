@@ -365,7 +365,7 @@ export default function LiveStreamManager() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title="Manage Live Streams" />
+      <TopNavigation showBackButton={true} />
 
       {/* Add Stream Button */}
       <TouchableOpacity

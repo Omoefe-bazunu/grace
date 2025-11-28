@@ -197,7 +197,10 @@ export default function MusicScreen() {
       <View style={styles.titleContainer}>
         <Text style={styles.songTitle}>{item.title || 'Untitled'}</Text>
       </View>
-      <TouchableOpacity style={styles.playButton}>
+      <TouchableOpacity
+        style={styles.playButton}
+        onPress={() => router.push(`/(tabs)/songs/music/${item.id}`)}
+      >
         <Text style={styles.playText}>Start Playing</Text>
       </TouchableOpacity>
     </TouchableOpacity>

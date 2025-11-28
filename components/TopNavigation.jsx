@@ -10,6 +10,7 @@ import {
   Sun,
   Brain,
   ArrowLeft,
+  Image,
 } from 'lucide-react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -116,6 +117,10 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
     router.push('/profile/quizresources');
   };
 
+  const handleGalleryPress = () => {
+    router.push('/profile/gallery');
+  };
+
   return (
     <>
       <View
@@ -138,6 +143,12 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
 
         <View style={styles.rightSection}>
           <LanguageSwitcher />
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={handleGalleryPress}
+          >
+            <Image size={20} color={colors.text} />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton} onPress={handleQuizPress}>
             <Brain size={20} color={colors.text} />
           </TouchableOpacity>
@@ -217,7 +228,7 @@ const styles = StyleSheet.create({
     padding: 4, // Add padding for easier touch
   },
   title: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   rightSection: {

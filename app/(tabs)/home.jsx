@@ -220,6 +220,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     position: 'relative',
+    borderBottomColor: '#1E3A8A',
+    borderBottomWidth: 2,
   },
   cardImageContainer: {
     width: '100%',
@@ -240,6 +242,6 @@ const styles = StyleSheet.create({
   },
   cardTextContainer: { padding: 16 },
   cardTitle: { fontSize: 18, fontWeight: 'bold' },
-  cardSubtitle: { fontSize: 14, opacity: 0.8, width: '80%' },
+  cardSubtitle: { fontSize: 12, opacity: 0.8, width: '80%' },
   arrow: { position: 'absolute', top: 20, right: 16 },
 });

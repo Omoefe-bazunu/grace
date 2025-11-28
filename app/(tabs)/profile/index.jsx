@@ -16,6 +16,7 @@ import {
   Info,
   Bell,
   Book,
+  Heart,
 } from 'lucide-react-native';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useLanguage } from '../../../contexts/LanguageContext';
@@ -53,6 +54,11 @@ export default function ProfileScreen() {
       title: translations.contact,
       onPress: () => router.push('/profile/contact'),
     },
+    // {
+    //   icon: <Heart size={20} color={colors.primary} />,
+    //   title: 'Favorite',
+    //   onPress: () => router.push('/profile/favorite'),
+    // },
     {
       icon: <Info size={20} color={colors.primary} />,
       title: translations.about,
