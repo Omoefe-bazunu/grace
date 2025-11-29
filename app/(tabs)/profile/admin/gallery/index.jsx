@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { Image, Video, Users } from 'lucide-react-native';
+import { Image, Video, Users, Pen } from 'lucide-react-native';
 import { SafeAreaWrapper } from '../../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../../components/TopNavigation';
 
@@ -21,6 +21,11 @@ export default function AdminGalleryManagement() {
       title: 'Upload Ministers Data',
       icon: <Users size={40} color="#1E3A8A" />,
       route: 'ministers',
+    },
+    {
+      title: 'Update Gallery Data',
+      icon: <Pen size={40} color="#1E3A8A" />,
+      route: 'gallerymanager',
     },
   ];
 

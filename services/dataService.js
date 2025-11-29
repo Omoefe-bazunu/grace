@@ -391,6 +391,33 @@ export const uploadMinister = async (file, ministerData) => {
   });
 };
 
+// === GALLERY PICTURES ADMIN ===
+export const deleteGalleryPicture = async (id) => {
+  await del('galleryPictures', id);
+};
+
+export const updateGalleryPicture = async (id, data) => {
+  return put(`galleryPictures/${id}`, data);
+};
+
+// === GALLERY VIDEOS ADMIN ===
+export const deleteGalleryVideo = async (id) => {
+  await del('galleryVideos', id);
+};
+
+export const updateGalleryVideo = async (id, data) => {
+  return put(`galleryVideos/${id}`, data);
+};
+
+// === MINISTERS ADMIN ===
+export const deleteMinister = async (id) => {
+  await del('ministers', id);
+};
+
+export const updateMinister = async (id, data) => {
+  return put(`ministers/${id}`, data);
+};
+
 // === DAILY DEVOTIONALS ===
 export const getDailyDevotionals = async () => {
   try {

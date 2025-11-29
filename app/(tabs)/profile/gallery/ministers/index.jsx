@@ -1,4 +1,3 @@
-// app/gallery/ministers/index.jsx
 import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
@@ -7,14 +6,18 @@ import {
   Image,
   StyleSheet,
   ActivityIndicator,
+  ImageBackground,
+  TextInput,
 } from 'react-native';
 import { getMinisters } from '../../../../../services/dataService';
 import { SafeAreaWrapper } from '../../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../../components/TopNavigation';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function MinistersGallery() {
   const [ministers, setMinisters] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -28,6 +31,10 @@ export default function MinistersGallery() {
       }
     })();
   }, []);
+
+  const filteredMinisters = ministers.filter((minister) =>
+    minister.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -44,34 +51,86 @@ export default function MinistersGallery() {
       <TopNavigation showBackButton={true} />
 
       <ScrollView style={styles.container}>
-        <Text style={styles.header}>Our Ministers</Text>
-
-        {ministers.length === 0 ? (
-          <Text style={styles.empty}>No ministers listed yet</Text>
-        ) : (
-          ministers.map((m) => (
-            <View key={m.id} style={styles.card}>
-              <Image
-                source={{
-                  uri: m.imageUrl || 'https://via.placeholder.com/120',
-                }}
-                style={styles.photo}
-                resizeMode="cover"
+        <View style={styles.headerSection}>
+          <View style={styles.bannerContainer}>
+            <ImageBackground
+              source={{
+                uri: 'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/GALLERY.png?alt=media&token=dbe70e9e-616e-45d0-8f16-8d05fb67715b',
+              }}
+              style={styles.bannerImage}
+            >
+              <LinearGradient
+                colors={['transparent', 'black']}
+                style={styles.bannerGradient}
               />
-              <View style={styles.info}>
-                <Text style={styles.name}>{m.name || 'Unnamed Minister'}</Text>
-                {m.category && (
-                  <Text style={styles.detail}>Category: {m.category}</Text>
-                )}
-                {m.station && (
-                  <Text style={styles.detail}>Station: {m.station}</Text>
-                )}
-                {m.maritalStatus && (
-                  <Text style={styles.detail}>Status: {m.maritalStatus}</Text>
-                )}
-                {m.contact && (
-                  <Text style={styles.detail}>Contact: {m.contact}</Text>
-                )}
+              <View style={styles.bannerText}>
+                <Text style={styles.bannerTitle}>MINISTERS PROFILE</Text>
+                <Text style={styles.bannerSubtitle}>
+                  This screen contains profiles of ministers of the church. This
+                  information is meant to help members identify the ministers
+                  and address them accordingly.
+                </Text>
+              </View>
+            </ImageBackground>
+          </View>
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search"
+              placeholderTextColor="#999"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+        </View>
+
+        {filteredMinisters.length === 0 ? (
+          <Text style={styles.empty}>
+            {searchQuery
+              ? 'No ministers found matching your search'
+              : 'No ministers listed yet'}
+          </Text>
+        ) : (
+          filteredMinisters.map((m) => (
+            <View key={m.id} style={styles.card}>
+              <View style={styles.orangeBar} />
+              <View style={styles.cardInner}>
+                <Image
+                  source={{
+                    uri: m.imageUrl || 'https://via.placeholder.com/150',
+                  }}
+                  style={styles.photo}
+                  resizeMode="cover"
+                />
+                <View style={styles.info}>
+                  <Text style={styles.name}>
+                    {m.name || 'Unnamed Minister'}
+                  </Text>
+                  {m.category && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.label}>Category:</Text>
+                      <Text style={styles.value}>{m.category}</Text>
+                    </View>
+                  )}
+                  {m.station && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.label}>Station:</Text>
+                      <Text style={styles.value}>{m.station}</Text>
+                    </View>
+                  )}
+                  {m.maritalStatus && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.label}>Marital Status:</Text>
+                      <Text style={styles.value}>{m.maritalStatus}</Text>
+                    </View>
+                  )}
+                  {m.contact && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.label}>Contact</Text>
+                      <Text style={styles.value}>{m.contact}</Text>
+                    </View>
+                  )}
+                </View>
               </View>
             </View>
           ))
@@ -82,26 +141,125 @@ export default function MinistersGallery() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  header: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1E3A8A',
-    textAlign: 'center',
-    marginVertical: 20,
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-  empty: { textAlign: 'center', color: '#666', fontSize: 18, marginTop: 50 },
+  headerSection: {
+    marginBottom: 16,
+  },
+  bannerContainer: {
+    overflow: 'hidden',
+    height: 200,
+    marginBottom: 10,
+  },
+  bannerImage: {
+    width: '100%',
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bannerGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 300,
+  },
+  bannerText: {
+    paddingHorizontal: 28,
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  bannerTitle: {
+    color: '#fff',
+    fontSize: 25,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  bannerSubtitle: {
+    color: '#fff',
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  searchContainer: {
+    marginHorizontal: 20,
+    marginTop: -30,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    borderRadius: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 16,
+    fontSize: 16,
+  },
+  empty: {
+    textAlign: 'center',
+    color: '#666',
+    fontSize: 16,
+    marginTop: 40,
+  },
   card: {
     backgroundColor: '#fff',
     marginHorizontal: 16,
     marginBottom: 16,
-    borderRadius: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    flexDirection: 'row',
+  },
+  orangeBar: {
+    width: 6,
+    backgroundColor: '#FF6B35',
+  },
+  cardInner: {
+    flex: 1,
     padding: 16,
     flexDirection: 'row',
-    elevation: 4,
   },
-  photo: { width: 120, height: 120, borderRadius: 60 },
-  info: { flex: 1, marginLeft: 16, justifyContent: 'center' },
-  name: { fontSize: 20, fontWeight: 'bold', color: '#111' },
-  detail: { fontSize: 15, color: '#444', marginTop: 4 },
+  photo: {
+    width: 120,
+    height: 150,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+  },
+  info: {
+    flex: 1,
+    marginLeft: 16,
+    justifyContent: 'center',
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 12,
+  },
+  detailRow: {
+    marginBottom: 6,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 2,
+  },
+  value: {
+    fontSize: 13,
+    color: '#666',
+  },
 });
