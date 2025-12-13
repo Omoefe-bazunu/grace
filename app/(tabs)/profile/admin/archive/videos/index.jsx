@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
   View,
@@ -7,16 +7,22 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  Image,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import * as ImageManipulator from 'expo-image-manipulator'; // ✅ IMPORT THIS
 import { SafeAreaWrapper } from '../../../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../../../components/TopNavigation';
 import { apiClient } from '../../../../../../utils/api';
-import { X, CheckCircle } from 'lucide-react-native';
+import { X, Video as VideoIcon, CheckCircle } from 'lucide-react-native';
 
-// Simple Progress Bar Component
+// ✅ SAFE IMPORT: This prevents the crash in Expo Go
+let VideoCompressor;
+try {
+  // We use 'require' instead of 'import' so it doesn't crash if missing
+  VideoCompressor = require('react-native-compressor').Video;
+} catch (e) {
+  console.log('Video Compressor not available (running in Expo Go?)');
+}
+
 const ProgressBar = ({ progress, status }) => {
   if (status === 'idle') return null;
   const color =
@@ -46,7 +52,7 @@ const ProgressBar = ({ progress, status }) => {
   );
 };
 
-export default function UploadPictures() {
+export default function UploadVideos() {
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
   const [files, setFiles] = useState([]);
@@ -55,7 +61,7 @@ export default function UploadPictures() {
   const pickFiles = async () => {
     const res = await DocumentPicker.getDocumentAsync({
       multiple: true,
-      type: 'image/*',
+      type: 'video/*',
       copyToCacheDirectory: true,
     });
     if (!res.canceled) {
@@ -64,7 +70,7 @@ export default function UploadPictures() {
         status: 'idle',
         progress: 0,
       }));
-      setFiles((prev) => [...prev, ...newFiles].slice(0, 10));
+      setFiles((prev) => [...prev, ...newFiles].slice(0, 5));
     }
   };
 
@@ -72,50 +78,52 @@ export default function UploadPictures() {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // ✅ NEW: COMPRESSION HELPER
-  const compressImage = async (uri) => {
+  // ✅ UPDATED COMPRESSION HELPER
+  const compressVideoFile = async (uri) => {
+    // Safety Check: If the library didn't load (Expo Go), skip compression
+    if (!VideoCompressor) {
+      console.log('Skipping compression (Library not loaded)');
+      return uri;
+    }
+
     try {
-      const result = await ImageManipulator.manipulateAsync(
-        uri,
-        [{ resize: { width: 1080 } }], // Resize width to 1080px (HD), height auto-adjusts
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG } // 70% quality JPEG
-      );
+      const result = await VideoCompressor.compress(uri, {
+        compressionMethod: 'auto',
+      });
       return result;
     } catch (err) {
-      console.log('Compression failed, using original', err);
-      return { uri }; // Fallback to original if compression fails
+      console.log('Video compression failed, using original', err);
+      return uri; // Fallback to original
     }
   };
 
   const uploadSingleFile = async (file, index) => {
     try {
       setFiles((prev) => {
-        const copy = [...prev];
-        copy[index].status = 'uploading';
-        return copy;
+        const c = [...prev];
+        c[index].status = 'uploading';
+        return c;
       });
 
-      // 1. ✅ COMPRESS BEFORE UPLOAD
-      // This reduces file size from ~5MB to ~300KB
-      const compressed = await compressImage(file.uri);
+      // 1. Compress (or skip if in Expo Go)
+      const finalUri = await compressVideoFile(file.uri);
 
       // 2. Get Signature
-      const signRes = await apiClient.get(`sign-upload?folder=galleryPictures`);
+      const signRes = await apiClient.get(`sign-upload?folder=archiveVideos`);
       const { signature, timestamp, cloudName, apiKey, folder } = signRes.data;
 
-      // 3. Form Data (Use COMPRESSED uri)
+      // 3. Upload XHR
       const formData = new FormData();
       formData.append('file', {
-        uri: compressed.uri,
-        name: file.name.replace(/\.[^/.]+$/, '') + '.jpg', // Ensure .jpg extension
-        type: 'image/jpeg',
+        uri: finalUri,
+        name: file.name.replace(/\.[^/.]+$/, '') + '.mp4', // Force mp4 extension
+        type: 'video/mp4',
       });
       formData.append('api_key', apiKey);
       formData.append('timestamp', timestamp.toString());
       formData.append('signature', signature);
       formData.append('folder', folder);
 
-      // 4. Upload XHR
       const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
 
       const secureUrl = await new Promise((resolve, reject) => {
@@ -125,9 +133,9 @@ export default function UploadPictures() {
           if (e.lengthComputable) {
             const percent = Math.round((e.loaded / e.total) * 100);
             setFiles((prev) => {
-              const copy = [...prev];
-              copy[index].progress = percent;
-              return copy;
+              const c = [...prev];
+              c[index].progress = percent;
+              return c;
             });
           }
         };
@@ -140,22 +148,20 @@ export default function UploadPictures() {
         xhr.send(formData);
       });
 
-      // 5. Update File State
       setFiles((prev) => {
-        const copy = [...prev];
-        copy[index].status = 'success';
-        copy[index].progress = 100;
-        copy[index].url = secureUrl;
-        return copy;
+        const c = [...prev];
+        c[index].status = 'success';
+        c[index].progress = 100;
+        c[index].url = secureUrl;
+        return c;
       });
-
       return secureUrl;
     } catch (error) {
       console.error(error);
       setFiles((prev) => {
-        const copy = [...prev];
-        copy[index].status = 'error';
-        return copy;
+        const c = [...prev];
+        c[index].status = 'error';
+        return c;
       });
       throw error;
     }
@@ -163,12 +169,10 @@ export default function UploadPictures() {
 
   const handleUploadAll = async () => {
     if (!title.trim() || files.length === 0)
-      return Alert.alert('Required', 'Title and images needed');
+      return Alert.alert('Required', 'Title and video needed');
 
     setIsUploading(true);
-
     try {
-      // Upload images
       const uploadPromises = files.map(async (file, index) => {
         if (file.status === 'success') return file.url;
         return await uploadSingleFile(file, index);
@@ -176,9 +180,9 @@ export default function UploadPictures() {
 
       const uploadedUrls = await Promise.all(uploadPromises);
 
-      // Save to backend
+      // Save to Backend
       const savePromises = uploadedUrls.map((url) =>
-        apiClient.post('galleryPictures', {
+        apiClient.post('archiveVideos', {
           event: title.trim(),
           description: desc.trim().slice(0, 200),
           url: url,
@@ -188,16 +192,12 @@ export default function UploadPictures() {
       );
 
       await Promise.all(savePromises);
-
-      Alert.alert('Success', 'All pictures uploaded successfully!');
+      Alert.alert('Success', 'All videos uploaded!');
       setTitle('');
       setDesc('');
       setFiles([]);
     } catch (e) {
-      Alert.alert(
-        'Partial Error',
-        'Some files failed to upload. Check the list.'
-      );
+      Alert.alert('Error', 'Some uploads failed.');
     } finally {
       setIsUploading(false);
     }
@@ -214,7 +214,7 @@ export default function UploadPictures() {
           <TextInput
             value={title}
             onChangeText={setTitle}
-            placeholder="e.g. Youth Conference 2025"
+            placeholder="e.g. Sunday Service Highlights"
             style={styles.input}
             editable={!isUploading}
           />
@@ -241,26 +241,27 @@ export default function UploadPictures() {
           style={styles.pickButton}
         >
           <Text style={{ color: '#fff', fontWeight: '600' }}>
-            Pick Images – {files.length}/10
+            Pick Videos – {files.length}/5
           </Text>
         </TouchableOpacity>
 
-        {/* File List */}
         <View style={{ gap: 12 }}>
           {files.map((file, index) => (
             <View key={index} style={styles.fileCard}>
               <View
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
               >
-                {/* Display preview image */}
-                <Image
-                  source={{ uri: file.uri }}
-                  style={{ width: 40, height: 40, borderRadius: 4 }}
-                />
+                <VideoIcon size={30} color="#666" />
                 <View style={{ flex: 1 }}>
                   <Text numberOfLines={1} style={{ fontSize: 14 }}>
                     {file.name}
                   </Text>
+                  {/* Show status text if compressing */}
+                  {file.status === 'uploading' && file.progress === 0 && (
+                    <Text style={{ fontSize: 10, color: '#F59E0B' }}>
+                      {VideoCompressor ? 'Compressing...' : 'Preparing...'}
+                    </Text>
+                  )}
                   <ProgressBar progress={file.progress} status={file.status} />
                 </View>
                 {file.status !== 'uploading' && (
@@ -288,7 +289,7 @@ export default function UploadPictures() {
             <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
           )}
           <Text style={{ color: '#fff', fontWeight: '600' }}>
-            {isUploading ? 'Processing...' : 'Upload All'}
+            {isUploading ? 'Processing...' : 'Upload All Videos'}
           </Text>
         </TouchableOpacity>
       </ScrollView>

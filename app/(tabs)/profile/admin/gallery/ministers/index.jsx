@@ -9,9 +9,30 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { uploadMinister } from '../../../../../../services/dataService';
+import * as ImageManipulator from 'expo-image-manipulator'; // ✅ IMPORT THIS
 import { SafeAreaWrapper } from '../../../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../../../components/TopNavigation';
+import { apiClient } from '../../../../../../utils/api';
+
+const ProgressBar = ({ progress }) => (
+  <View
+    style={{
+      height: 4,
+      backgroundColor: '#E5E7EB',
+      borderRadius: 2,
+      marginTop: 8,
+      overflow: 'hidden',
+    }}
+  >
+    <View
+      style={{
+        height: '100%',
+        width: `${progress}%`,
+        backgroundColor: '#007AFF',
+      }}
+    />
+  </View>
+);
 
 export default function UploadMinister() {
   const [form, setForm] = useState({
@@ -22,11 +43,30 @@ export default function UploadMinister() {
     contact: '',
   });
   const [file, setFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
 
   const pickPhoto = async () => {
-    const res = await DocumentPicker.getDocumentAsync({ type: 'image/*' });
+    const res = await DocumentPicker.getDocumentAsync({
+      type: 'image/*',
+      copyToCacheDirectory: true,
+    });
     if (!res.canceled) setFile(res.assets[0]);
+  };
+
+  // ✅ COMPRESSION HELPER
+  const compressImage = async (uri) => {
+    try {
+      const result = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 1080 } }], // Resize to 1080px width
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG } // 70% quality JPEG
+      );
+      return result;
+    } catch (err) {
+      console.log('Compression failed, using original', err);
+      return { uri }; // Fallback to original
+    }
   };
 
   const handleChange = (field, value) => {
@@ -39,13 +79,55 @@ export default function UploadMinister() {
     }
 
     setUploading(true);
+    setUploadProgress(0);
+
     try {
-      await uploadMinister(file, {
+      // 1. ✅ COMPRESS BEFORE UPLOAD
+      const compressed = await compressImage(file.uri);
+
+      // 2. Get Signature
+      const signRes = await apiClient.get(`sign-upload?folder=ministers`);
+      const { signature, timestamp, cloudName, apiKey, folder } = signRes.data;
+
+      // 3. Upload Photo (Direct)
+      const formData = new FormData();
+      formData.append('file', {
+        uri: compressed.uri, // Use compressed URI
+        name: file.name.replace(/\.[^/.]+$/, '') + '.jpg', // Ensure .jpg extension
+        type: 'image/jpeg', // Force jpeg type
+      });
+      formData.append('api_key', apiKey);
+      formData.append('timestamp', timestamp.toString());
+      formData.append('signature', signature);
+      formData.append('folder', folder);
+
+      const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
+
+      const imageUrl = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', cloudinaryUrl);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setUploadProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status < 300)
+            resolve(JSON.parse(xhr.responseText).secure_url);
+          else reject(xhr.responseText);
+        };
+        xhr.onerror = () => reject('Network Error');
+        xhr.send(formData);
+      });
+
+      // 4. Save Minister Data
+      await apiClient.post('ministers', {
         name: form.name.trim(),
         category: form.category.trim(),
         station: form.station.trim(),
         maritalStatus: form.maritalStatus.trim(),
         contact: form.contact.trim(),
+        imageUrl: imageUrl, // Save the cloud URL
       });
 
       Alert.alert('Success', 'Minister added successfully!');
@@ -57,6 +139,7 @@ export default function UploadMinister() {
         contact: '',
       });
       setFile(null);
+      setUploadProgress(0);
     } catch (e) {
       Alert.alert('Upload Failed', e.message || 'Please try again');
     } finally {
@@ -68,7 +151,6 @@ export default function UploadMinister() {
     <SafeAreaWrapper>
       <TopNavigation showBackButton={true} />
       <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
-        {/* Name */}
         <View>
           <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Name *</Text>
           <TextInput
@@ -76,10 +158,10 @@ export default function UploadMinister() {
             onChangeText={(t) => handleChange('name', t)}
             placeholder="Full name"
             style={styles.input}
+            editable={!uploading}
           />
         </View>
 
-        {/* Category */}
         <View>
           <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Category</Text>
           <TextInput
@@ -87,10 +169,10 @@ export default function UploadMinister() {
             onChangeText={(t) => handleChange('category', t)}
             placeholder="e.g. Pastor, Deacon, Evangelist"
             style={styles.input}
+            editable={!uploading}
           />
         </View>
 
-        {/* Station */}
         <View>
           <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Station</Text>
           <TextInput
@@ -98,10 +180,10 @@ export default function UploadMinister() {
             onChangeText={(t) => handleChange('station', t)}
             placeholder="e.g. Warri, Lagos, Abuja"
             style={styles.input}
+            editable={!uploading}
           />
         </View>
 
-        {/* Marital Status */}
         <View>
           <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>
             Marital Status
@@ -111,10 +193,10 @@ export default function UploadMinister() {
             onChangeText={(t) => handleChange('maritalStatus', t)}
             placeholder="e.g. Married, Single"
             style={styles.input}
+            editable={!uploading}
           />
         </View>
 
-        {/* Contact */}
         <View>
           <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>
             Contact (Phone/Email)
@@ -124,36 +206,36 @@ export default function UploadMinister() {
             onChangeText={(t) => handleChange('contact', t)}
             placeholder="Optional"
             style={styles.input}
+            editable={!uploading}
           />
         </View>
 
-        {/* Pick Photo Button */}
         <TouchableOpacity
           onPress={pickPhoto}
           disabled={uploading}
-          style={styles.button}
+          style={styles.pickButton}
         >
-          <Text style={styles.buttonText}>
-            {file ? `Photo: ${file.name}` : 'Pick Photo *'}
+          <Text style={{ color: '#fff', fontWeight: '600' }}>
+            {file ? `Photo Selected: ${file.name}` : 'Pick Photo *'}
           </Text>
         </TouchableOpacity>
 
-        {/* Save Button */}
+        {uploading && uploadProgress > 0 && (
+          <ProgressBar progress={uploadProgress} />
+        )}
+
         <TouchableOpacity
           onPress={upload}
           disabled={uploading || !form.name || !file}
           style={[
-            styles.button,
-            {
-              backgroundColor:
-                uploading || !form.name || !file ? '#aaa' : '#34C759',
-            },
+            styles.uploadButton,
+            (uploading || !form.name || !file) && styles.disabled,
           ]}
         >
           {uploading && (
             <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
           )}
-          <Text style={styles.buttonText}>
+          <Text style={{ color: '#fff', fontWeight: '600' }}>
             {uploading ? 'Saving...' : 'Save Minister'}
           </Text>
         </TouchableOpacity>
@@ -169,19 +251,21 @@ const styles = {
     borderRadius: 8,
     padding: 12,
     backgroundColor: '#fff',
-    fontSize: 16,
   },
-  button: {
+  pickButton: {
     backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  uploadButton: {
+    backgroundColor: '#34C759',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
+  disabled: { backgroundColor: '#aaa' },
 };

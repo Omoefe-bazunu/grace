@@ -6,6 +6,7 @@ import {
   Video,
   User,
   Podcast,
+  Archive,
 } from 'lucide-react-native';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -30,9 +31,10 @@ export default function TabLayout() {
           height: 60, // Fixed height for tab bar
         },
         tabBarLabelStyle: {
-          fontSize: 12, // Font size for tab labels
+          fontSize: 8, // Font size for tab labels
           fontWeight: '600', // Font weight for tab labels
         },
+        tabBarScrollEnabled: true,
       }}
     >
       {/* Home tab */}
@@ -45,14 +47,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      {/* Songs tab (replaces hymns) */}
-      <Tabs.Screen
-        name="songs"
-        options={{
-          title: translations.songs,
-          tabBarIcon: ({ size, color }) => <Music size={size} color={color} />,
-        }}
-      />
       {/* Sermons tab */}
       <Tabs.Screen
         name="sermons"
@@ -61,6 +55,15 @@ export default function TabLayout() {
           tabBarIcon: ({ size, color }) => <Mic size={size} color={color} />,
         }}
       />
+      {/* Songs tab (replaces hymns) */}
+      <Tabs.Screen
+        name="songs"
+        options={{
+          title: translations.songs,
+          tabBarIcon: ({ size, color }) => <Music size={size} color={color} />,
+        }}
+      />
+
       {/* Animations tab */}
       <Tabs.Screen
         name="animations"
@@ -76,6 +79,16 @@ export default function TabLayout() {
           title: 'Live',
           tabBarIcon: ({ size, color }) => (
             <Podcast size={size} color={color} />
+          ),
+        }}
+      />
+      {/* Archives tab */}
+      <Tabs.Screen
+        name="archive"
+        options={{
+          title: 'Archive',
+          tabBarIcon: ({ size, color }) => (
+            <Archive size={size} color={color} />
           ),
         }}
       />

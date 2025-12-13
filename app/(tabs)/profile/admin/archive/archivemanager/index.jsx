@@ -16,11 +16,7 @@ import {
 import { SafeAreaWrapper } from '../../../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../../../components/TopNavigation';
 import { useTheme } from '../../../../../../contexts/ThemeContext';
-import {
-  getGalleryPictures,
-  getGalleryVideos,
-  getMinisters,
-} from '@/services/dataService';
+import { getArchivePictures, getArchiveVideos } from '@/services/dataService';
 import apiClient from '../../../../../../utils/api';
 import {
   Edit2,
@@ -28,11 +24,10 @@ import {
   X,
   Image as ImageIcon,
   Video,
-  User,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-export default function AdminGalleryManager() {
+export default function AdminArchiveManager() {
   const { colors } = useTheme();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,30 +41,27 @@ export default function AdminGalleryManager() {
       // Helper to safely extract array from response
       const getArray = (data) => {
         if (Array.isArray(data)) return data;
-        if (data && Array.isArray(data.galleryPictures))
-          return data.galleryPictures;
-        if (data && Array.isArray(data.galleryVideos))
-          return data.galleryVideos;
-        if (data && Array.isArray(data.ministers)) return data.ministers;
+        if (data && Array.isArray(data.archivePictures))
+          return data.archivePictures;
+        if (data && Array.isArray(data.archiveVideos))
+          return data.archiveVideos;
         return [];
       };
 
-      const [picsData, vidsData, ministersData] = await Promise.all([
-        getGalleryPictures(),
-        getGalleryVideos(),
-        getMinisters(),
+      const [picsData, vidsData] = await Promise.all([
+        getArchivePictures(),
+        getArchiveVideos(),
       ]);
 
       const pics = getArray(picsData);
       const vids = getArray(vidsData);
-      const ministers = getArray(ministersData);
 
       const formatted = [
         ...pics.map((p) => ({
           ...p,
           id: p.id,
           title: p.event || 'Untitled Event',
-          type: 'galleryPicture',
+          type: 'archivePicture',
           url: p.url,
           description: p.description,
         })),
@@ -77,20 +69,9 @@ export default function AdminGalleryManager() {
           ...v,
           id: v.id,
           title: v.event || 'Untitled Video',
-          type: 'galleryVideo',
+          type: 'archiveVideo',
           url: v.url,
           description: v.description,
-        })),
-        ...ministers.map((m) => ({
-          ...m,
-          id: m.id,
-          title: m.name || 'Unnamed Minister',
-          type: 'minister',
-          imageUrl: m.imageUrl,
-          category: m.category,
-          station: m.station,
-          maritalStatus: m.maritalStatus,
-          contact: m.contact,
         })),
       ];
 
@@ -119,11 +100,10 @@ export default function AdminGalleryManager() {
 
   const getCollectionName = (type) => {
     const map = {
-      galleryPicture: 'galleryPictures',
-      galleryVideo: 'galleryVideos',
-      minister: 'ministers',
+      archivePicture: 'archivePictures',
+      archiveVideo: 'archiveVideos',
     };
-    return map[type] || 'galleryPictures';
+    return map[type] || 'archivePictures';
   };
 
   const handleDelete = (item) => {
@@ -153,48 +133,27 @@ export default function AdminGalleryManager() {
 
   const openEditModal = (item) => {
     setEditingItem(item);
-    if (item.type === 'minister') {
-      setForm({
-        name: item.title,
-        category: item.category || '',
-        station: item.station || '',
-        maritalStatus: item.maritalStatus || '',
-        contact: item.contact || '',
-      });
-    } else {
-      setForm({
-        event: item.title,
-        description: item.description || '',
-      });
-    }
+    setForm({
+      event: item.title,
+      description: item.description || '',
+    });
     setModalVisible(true);
   };
 
   const handleSave = async () => {
     const collection = getCollectionName(editingItem.type);
-    let payload = {};
 
-    if (editingItem.type === 'minister') {
-      if (!form.name?.trim()) return Alert.alert('Error', 'Name is required');
-      payload = {
-        name: form.name.trim(),
-        category: form.category.trim(),
-        station: form.station.trim(),
-        maritalStatus: form.maritalStatus.trim(),
-        contact: form.contact.trim(),
-      };
-    } else {
-      if (!form.event?.trim())
-        return Alert.alert('Error', 'Event title is required');
-      payload = {
-        event: form.event.trim(),
-        description: form.description.trim(),
-      };
+    if (!form.event?.trim()) {
+      return Alert.alert('Error', 'Event title is required');
     }
 
+    const payload = {
+      event: form.event.trim(),
+      description: form.description.trim(),
+    };
+
     try {
-      // ✅ FIXED: Pass 3 arguments (collection, id, payload) explicitly
-      // This ensures utils/api.js forms the correct URL: /api/ministers/ID
+      // Pass 3 arguments (collection, id, payload) explicitly
       await apiClient.put(collection, editingItem.id, payload);
 
       setItems((prev) =>
@@ -202,7 +161,7 @@ export default function AdminGalleryManager() {
           i.id === editingItem.id
             ? {
                 ...i,
-                title: editingItem.type === 'minister' ? form.name : form.event,
+                title: form.event,
                 ...payload,
               }
             : i
@@ -217,29 +176,23 @@ export default function AdminGalleryManager() {
   };
 
   const getTypeColor = (type) => {
-    return type === 'galleryPicture'
-      ? '#EC4899'
-      : type === 'galleryVideo'
-      ? '#F97316'
-      : '#6366F1';
+    return type === 'archivePicture' ? '#EC4899' : '#F97316';
   };
 
   const getTypeIcon = (type) => {
-    if (type === 'galleryPicture') return <ImageIcon size={20} color="#fff" />;
-    if (type === 'galleryVideo') return <Video size={20} color="#fff" />;
-    return <User size={20} color="#fff" />;
+    if (type === 'archivePicture') return <ImageIcon size={20} color="#fff" />;
+    return <Video size={20} color="#fff" />;
   };
 
   const getTypeLabel = (type) => {
-    if (type === 'galleryPicture') return 'Photo';
-    if (type === 'galleryVideo') return 'Video';
-    return 'Minister';
+    if (type === 'archivePicture') return 'Photo';
+    return 'Video';
   };
 
   if (loading) {
     return (
       <SafeAreaWrapper>
-        <TopNavigation title="Gallery & Ministers" showBackButton />
+        <TopNavigation title="Archive Manager" showBackButton />
         <View
           style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
         >
@@ -251,7 +204,7 @@ export default function AdminGalleryManager() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title="Gallery & Ministers Admin" showBackButton />
+      <TopNavigation title="Archive Admin" showBackButton />
 
       <ScrollView
         refreshControl={
@@ -272,8 +225,7 @@ export default function AdminGalleryManager() {
         ) : (
           items.map((item) => {
             const color = getTypeColor(item.type);
-            const displayImage =
-              item.type === 'minister' ? item.imageUrl : item.url;
+            const displayImage = item.url;
 
             return (
               <View
@@ -371,31 +323,6 @@ export default function AdminGalleryManager() {
                       {item.description}
                     </Text>
                   )}
-
-                  {item.type === 'minister' && (
-                    <View style={{ marginTop: 10 }}>
-                      {/* Safety Check: Ensure boolean result */}
-                      {Boolean(item.category || item.station) && (
-                        <Text style={{ color: '#666', fontSize: 13 }}>
-                          {[item.category, item.station]
-                            .filter(Boolean)
-                            .join(' • ')}
-                        </Text>
-                      )}
-
-                      {!!item.contact && (
-                        <Text
-                          style={{
-                            color: colors.primary,
-                            marginTop: 4,
-                            fontSize: 13,
-                          }}
-                        >
-                          {item.contact}
-                        </Text>
-                      )}
-                    </View>
-                  )}
                 </View>
 
                 <View
@@ -404,38 +331,20 @@ export default function AdminGalleryManager() {
                     justifyContent: 'flex-end',
                     padding: 16,
                     paddingTop: 0,
-                    gap: 2,
+                    gap: 20,
                   }}
                 >
                   <TouchableOpacity
                     onPress={() => openEditModal(item)}
                     style={{ padding: 8 }}
                   >
-                    <Text
-                      style={{
-                        color: '#ffff',
-                        backgroundColor: '#076423ff',
-                        borderRadius: 6,
-                        padding: 8,
-                      }}
-                    >
-                      Update
-                    </Text>
+                    <Edit2 size={20} color={colors.primary} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => handleDelete(item)}
                     style={{ padding: 8 }}
                   >
-                    <Text
-                      style={{
-                        color: '#ffff',
-                        backgroundColor: '#e74c3c',
-                        borderRadius: 6,
-                        padding: 8,
-                      }}
-                    >
-                      Delete
-                    </Text>
+                    <Trash2 size={20} color="#e74c3c" />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -482,66 +391,24 @@ export default function AdminGalleryManager() {
             </View>
 
             <ScrollView style={{ padding: 20 }}>
-              {editingItem?.type === 'minister' ? (
-                <>
-                  <Text style={labelStyle(colors)}>Name</Text>
-                  <TextInput
-                    placeholder="Name *"
-                    value={form.name}
-                    onChangeText={(t) => setForm({ ...form, name: t })}
-                    style={inputStyle(colors)}
-                  />
-                  <Text style={labelStyle(colors)}>Category</Text>
-                  <TextInput
-                    placeholder="Category (e.g. Pastor)"
-                    value={form.category}
-                    onChangeText={(t) => setForm({ ...form, category: t })}
-                    style={inputStyle(colors)}
-                  />
-                  <Text style={labelStyle(colors)}>Station</Text>
-                  <TextInput
-                    placeholder="Station"
-                    value={form.station}
-                    onChangeText={(t) => setForm({ ...form, station: t })}
-                    style={inputStyle(colors)}
-                  />
-                  <Text style={labelStyle(colors)}>Marital Status</Text>
-                  <TextInput
-                    placeholder="Marital Status"
-                    value={form.maritalStatus}
-                    onChangeText={(t) => setForm({ ...form, maritalStatus: t })}
-                    style={inputStyle(colors)}
-                  />
-                  <Text style={labelStyle(colors)}>Contact</Text>
-                  <TextInput
-                    placeholder="Contact"
-                    value={form.contact}
-                    onChangeText={(t) => setForm({ ...form, contact: t })}
-                    style={inputStyle(colors)}
-                  />
-                </>
-              ) : (
-                <>
-                  <Text style={labelStyle(colors)}>Title</Text>
-                  <TextInput
-                    placeholder="Event Title *"
-                    value={form.event}
-                    onChangeText={(t) => setForm({ ...form, event: t })}
-                    style={inputStyle(colors)}
-                  />
-                  <Text style={labelStyle(colors)}>Description</Text>
-                  <TextInput
-                    placeholder="Description"
-                    value={form.description}
-                    onChangeText={(t) => setForm({ ...form, description: t })}
-                    multiline
-                    style={[
-                      inputStyle(colors),
-                      { height: 120, textAlignVertical: 'top' },
-                    ]}
-                  />
-                </>
-              )}
+              <Text style={labelStyle(colors)}>Title</Text>
+              <TextInput
+                placeholder="Event Title *"
+                value={form.event}
+                onChangeText={(t) => setForm({ ...form, event: t })}
+                style={inputStyle(colors)}
+              />
+              <Text style={labelStyle(colors)}>Description</Text>
+              <TextInput
+                placeholder="Description"
+                value={form.description}
+                onChangeText={(t) => setForm({ ...form, description: t })}
+                multiline
+                style={[
+                  inputStyle(colors),
+                  { height: 120, textAlignVertical: 'top' },
+                ]}
+              />
             </ScrollView>
 
             <View

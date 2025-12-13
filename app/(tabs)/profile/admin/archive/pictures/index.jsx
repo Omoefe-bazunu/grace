@@ -100,7 +100,7 @@ export default function UploadPictures() {
       const compressed = await compressImage(file.uri);
 
       // 2. Get Signature
-      const signRes = await apiClient.get(`sign-upload?folder=galleryPictures`);
+      const signRes = await apiClient.get(`sign-upload?folder=archivePictures`);
       const { signature, timestamp, cloudName, apiKey, folder } = signRes.data;
 
       // 3. Form Data (Use COMPRESSED uri)
@@ -178,7 +178,7 @@ export default function UploadPictures() {
 
       // Save to backend
       const savePromises = uploadedUrls.map((url) =>
-        apiClient.post('galleryPictures', {
+        apiClient.post('archivePictures', {
           event: title.trim(),
           description: desc.trim().slice(0, 200),
           url: url,

@@ -159,7 +159,7 @@ export default function DailyGuideScreen() {
             </View>
             <Text style={styles.headerTitle}>Daily Devotional</Text>
             <Text style={styles.headerSubtitle}>
-              Nourish your spirit with daily guidance
+              Nourish your spirit with daily guidance.
             </Text>
           </View>
         </ImageBackground>

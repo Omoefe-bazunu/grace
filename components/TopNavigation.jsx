@@ -159,7 +159,12 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
             <Bell size={20} color={colors.text} />
             {unreadCount > 0 && (
               <View style={[styles.badge, { backgroundColor: colors.accent }]}>
-                <Text style={[styles.badgeText, { color: 'red' }]}>
+                <Text
+                  style={[
+                    styles.badgeText,
+                    { color: 'white', backgroundColor: 'red' },
+                  ]}
+                >
                   {unreadCount}
                 </Text>
               </View>
@@ -252,10 +257,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   badgeText: {
-    fontSize: 12,
+    fontSize: 6,
     fontWeight: 'bold',
-    borderWidth: 1,
-    borderColor: 'red',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
     borderRadius: 100,
   },
   overlay: {

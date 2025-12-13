@@ -5,9 +5,8 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
+  Dimensions,
 } from 'react-native';
-import { router } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
@@ -18,24 +17,89 @@ import {
   markNoticeAsRead,
 } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
-import { Bell, CheckCircle, ArrowLeft } from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Bell, CheckCircle2 } from 'lucide-react-native';
+
+const { width } = Dimensions.get('window');
+
+// Helper to format time (e.g., 10:30 AM)
+const formatTime = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  // Check if date is valid
+  if (isNaN(date.getTime())) return '';
+
+  return date.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+};
+
+// Helper to format date (e.g., Mon, 12 Oct)
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleDateString([], {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+};
 
 const SkeletonCard = () => {
   const { colors } = useTheme();
   return (
     <View style={[styles.noticeCard, { backgroundColor: colors.card }]}>
-      <LinearGradient
-        colors={[colors.skeleton, colors.skeletonHighlight]}
-        style={styles.skeletonTitle}
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          marginBottom: 10,
+        }}
+      >
+        <View
+          style={{
+            width: 24,
+            height: 24,
+            borderRadius: 12,
+            backgroundColor: colors.skeleton,
+          }}
+        />
+        <View
+          style={{
+            width: 60,
+            height: 16,
+            borderRadius: 4,
+            backgroundColor: colors.skeleton,
+          }}
+        />
+      </View>
+      <View
+        style={{
+          width: '70%',
+          height: 20,
+          borderRadius: 4,
+          backgroundColor: colors.skeleton,
+          marginBottom: 8,
+        }}
       />
-      <LinearGradient
-        colors={[colors.skeleton, colors.skeletonHighlight]}
-        style={styles.skeletonText}
+      <View
+        style={{
+          width: '100%',
+          height: 14,
+          borderRadius: 4,
+          backgroundColor: colors.skeleton,
+          marginBottom: 4,
+        }}
       />
-      <LinearGradient
-        colors={[colors.skeleton, colors.skeletonHighlight]}
-        style={styles.skeletonDate}
+      <View
+        style={{
+          width: '90%',
+          height: 14,
+          borderRadius: 4,
+          backgroundColor: colors.skeleton,
+        }}
       />
     </View>
   );
@@ -57,7 +121,12 @@ export default function NoticesScreen() {
     }
 
     const unsubscribeNotices = subscribeToNotices((newNotices) => {
-      setAllNotices(newNotices);
+      // Sort by createdAt descending
+      const sorted = [...newNotices].sort(
+        (a, b) =>
+          new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
+      );
+      setAllNotices(sorted);
       setLoading(false);
     });
 
@@ -75,59 +144,98 @@ export default function NoticesScreen() {
   }, [userId]);
 
   const handleReadNotice = async (noticeId) => {
-    await markNoticeAsRead(userId, noticeId);
+    if (!readNoticeIds.includes(noticeId)) {
+      await markNoticeAsRead(userId, noticeId);
+    }
   };
 
   const renderNoticeItem = ({ item }) => {
     const isRead = readNoticeIds.includes(item.id);
-    const cardStyle = [
-      styles.noticeCard,
-      { backgroundColor: isRead ? colors.card : colors.primaryLight },
-      isRead ? {} : styles.unreadCard,
-    ];
-    const textStyle = { color: isRead ? colors.text : colors.primary };
+    const timestamp = item.createdAt || item.date;
 
     return (
       <TouchableOpacity
-        style={cardStyle}
+        style={[
+          styles.noticeCard,
+          {
+            backgroundColor: colors.card,
+            opacity: isRead ? 0.85 : 1,
+            borderLeftColor: isRead ? 'transparent' : colors.primary,
+            borderLeftWidth: isRead ? 0 : 4, // Left border highlight for unread
+          },
+        ]}
+        activeOpacity={0.8}
         onPress={() => handleReadNotice(item.id)}
       >
-        <View style={styles.noticeIcon}>
-          {isRead ? (
-            <CheckCircle size={24} color={colors.textSecondary} />
-          ) : (
-            <Bell size={24} color={colors.primary} />
-          )}
+        {/* Header: Icon - Title - Time */}
+        <View style={styles.cardHeader}>
+          <View style={styles.headerLeft}>
+            {/* Icon moved to top left edge */}
+            {isRead ? (
+              <CheckCircle2
+                size={20}
+                color={colors.textSecondary}
+                style={styles.icon}
+              />
+            ) : (
+              <Bell size={20} color={colors.primary} style={styles.icon} />
+            )}
+            <Text
+              style={[
+                styles.title,
+                { color: colors.text, fontWeight: isRead ? '600' : '700' },
+              ]}
+              numberOfLines={1}
+            >
+              {item.title || translations.noTitle}
+            </Text>
+          </View>
+
+          {/* Actual Time on the right */}
+          <View style={styles.timeContainer}>
+            <Text style={[styles.timeText, { color: colors.textSecondary }]}>
+              {formatTime(timestamp)}
+            </Text>
+          </View>
         </View>
-        <View style={styles.noticeInfo}>
-          <Text style={[styles.noticeTitle, textStyle]} numberOfLines={1}>
-            {item.title || translations.noTitle}
+
+        {/* Message Body */}
+        <Text
+          style={[
+            styles.message,
+            { color: isRead ? colors.textSecondary : colors.text },
+          ]}
+        >
+          {item.message || translations.noMessage}
+        </Text>
+
+        {/* Footer: Date & Action */}
+        <View style={styles.cardFooter}>
+          <Text style={[styles.dateText, { color: colors.textSecondary }]}>
+            {formatDate(timestamp)}
           </Text>
-          <Text style={[styles.noticeMessage, { color: colors.textSecondary }]}>
-            {item.message || translations.noMessage}
-          </Text>
-          <Text style={[styles.noticeDate, { color: colors.textSecondary }]}>
-            {item.date || translations.unknownDate}
-          </Text>
+
+          {/* Explicit "Mark as Read" Button */}
+          {!isRead && (
+            <TouchableOpacity
+              onPress={() => handleReadNotice(item.id)}
+              style={styles.markReadButton}
+            >
+              <Text style={[styles.markReadText, { color: colors.primary }]}>
+                Mark as Read
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </TouchableOpacity>
     );
   };
 
-  const renderSkeletonCards = () => (
-    <>
-      <SkeletonCard />
-      <SkeletonCard />
-      <SkeletonCard />
-      <SkeletonCard />
-      <SkeletonCard />
-      <SkeletonCard />
-    </>
-  );
-
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
-      <Bell size={64} color={colors.textSecondary} style={styles.emptyIcon} />
+      <View style={[styles.emptyIconCircle, { backgroundColor: colors.card }]}>
+        <Bell size={48} color={colors.textSecondary} />
+      </View>
       <Text style={[styles.emptyText, { color: colors.text }]}>
         {translations.noNotices}
       </Text>
@@ -139,34 +247,24 @@ export default function NoticesScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} />
-      <View>
-        <Text
-          style={[
-            {
-              marginHorizontal: 'auto',
-              fontWeight: 'bold',
-              fontSize: 24,
-              marginVertical: 12,
-            },
-          ]}
-        >
-          Notices
-        </Text>
-      </View>
+      <TopNavigation showBackButton={true} title="Notices" />
+
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {loading ? (
-          <View style={styles.listContainer}>{renderSkeletonCards()}</View>
-        ) : allNotices.length > 0 ? (
+          <View style={styles.listContent}>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </View>
+        ) : (
           <FlatList
             data={allNotices}
             renderItem={renderNoticeItem}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContainer}
+            contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
+            ListEmptyComponent={renderEmptyComponent}
           />
-        ) : (
-          renderEmptyComponent()
         )}
       </View>
     </SafeAreaWrapper>
@@ -174,75 +272,103 @@ export default function NoticesScreen() {
 }
 
 const styles = StyleSheet.create({
-  listContainer: {
-    padding: 12,
+  container: {
+    flex: 1,
+  },
+  listContent: {
+    padding: 16,
+    paddingBottom: 40,
   },
   noticeCard: {
     borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 16,
+    // Modern Shadow
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+  cardHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    elevation: 5,
-  },
-
-  unreadCard: {
-    borderWidth: 2,
-    borderColor: '#3498db',
-  },
-  noticeIcon: {
-    marginRight: 16,
-  },
-  noticeInfo: {
-    flex: 1,
-  },
-  noticeTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  noticeMessage: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  noticeDate: {
-    fontSize: 12,
-    opacity: 0.7,
-  },
-  skeletonTitle: {
-    height: 16,
-    width: '80%',
-    borderRadius: 4,
-    marginBottom: 4,
-  },
-  skeletonText: {
-    height: 14,
-    width: '60%',
-    borderRadius: 4,
     marginBottom: 8,
   },
-  skeletonDate: {
-    height: 12,
-    width: '40%',
-    borderRadius: 4,
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
   },
+  icon: {
+    marginRight: 8,
+  },
+  title: {
+    fontSize: 16,
+    flex: 1, // Allow title to take remaining space
+  },
+  timeContainer: {
+    justifyContent: 'center',
+  },
+  timeText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  message: {
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: 12,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+  },
+  dateText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  markReadButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  markReadText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  // Empty State Styles
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingTop: 100,
   },
-  emptyIcon: {
-    marginBottom: 16,
+  emptyIconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   emptyText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
     marginBottom: 8,
-    textAlign: 'center',
   },
   emptySubText: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
+    maxWidth: '70%',
   },
 });

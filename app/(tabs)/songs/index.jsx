@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ImageBackground,
   Dimensions,
+  RefreshControl, // ✅ Import RefreshControl
 } from 'react-native';
 import { router } from 'expo-router';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -29,33 +30,57 @@ export default function SongsScreen() {
   const [categories, setCategories] = useState([]);
   const [categoryCounts, setCategoryCounts] = useState({});
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); // ✅ Refreshing state
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+  // ✅ Extracted fetching logic to reuse it
+  const loadSongs = async () => {
+    try {
       let allSongs = [];
       let cursor = null;
       let hasMore = true;
+
+      // Fetch all pages
       while (hasMore) {
         const result = await getSongsPaginated(50, cursor);
         allSongs = [...allSongs, ...result.songs];
         hasMore = result.hasMore;
         cursor = result.nextCursor;
       }
+
+      // Process categories
       const uniqueCategories = [
         ...new Set(allSongs.map((s) => s.category).filter(Boolean)),
       ].sort();
+
       const counts = {};
       allSongs.forEach((s) => {
         if (s.category) {
           counts[s.category] = (counts[s.category] || 0) + 1;
         }
       });
+
       setCategories(uniqueCategories);
       setCategoryCounts(counts);
+    } catch (error) {
+      console.error('Failed to load songs:', error);
+    }
+  };
+
+  // Initial Load
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true);
+      await loadSongs();
       setLoading(false);
     };
-    fetchData();
+    init();
+  }, []);
+
+  // ✅ Refresh Handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadSongs();
+    setRefreshing(false);
   }, []);
 
   const SkeletonCard = () => (
@@ -159,6 +184,14 @@ export default function SongsScreen() {
         contentContainerStyle={{ paddingBottom: 30 }}
         showsVerticalScrollIndicator={false}
         style={{ backgroundColor: colors.background }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]} // Android spinner color
+            tintColor={colors.primary} // iOS spinner color
+          />
+        }
       >
         <View style={styles.playlistsContainer}>
           {renderPlaylist(featuredPlaylist, 'featured')}
