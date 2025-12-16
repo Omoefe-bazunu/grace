@@ -1,3 +1,5 @@
+//
+
 // app/_layout.js
 import 'react-native-url-polyfill/auto';
 import { useEffect } from 'react';
@@ -7,9 +9,11 @@ import { useFrameworkReady } from '../hooks/useFrameworkReady';
 import { LanguageProvider } from '../contexts/LanguageContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { AuthProvider } from '../contexts/AuthContext';
+import { PlayProvider } from '../contexts/PlayContext'; // 1. Import PlayProvider
 import { SafeAreaWrapper } from '../components/ui/SafeAreaWrapper';
 import { Audio } from 'expo-av';
 import ErrorBoundary from '../components/ErrorBoundary';
+import MiniPlayer from '../components/MiniPlayer'; // 2. Import MiniPlayer
 
 export default function RootLayout() {
   useFrameworkReady();
@@ -41,10 +45,17 @@ export default function RootLayout() {
       <ThemeProvider>
         <LanguageProvider>
           <AuthProvider>
-            <SafeAreaWrapper>
-              <Stack screenOptions={{ headerShown: false }} />
-              <StatusBar style="auto" />
-            </SafeAreaWrapper>
+            {/* 3. Wrap the content in PlayProvider */}
+            <PlayProvider>
+              <SafeAreaWrapper>
+                <Stack screenOptions={{ headerShown: false }} />
+
+                {/* 4. Place MiniPlayer here so it floats above all screens */}
+                <MiniPlayer />
+
+                <StatusBar style="auto" />
+              </SafeAreaWrapper>
+            </PlayProvider>
           </AuthProvider>
         </LanguageProvider>
       </ThemeProvider>

@@ -88,6 +88,20 @@ export default function FavoritesScreen() {
     loadFavorites(true);
   };
 
+  // Function to start playing the loop
+  const handlePlayAll = () => {
+    if (favorites.length > 0) {
+      // Start with the first song, tell it we are in 'favorites' context
+      router.push({
+        pathname: '/(tabs)/songs/music/[id]',
+        params: {
+          id: favorites[0].songId || favorites[0].id,
+          playlistContext: 'favorites',
+        },
+      });
+    }
+  };
+
   const handleRemoveFavorite = async (song) => {
     Alert.alert(
       'Remove from Favorites',
@@ -229,24 +243,34 @@ export default function FavoritesScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title="My Favorites" />
+      <TopNavigation showBackButton={true} />
 
       <View style={styles.headerSection}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Text style={[styles.backText, { color: colors.primary }]}>
-            ← Back
-          </Text>
-        </TouchableOpacity>
-
         {!loading && favorites.length > 0 && (
           <Text style={[styles.countText, { color: colors.textSecondary }]}>
             {favorites.length} {favorites.length === 1 ? 'song' : 'songs'}
           </Text>
         )}
       </View>
+      {/* NEW PLAY ALL BUTTON */}
+      {!loading && favorites.length > 0 && (
+        <TouchableOpacity
+          onPress={handlePlayAll}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: colors.primary,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 20,
+          }}
+        >
+          <PlayCircle size={16} color="#FFF" style={{ marginRight: 6 }} />
+          <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 12 }}>
+            Play All
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {loading ? (
         <View style={styles.listContainer}>

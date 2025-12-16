@@ -247,7 +247,7 @@ export default function NoticesScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} title="Notices" />
+      <TopNavigation showBackButton={true} />
 
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {loading ? (
