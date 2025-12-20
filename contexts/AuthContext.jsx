@@ -1,4 +1,3 @@
-// contexts/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -8,18 +7,16 @@ const AuthContext = createContext(undefined);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true); // ← Starts true
+  const [isLoading, setIsLoading] = useState(true);
 
   const API = 'https://grace-backend-tp3h.onrender.com';
 
-  // Auto-attach JWT
   axios.interceptors.request.use(async (config) => {
     const token = await AsyncStorage.getItem('jwt');
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   });
 
-  // Handle 401 globally
   axios.interceptors.response.use(
     (res) => res,
     async (error) => {
@@ -37,11 +34,11 @@ export function AuthProvider({ children }) {
       await AsyncStorage.setItem('jwt', data.token);
       const decoded = jwtDecode(data.token);
       setUser({ uid: decoded.email, email: decoded.email });
-      setIsLoading(false); // ← NOW SET TO FALSE
+      setIsLoading(false);
       return true;
     } catch (error) {
       console.error('Login error:', error.response?.data || error.message);
-      setIsLoading(false); // ← Even on error
+      setIsLoading(false);
       return false;
     }
   };
@@ -49,7 +46,7 @@ export function AuthProvider({ children }) {
   const signup = async (email, password) => {
     try {
       await axios.post(`${API}/register`, { email, password });
-      return await login(email, password); // login handles isLoading
+      return await login(email, password);
     } catch (error) {
       console.error('Signup error:', error.response?.data || error.message);
       setIsLoading(false);
@@ -58,14 +55,24 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem('jwt');
-    setUser(null);
-    setIsLoading(false); // ← Ensure loading ends
+    try {
+      // 1. Remove the Token
+      await AsyncStorage.removeItem('jwt');
+
+      // 2. Remove Onboarding Flag to force Onboarding on next launch
+      await AsyncStorage.removeItem('hasSeenOnboarding');
+
+      // 3. Reset State
+      setUser(null);
+    } catch (e) {
+      console.error('Logout failed', e);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const isAdmin = user?.email === 'raniem57@gmail.com';
 
-  // Restore session
   useEffect(() => {
     const restoreSession = async () => {
       try {
@@ -90,7 +97,7 @@ export function AuthProvider({ children }) {
         await AsyncStorage.removeItem('jwt');
         setUser(null);
       } finally {
-        setIsLoading(false); // ← ALWAYS SET TO FALSE
+        setIsLoading(false);
       }
     };
 

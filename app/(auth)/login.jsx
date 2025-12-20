@@ -6,13 +6,13 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Alert,
-  Dimensions, // Import Dimensions for dynamic styling
+  Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { Input } from '../../components/ui/Input'; // Assuming Input component is flexible
-import { Button } from '../../components/ui/Button'; // Assuming Button component is flexible
+import { Input } from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 
 const { width, height } = Dimensions.get('window');
@@ -53,6 +53,13 @@ export default function LoginScreen() {
     }
   };
 
+  // --- New Password Reset Handler ---
+  const handleResetPassword = () => {
+    // Navigate to your reset password screen
+    // Make sure to create this file: app/(auth)/reset-password.tsx
+    router.push('/(auth)/reset-password');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Top Left Curve Placeholder */}
@@ -76,8 +83,8 @@ export default function LoginScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             placeholder={translations.enterEmail || 'Enter your email'}
-            style={styles.inputField} // Apply custom style
-            placeholderTextColor="#888" // Adjust placeholder text color
+            style={styles.inputField}
+            placeholderTextColor="#888"
           />
 
           {/* Password Input */}
@@ -89,9 +96,19 @@ export default function LoginScreen() {
             onChangeText={setPassword}
             secureTextEntry
             placeholder={translations.enterPassword || 'Enter your password'}
-            style={styles.inputField} // Apply custom style
-            placeholderTextColor="#888" // Adjust placeholder text color
+            style={styles.inputField}
+            placeholderTextColor="#888"
           />
+
+          {/* --- Forgot Password Link --- */}
+          <TouchableOpacity
+            onPress={handleResetPassword}
+            style={styles.forgotPasswordContainer}
+          >
+            <Text style={styles.forgotPasswordText}>
+              {translations.forgotPassword || 'Forgot Password?'}
+            </Text>
+          </TouchableOpacity>
 
           {/* Login Button */}
           <Button
@@ -102,8 +119,8 @@ export default function LoginScreen() {
             }
             onPress={handleLogin}
             disabled={isLoading}
-            style={styles.loginButton} // Apply custom style
-            textStyle={styles.loginButtonText} // Apply custom text style
+            style={styles.loginButton}
+            textStyle={styles.loginButtonText}
           />
         </View>
 
@@ -128,97 +145,101 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0d326f', // Deep blue background from the image
+    backgroundColor: '#0d326f',
   },
-  // --- Top Left Curve ---
   topLeftCurve: {
     position: 'absolute',
-    top: -50, // Adjust as needed to match the curve's visibility
-    left: -50, // Adjust as needed
+    top: -50,
+    left: -50,
     width: 150,
     height: 150,
     borderRadius: 75,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)', // Semi-transparent white
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
-  // --- Language Switcher ---
   languageSwitcherContainer: {
     position: 'absolute',
-    top: 30, // Consistent with onboarding skip button
-    right: 30, // Consistent with onboarding skip button
+    top: 30,
+    right: 30,
     zIndex: 10,
-    // Add a slight shadow if desired to make it pop
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
     elevation: 2,
   },
-  // --- Main Content Area ---
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    justifyContent: 'center', // Center content vertically
-    // Pushing content down slightly to account for top controls
+    justifyContent: 'center',
     paddingTop: height * 0.1,
   },
-  // --- Title ---
   title: {
-    fontSize: 32, // Larger font size
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#FFFFFF', // White text
+    color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 40, // More space below title
+    marginBottom: 40,
   },
-  // --- Form Elements ---
   form: {
     marginBottom: 24,
-    width: '100%', // Ensure form takes full width for centering
-    alignItems: 'center', // Center input fields and button
+    width: '100%',
+    alignItems: 'center',
   },
   inputLabel: {
-    fontSize: 18, // Slightly larger label
+    fontSize: 18,
     fontWeight: '500',
-    color: '#FFFFFF', // White text
-    marginBottom: 8, // Space between label and input
+    color: '#FFFFFF',
+    marginBottom: 8,
     textAlign: 'center',
-    width: '90%', // Match input width
+    width: '90%',
   },
   inputField: {
-    backgroundColor: '#FFFFFF', // White background for inputs
-    borderRadius: 30, // More rounded corners
-    height: 55, // Taller input fields
-    paddingHorizontal: 20, // More horizontal padding
-    marginBottom: 20, // Space between inputs
-    width: 300, // Fixed width for inputs to look consistent
+    backgroundColor: '#FFFFFF',
+    borderRadius: 30,
+    height: 55,
+    paddingHorizontal: 20,
+    marginBottom: 2,
+    width: 300,
     fontSize: 16,
-    color: '#333333', // Dark text color for input
+    color: '#333333',
   },
-  // --- Login Button ---
+  // --- Forgot Password Styles ---
+  forgotPasswordContainer: {
+    width: 300, // Matches input width
+    alignItems: 'flex-end', // Aligns text to the right
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  forgotPasswordText: {
+    color: '#ffc700', // Matches your theme yellow/gold
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  // -----------------------------
   loginButton: {
-    marginTop: 10, // Adjust margin top
-    backgroundColor: '#ffc700', // Yellow/Gold background
-    borderRadius: 30, // Rounded corners
-    height: 55, // Taller button
-    width: '90%', // Match input width
+    marginTop: 0, // Removed extra margin since forgot password adds spacing
+    backgroundColor: '#ffc700',
+    borderRadius: 30,
+    height: 55,
+    width: 300,
     justifyContent: 'center',
     alignItems: 'center',
   },
   loginButtonText: {
-    color: '#333333', // Dark text for contrast on yellow
+    color: '#333333',
     fontSize: 18,
     fontWeight: 'bold',
   },
-  // --- Sign Up Link ---
   signupLink: {
     alignItems: 'center',
-    marginTop: 20, // Space above sign up link
+    marginTop: 20,
   },
   signupText: {
     fontSize: 16,
-    color: '#FFFFFF', // White text
+    color: '#FFFFFF',
   },
   linkText: {
-    color: '#ffc700', // Yellow/Gold for the link
+    color: '#ffc700',
     fontWeight: '600',
   },
 });

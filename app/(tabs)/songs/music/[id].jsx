@@ -1,44 +1,44 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
-  StyleSheet,
   TouchableOpacity,
   Image,
   Animated,
   Easing,
   ActivityIndicator,
+  Alert,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+// 1. Removed Heart Import
 import {
   Play,
   Pause,
   FastForward,
   Rewind,
   Repeat,
-  Heart,
   Download,
 } from 'lucide-react-native';
+
+// 2. FileSystem & MediaLibrary for Real Saving
+import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library';
+
 import { useTheme } from '../../../../contexts/ThemeContext';
-import { usePlayer } from '../../../../app/contexts/PlayContext'; // Use Global Context
+import { usePlayer } from '../../../../contexts/PlayListContext';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
-import {
-  getSong,
-  getFavorites,
-  toggleFavorite,
-} from '../../../../services/dataService';
+import { getSong } from '../../../../services/dataService';
 
-// ... Keep your SkeletonSong and Constants ...
 const HARDCODED_ALBUM_ART_URL =
-  'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/CHOIR.png?alt=media&token=92dd7301-75bd-4ea8-a042-371e94649186';
+  'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006527/CHOIR_o1kzpt.png';
 
 export default function MusicDetailScreen() {
-  const { id, playlistContext } = useLocalSearchParams();
+  const { id } = useLocalSearchParams();
   const { colors } = useTheme();
 
-  // Use Global Player
   const {
     currentSong,
     isPlaying,
@@ -53,12 +53,12 @@ export default function MusicDetailScreen() {
 
   const [localSongData, setLocalSongData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Animation Refs
   const pulse = useRef(new Animated.Value(1)).current;
 
-  // --- Animation Logic ---
+  // Animation Logic
   useEffect(() => {
     if (isPlaying) {
       Animated.loop(
@@ -83,28 +83,17 @@ export default function MusicDetailScreen() {
     }
   }, [isPlaying]);
 
-  // --- Load Data & Start Music ---
+  // Load Song Data
   useEffect(() => {
     const init = async () => {
       setLoading(true);
       try {
-        // 1. Fetch Song Details
         const songData = await getSong(id);
         setLocalSongData(songData);
 
-        // 2. Fetch Favorites status
-        const favs = await getFavorites();
-        setIsFavorite(favs.some((f) => f.songId === id || f.id === id));
-
-        // 3. PLAY LOGIC:
-        // Only play if it's a DIFFERENT song than what is currently playing
+        // Auto-play only if it's a NEW song request
         if (songData && (!currentSong || currentSong.id !== songData.id)) {
-          // If playlistContext is set, play with playlist support
-          let queue = null;
-          if (playlistContext === 'favorites') {
-            queue = favs; // Pass the full array of favorite objects
-          }
-          await playSong(songData, queue);
+          await playSong(songData);
         }
       } catch (e) {
         console.error(e);
@@ -115,12 +104,63 @@ export default function MusicDetailScreen() {
     init();
   }, [id]);
 
-  const handleFavorite = async () => {
+  const handleMainPlayPause = async () => {
+    if (currentSong && (currentSong.id === id || currentSong.songId === id)) {
+      togglePlayPause();
+    } else {
+      if (localSongData) await playSong(localSongData);
+    }
+  };
+
+  // === REAL SAVE TO DEVICE LOGIC ===
+  const handleDownload = async () => {
+    const songToDownload = currentSong || localSongData;
+    if (!songToDownload?.audioUrl) return;
+
+    // 1. Permission Check
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permission required',
+        'Please allow access to save songs to your device.'
+      );
+      return;
+    }
+
+    setIsDownloading(true);
     try {
-      await toggleFavorite(id, isFavorite ? 'remove' : 'add');
-      setIsFavorite(!isFavorite);
+      // 2. Define path
+      const filename = `${songToDownload.title.replace(
+        /[^a-z0-9]/gi,
+        '_'
+      )}.mp3`;
+      const fileUri = FileSystem.documentDirectory + filename;
+
+      // 3. Download to app cache
+      const { uri } = await FileSystem.downloadAsync(
+        songToDownload.audioUrl,
+        fileUri
+      );
+
+      // 4. Move to System Music/Gallery
+      const asset = await MediaLibrary.createAssetAsync(uri);
+
+      // Optional: Organize into an Album on Android
+      if (Platform.OS === 'android') {
+        const album = await MediaLibrary.getAlbumAsync('GraceApp Music');
+        if (album == null) {
+          await MediaLibrary.createAlbumAsync('GraceApp Music', asset, false);
+        } else {
+          await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+        }
+      }
+
+      Alert.alert('Success', 'Song saved to your device!');
     } catch (e) {
       console.error(e);
+      Alert.alert('Error', 'Could not save file.');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -134,16 +174,18 @@ export default function MusicDetailScreen() {
   if (loading || !localSongData)
     return <ActivityIndicator style={{ flex: 1 }} color={colors.primary} />;
 
-  // Determine active song data (prefer Context data if playing, else local)
-  const displaySong =
-    currentSong && currentSong.id === id ? currentSong : localSongData;
+  const isCurrentSongLoaded =
+    currentSong && (currentSong.id === id || currentSong.songId === id);
+  const displayIsPlaying = isCurrentSongLoaded ? isPlaying : false;
+  const displayPosition = isCurrentSongLoaded ? position : 0;
+  const displayDuration = isCurrentSongLoaded ? duration : 1;
 
   return (
     <SafeAreaWrapper>
       <TopNavigation showBackButton={true} />
-      <ScrollView style={{ flex: 1, padding: 20 }}>
+      <ScrollView style={{ flex: 1, paddingHorizontal: 20 }}>
         {/* Album Art */}
-        <View style={{ alignItems: 'center', marginVertical: 30 }}>
+        <View style={{ alignItems: 'center', marginVertical: 20 }}>
           <Animated.View
             style={{
               transform: [{ scale: pulse }],
@@ -163,14 +205,14 @@ export default function MusicDetailScreen() {
           <Text
             style={{ fontSize: 24, fontWeight: 'bold', color: colors.text }}
           >
-            {displaySong.title}
+            {localSongData.title}
           </Text>
           <Text style={{ fontSize: 16, color: colors.textSecondary }}>
-            {displaySong.artist || 'Unknown'}
+            {localSongData.category || 'Unknown'}
           </Text>
         </View>
 
-        {/* Progress */}
+        {/* Progress Bar */}
         <View style={{ marginBottom: 30 }}>
           <View
             style={{
@@ -180,10 +222,10 @@ export default function MusicDetailScreen() {
             }}
           >
             <Text style={{ color: colors.textSecondary }}>
-              {formatTime(position)}
+              {formatTime(displayPosition)}
             </Text>
             <Text style={{ color: colors.textSecondary }}>
-              {formatTime(duration)}
+              {formatTime(displayDuration)}
             </Text>
           </View>
           <View
@@ -196,7 +238,7 @@ export default function MusicDetailScreen() {
           >
             <View
               style={{
-                width: `${(position / duration) * 100}%`,
+                width: `${(displayPosition / displayDuration) * 100}%`,
                 height: '100%',
                 backgroundColor: colors.primary,
               }}
@@ -204,13 +246,14 @@ export default function MusicDetailScreen() {
           </View>
         </View>
 
-        {/* Controls */}
+        {/* --- CONTROLS ROW (No Heart) --- */}
         <View
           style={{
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: 40,
+            paddingHorizontal: 20,
           }}
         >
           <TouchableOpacity onPress={toggleLoop}>
@@ -220,12 +263,14 @@ export default function MusicDetailScreen() {
             />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => seek(position - 10000)}>
+          <TouchableOpacity
+            onPress={() => isCurrentSongLoaded && seek(position - 10000)}
+          >
             <Rewind color={colors.text} size={32} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={togglePlayPause}
+            onPress={handleMainPlayPause}
             style={{
               width: 70,
               height: 70,
@@ -236,23 +281,35 @@ export default function MusicDetailScreen() {
               elevation: 5,
             }}
           >
-            {isPlaying ? (
+            {displayIsPlaying ? (
               <Pause color="#fff" size={32} />
             ) : (
               <Play color="#fff" size={32} />
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => seek(position + 10000)}>
+          <TouchableOpacity
+            onPress={() => isCurrentSongLoaded && seek(position + 10000)}
+          >
             <FastForward color={colors.text} size={32} />
           </TouchableOpacity>
-
-          <TouchableOpacity onPress={handleFavorite}>
-            <Heart
-              color={isFavorite ? '#ff4444' : colors.textSecondary}
-              fill={isFavorite ? '#ff4444' : 'none'}
-              size={24}
-            />
+          <TouchableOpacity
+            onPress={handleDownload}
+            disabled={isDownloading}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+          >
+            {isDownloading ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Download
+                color={colors.textSecondary}
+                size={20}
+                style={{ marginRight: 8 }}
+              />
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>

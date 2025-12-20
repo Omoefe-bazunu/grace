@@ -25,6 +25,7 @@ import { SafeAreaWrapper } from '../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../components/TopNavigation';
 import { Button } from '../../../components/ui/Button';
 import { LANGUAGES } from '../../../constants/languages';
+import { HeartIcon } from 'lucide-react';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
@@ -44,6 +45,7 @@ export default function ProfileScreen() {
       title: translations.quiz || 'Quiz Resources',
       onPress: () => router.push('/profile/quizresources'),
     },
+
     {
       icon: <Bell size={20} color={colors.primary} />,
       title: translations.notices,
@@ -54,11 +56,7 @@ export default function ProfileScreen() {
       title: translations.contact,
       onPress: () => router.push('/profile/contact'),
     },
-    // {
-    //   icon: <Heart size={20} color={colors.primary} />,
-    //   title: 'Favorite',
-    //   onPress: () => router.push('/profile/favorite'),
-    // },
+
     {
       icon: <Info size={20} color={colors.primary} />,
       title: translations.about,

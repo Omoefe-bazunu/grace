@@ -203,7 +203,7 @@ export default function HymnsScreen() {
       <View>
         <ImageBackground
           source={{
-            uri: 'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/CHOIR.png?alt=media&token=92dd7301-75bd-4ea8-a042-371e94649186',
+            uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006527/CHOIR_o1kzpt.png',
           }}
           style={styles.headerImageContainer}
           resizeMode="cover"

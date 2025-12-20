@@ -273,6 +273,11 @@ export const markNoticeAsRead = async (userId, noticeId) => {
 };
 
 export const subscribeToReadNotices = (userId, callback) => {
+  // FIX: Stop execution immediately if userId is missing
+  if (!userId || userId === 'undefined') {
+    return () => {}; // Return an empty cleanup function
+  }
+
   const fetch = async () => {
     try {
       const response = await apiClient.get(`users/${userId}/readNotices`);
@@ -281,6 +286,7 @@ export const subscribeToReadNotices = (userId, callback) => {
       callback([]);
     }
   };
+
   fetch();
   const interval = setInterval(fetch, 10000);
   return () => clearInterval(interval);

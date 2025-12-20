@@ -28,7 +28,7 @@ import { TopNavigation } from '../../../../components/TopNavigation';
 
 // Placeholder for the image path (Ensure this path is correct in your project)
 const HEADER_IMAGE_URI =
-  'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/CHOIR.png?alt=media&token=92dd7301-75bd-4ea8-a042-371e94649186';
+  'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006527/CHOIR_o1kzpt.png';
 
 export default function MusicScreen() {
   const { category } = useLocalSearchParams();
@@ -218,9 +218,7 @@ export default function MusicScreen() {
         resizeMode="cover"
       >
         <View style={styles.headerOverlay} />
-        <Text style={styles.headerTitle}>
-          {category || 'Salem City Youth Choir'}
-        </Text>
+        <Text style={styles.headerTitle}>{category || 'Category'}</Text>
       </ImageBackground>
 
       <View style={styles.searchWrapper}>

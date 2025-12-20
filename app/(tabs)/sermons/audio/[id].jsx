@@ -6,9 +6,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Animated, // <-- New Import
-  Easing, // <-- New Import
+  Animated,
+  Easing,
   Alert,
+  Platform,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
@@ -18,8 +19,15 @@ import {
   FastForward,
   Rewind,
   Calendar,
-  Mic, // <-- New Import for the visualizer
+  Mic,
+  Repeat, // Added
+  Download, // Added
 } from 'lucide-react-native';
+
+// FileSystem & MediaLibrary for Real Saving
+import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library';
+
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
@@ -28,7 +36,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
 import { TopNavigation } from '../../../../components/TopNavigation';
 
-// --- Placeholder/Skeleton Component (Updated to include visual) ---
+// --- Placeholder/Skeleton Component ---
 const SkeletonSermon = () => {
   const { colors } = useTheme();
   return (
@@ -48,7 +56,6 @@ const SkeletonSermon = () => {
           colors={[colors.skeleton, colors.skeletonHighlight]}
           style={styles.skeletonDate}
         />
-        {/* Skeleton for the new visual element */}
         <LinearGradient
           colors={[colors.skeleton, colors.skeletonHighlight]}
           style={styles.skeletonVisual}
@@ -69,36 +76,36 @@ export default function SermonAudioDetailScreen() {
 
   const [sermon, setSermon] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Audio State
   const [sound, setSound] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isLooping, setIsLooping] = useState(false); // Added Loop State
+  const [isDownloading, setIsDownloading] = useState(false); // Added Download State
 
   // --- ANIMATION STATE ---
   const pulse = useRef(new Animated.Value(1)).current;
   const animationRef = useRef(null);
-
   const isMounted = useRef(true);
 
   // --- PULSE ANIMATION LOGIC ---
-
   const startPulse = useCallback(() => {
-    if (animationRef.current) {
-      animationRef.current.stop();
-    }
-    pulse.setValue(1); // Reset to original size
+    if (animationRef.current) animationRef.current.stop();
+    pulse.setValue(1);
 
     animationRef.current = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, {
-          toValue: 1.1, // Scale slightly up
-          duration: 700, // Speed of one pulse direction
+          toValue: 1.05,
+          duration: 1000,
           easing: Easing.ease,
           useNativeDriver: true,
         }),
         Animated.timing(pulse, {
-          toValue: 1, // Scale back down
-          duration: 700,
+          toValue: 1,
+          duration: 1000,
           easing: Easing.ease,
           useNativeDriver: true,
         }),
@@ -110,53 +117,55 @@ export default function SermonAudioDetailScreen() {
     if (animationRef.current) {
       animationRef.current.stop();
       animationRef.current = null;
-      pulse.setValue(1); // Reset scale to 1 when stopping
+      pulse.setValue(1);
     }
   }, [pulse]);
 
   // --- AUDIO LOGIC ---
-
   const onPlaybackStatusUpdate = useCallback(
     (status) => {
       if (!isMounted.current) return;
 
       if (status.isLoaded) {
-        // Integrate pulse logic here
+        // Pulse Logic
         if (status.isPlaying !== isPlaying) {
-          if (status.isPlaying) {
-            startPulse();
-          } else {
-            stopPulse();
-          }
+          status.isPlaying ? startPulse() : stopPulse();
         }
 
         setIsPlaying(status.isPlaying);
         setPosition(status.positionMillis);
         if (status.durationMillis) setDuration(status.durationMillis);
+
+        // Loop / End Logic
         if (status.didJustFinish) {
-          setIsPlaying(false);
-          setPosition(0);
-          sound.setPositionAsync(0);
-          stopPulse(); // Stop pulse on finish
+          if (isLooping) {
+            // If looping, the player might handle it automatically if setIsLoopingAsync is set,
+            // but we ensure logic consistency here.
+          } else {
+            setIsPlaying(false);
+            setPosition(0);
+            sound.setPositionAsync(0);
+            stopPulse();
+          }
         }
       } else if (status.error) {
         console.error('Audio load error:', status.error);
-        if (isMounted.current)
-          Alert.alert('Audio Error', 'Could not load sermon audio.');
         stopPulse();
       }
     },
-    [isPlaying, startPulse, stopPulse, sound]
+    [isPlaying, startPulse, stopPulse, sound, isLooping]
   );
 
   const loadAudio = async (url) => {
     try {
       if (sound) await sound.unloadAsync();
+
       const { sound: newSound } = await Audio.Sound.createAsync(
         { uri: url },
-        { shouldPlay: false },
+        { shouldPlay: false, isLooping: isLooping },
         onPlaybackStatusUpdate
       );
+
       if (isMounted.current) setSound(newSound);
     } catch (error) {
       console.error('Audio load error:', error);
@@ -189,11 +198,11 @@ export default function SermonAudioDetailScreen() {
     return () => {
       isMounted.current = false;
       if (sound) sound.unloadAsync();
-      stopPulse(); // Cleanup animation on unmount
+      stopPulse();
     };
   }, [id, stopPulse]);
 
-  // --- PLAYER CONTROLS ---
+  // --- CONTROLS ---
 
   const handlePlayPause = async () => {
     if (sound) {
@@ -204,6 +213,14 @@ export default function SermonAudioDetailScreen() {
         await sound.playAsync();
         startPulse();
       }
+    }
+  };
+
+  const handleToggleLoop = async () => {
+    const nextState = !isLooping;
+    setIsLooping(nextState);
+    if (sound) {
+      await sound.setIsLoopingAsync(nextState);
     }
   };
 
@@ -218,6 +235,50 @@ export default function SermonAudioDetailScreen() {
     if (sound) {
       const newPos = Math.max(0, position - 10000);
       await sound.setPositionAsync(newPos);
+    }
+  };
+
+  // --- DOWNLOAD LOGIC (Same as Music Player) ---
+  const handleDownload = async () => {
+    if (!sermon?.audioUrl) return;
+
+    // 1. Permission Check
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permission required',
+        'Please allow access to save sermons to your device.'
+      );
+      return;
+    }
+
+    setIsDownloading(true);
+    try {
+      // 2. Define path
+      const filename = `Sermon_${sermon.title.replace(/[^a-z0-9]/gi, '_')}.mp3`;
+      const fileUri = FileSystem.documentDirectory + filename;
+
+      // 3. Download
+      const { uri } = await FileSystem.downloadAsync(sermon.audioUrl, fileUri);
+
+      // 4. Save to Gallery/Music
+      const asset = await MediaLibrary.createAssetAsync(uri);
+
+      if (Platform.OS === 'android') {
+        const album = await MediaLibrary.getAlbumAsync('GraceApp Sermons');
+        if (album == null) {
+          await MediaLibrary.createAlbumAsync('GraceApp Sermons', asset, false);
+        } else {
+          await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+        }
+      }
+
+      Alert.alert('Success', 'Sermon saved to your device!');
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', 'Could not save file.');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -246,91 +307,131 @@ export default function SermonAudioDetailScreen() {
       <ScrollView
         style={[styles.content, { backgroundColor: colors.background }]}
       >
-        <Text style={[styles.title, { color: colors.text }]}>
-          {sermon.title || translations.noTitle}
-        </Text>
-
-        <View style={styles.dateRow}>
-          <Calendar size={18} color={colors.textSecondary} />
-          <Text style={[styles.date, { color: colors.textSecondary }]}>
-            {sermon.date || translations.unknownDate}
-          </Text>
-        </View>
-
-        {/* --- Pulsing Visualizer --- */}
+        {/* Visualizer (Pulsing Mic) */}
         <View style={styles.audioVisualContainer}>
           <Animated.View
             style={[
               styles.audioVisualDisc,
               {
-                transform: [{ scale: pulse }], // Apply pulse animation here
-                backgroundColor: colors.primary + '20', // Light background for pulse halo
-                borderColor: colors.primary + '50',
+                transform: [{ scale: pulse }],
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                elevation: 10, // Shadow matching music player
               },
             ]}
           >
             <View
               style={[
                 styles.micIconContainer,
-                { backgroundColor: colors.primary, borderColor: colors.card },
+                { backgroundColor: colors.primary },
               ]}
             >
-              <Mic size={60} color={colors.card} />
+              <Mic size={60} color="#FFFFFF" />
             </View>
           </Animated.View>
         </View>
-        {/* --- End Pulsing Visualizer --- */}
 
-        <View style={styles.audioControls}>
-          <TouchableOpacity onPress={handleRewind} style={styles.controlButton}>
-            <Rewind size={24} color={colors.text} />
-            <Text style={[styles.controlText, { color: colors.text }]}>
-              -10s
+        {/* Titles */}
+        <View style={{ alignItems: 'center', marginBottom: 20 }}>
+          <Text style={[styles.title, { color: colors.text }]}>
+            {sermon.title || translations.noTitle}
+          </Text>
+
+          <View style={styles.dateRow}>
+            <Calendar size={16} color={colors.textSecondary} />
+            <Text style={[styles.date, { color: colors.textSecondary }]}>
+              {sermon.date || translations.unknownDate}
             </Text>
+          </View>
+        </View>
+
+        {/* Progress Bar */}
+        <View style={{ marginBottom: 30 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              marginBottom: 10,
+            }}
+          >
+            <Text style={{ color: colors.textSecondary }}>
+              {formatTime(position)}
+            </Text>
+            <Text style={{ color: colors.textSecondary }}>
+              {formatTime(duration)}
+            </Text>
+          </View>
+          <View
+            style={{
+              height: 4,
+              backgroundColor: colors.border,
+              borderRadius: 2,
+              overflow: 'hidden',
+            }}
+          >
+            <View
+              style={{
+                width: duration ? `${(position / duration) * 100}%` : '0%',
+                height: '100%',
+                backgroundColor: colors.primary,
+              }}
+            />
+          </View>
+        </View>
+
+        {/* --- CONTROLS ROW --- */}
+        <View style={styles.audioControls}>
+          {/* Repeat */}
+          <TouchableOpacity onPress={handleToggleLoop}>
+            <Repeat
+              color={isLooping ? colors.primary : colors.textSecondary}
+              size={24}
+            />
           </TouchableOpacity>
 
+          {/* Rewind */}
+          <TouchableOpacity onPress={handleRewind}>
+            <Rewind size={32} color={colors.text} />
+          </TouchableOpacity>
+
+          {/* Play/Pause */}
           <TouchableOpacity
             onPress={handlePlayPause}
-            style={styles.playPauseButton}
+            style={[
+              styles.playPauseButton,
+              { backgroundColor: colors.primary },
+            ]}
           >
             {isPlaying ? (
-              <Pause size={48} color="#FFFFFF" />
+              <Pause size={32} color="#FFFFFF" />
             ) : (
-              <Play size={48} color="#FFFFFF" />
+              <Play size={32} color="#FFFFFF" />
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={handleFastForward}
-            style={styles.controlButton}
-          >
-            <FastForward size={24} color={colors.text} />
-            <Text style={[styles.controlText, { color: colors.text }]}>
-              +10s
-            </Text>
+          {/* Fast Forward */}
+          <TouchableOpacity onPress={handleFastForward}>
+            <FastForward size={32} color={colors.text} />
           </TouchableOpacity>
-        </View>
 
-        <View style={styles.progressContainer}>
-          <Text style={[styles.timeText, { color: colors.textSecondary }]}>
-            {formatTime(position)}
-          </Text>
-          <View
-            style={[styles.progressBarBg, { backgroundColor: colors.border }]}
+          <TouchableOpacity
+            onPress={handleDownload}
+            disabled={isDownloading}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
           >
-            <View
-              style={[
-                styles.progressBar,
-                {
-                  width: duration ? `${(position / duration) * 100}%` : '0%',
-                  backgroundColor: colors.primary,
-                },
-              ]}
-            />
-          </View>
-          <Text style={[styles.timeText, { color: colors.textSecondary }]}>
-            {formatTime(duration)}
-          </Text>
+            {isDownloading ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Download
+                color={colors.textSecondary}
+                size={20}
+                style={{ marginRight: 8 }}
+              />
+            )}
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaWrapper>
@@ -340,23 +441,13 @@ export default function SermonAudioDetailScreen() {
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
-  backButton: { padding: 8 },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'center',
-  },
-  content: { flex: 1, paddingHorizontal: 20, paddingTop: 20 },
+  content: { flex: 1, paddingHorizontal: 20, paddingTop: 10 },
   title: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 8,
     textAlign: 'center',
@@ -366,57 +457,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    marginBottom: 24,
   },
-  date: { fontSize: 16 },
-  // --- New Styles for Visualizer ---
+  date: { fontSize: 14 },
+
+  // Visualizer Styles (Matched to Album Art dimensions)
   audioVisualContainer: {
     alignItems: 'center',
-    marginVertical: 40,
-    height: 150, // Fixed height for container
+    marginVertical: 30,
   },
   audioVisualDisc: {
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  micIconContainer: {
     width: 150,
     height: 150,
     borderRadius: 75,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    opacity: 0.8,
   },
-  micIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 5,
-  },
-  // --- End New Styles ---
+
+  // Controls
   audioControls: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 20,
+    marginBottom: 40,
+    paddingHorizontal: 10,
   },
   playPauseButton: {
-    backgroundColor: '#1E3A8A',
-    borderRadius: 50,
-    padding: 20,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
   },
-  controlButton: { alignItems: 'center', padding: 10 },
-  controlText: { fontSize: 12, marginTop: 4 },
-  progressContainer: {
+  downloadBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    borderWidth: 1,
+    elevation: 2,
   },
-  timeText: { fontSize: 12, marginHorizontal: 8 },
-  progressBarBg: { flex: 1, height: 4, borderRadius: 2 },
-  progressBar: { height: '100%', borderRadius: 2 },
-  infoBox: { borderRadius: 12, padding: 20, marginBottom: 30 },
-  infoText: { fontSize: 16, lineHeight: 24 },
-  error: { fontSize: 18, textAlign: 'center', marginTop: 50 },
+
+  // Skeleton
   skeletonHeaderTitle: {
     height: 18,
     width: '60%',
@@ -437,13 +532,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     alignSelf: 'center',
   },
-  // Skeleton for the new visual element
   skeletonVisual: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
+    width: 250,
+    height: 250,
+    borderRadius: 125,
     alignSelf: 'center',
-    marginVertical: 40,
+    marginVertical: 30,
   },
   skeletonAudio: {
     height: 40,
@@ -451,4 +545,5 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginBottom: 20,
   },
+  error: { fontSize: 18, textAlign: 'center', marginTop: 50 },
 });

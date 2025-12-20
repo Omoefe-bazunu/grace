@@ -11,8 +11,9 @@ import {
   StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
-import { ArrowRight, ChevronRight } from 'lucide-react-native';
+import { ArrowRight } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Added Import
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,8 +25,7 @@ const slides = [
     title: "God's Kingdom Society",
     description:
       "A Christian Organization where the truth of God's word is preached and practiced in pursuance of the salvation of God.",
-    // Dark Blue to Deep Purple gradient
-    colors: ['#0d326f', '#071d45'],
+    colors: ['#113c83ff', '#022e68ff'],
     imageSrc:
       'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/logo%201.png?alt=media&token=63f2b45b-8e01-423e-a9ca-2384f329d4c9',
   },
@@ -35,7 +35,6 @@ const slides = [
     title: 'Edifying Sermons',
     description:
       'Get easy access to sermons of the GKS in text, audio and video formats and learn the word of God as it is in the Bible.',
-    // Rich Green to Dark Forest gradient
     colors: ['#388338', '#1a421a'],
     imageSrc:
       'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/mic%201.png?alt=media&token=2f7584e0-3a71-4a24-b534-03f57dee9d7e',
@@ -46,10 +45,19 @@ const slides = [
     title: 'Graceful Songs',
     description:
       'Join fellow believers around the world to give honour to God and Christ through melodious songs of praise.',
-    // Orange to Deep Burnt Orange
     colors: ['#e7713d', '#a64d25'],
     imageSrc:
       'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/MUSCI.png?alt=media&token=8629841c-01b7-4f61-8b1e-9b97708e0cbe',
+  },
+  {
+    id: '4',
+    subtitle: 'EXPLORE MORE',
+    title: 'MORE FEATURES',
+    description:
+      "Learn God's word through animations, and gain access to pictures and videos in the church's archive.",
+    colors: ['#400eb6ff', '#09228fff'],
+    imageSrc:
+      'https://firebasestorage.googleapis.com/v0/b/high-481fd.firebasestorage.app/o/gksimages%2Fmore%20(1).png?alt=media&token=8aa25d22-ed60-4817-ad81-b700ad03f229',
   },
 ];
 
@@ -68,8 +76,17 @@ export default function OnboardingScreen() {
     itemVisiblePercentThreshold: 50,
   }).current;
 
-  const navigateToNextScreen = () => {
-    router.replace('/(onboarding)/language-selection');
+  // --- UPDATED NAVIGATION LOGIC ---
+  const navigateToNextScreen = async () => {
+    try {
+      // Mark onboarding as seen so they don't see it again until logout/reinstall
+      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+      router.replace('/(onboarding)/language-selection');
+    } catch (error) {
+      console.error('Failed to save onboarding status:', error);
+      // Proceed anyway to avoid blocking the user
+      router.replace('/(onboarding)/language-selection');
+    }
   };
 
   const handleNext = () => {
@@ -90,7 +107,6 @@ export default function OnboardingScreen() {
       (index + 1) * width,
     ];
 
-    // Parallax effect for the image
     const imageTranslateY = scrollX.interpolate({
       inputRange,
       outputRange: [100, 0, 100],
@@ -107,7 +123,6 @@ export default function OnboardingScreen() {
       <View style={{ width, height, overflow: 'hidden' }}>
         <StatusBar barStyle="light-content" />
 
-        {/* Full Screen Gradient Background */}
         <LinearGradient
           colors={item.colors}
           start={{ x: 0, y: 0 }}
@@ -115,12 +130,10 @@ export default function OnboardingScreen() {
           style={StyleSheet.absoluteFillObject}
         />
 
-        {/* Abstract Background Shapes for Modern Feel */}
         <View style={styles.backgroundCircleTop} />
         <View style={styles.backgroundCircleBottom} />
 
         <View style={styles.contentContainer}>
-          {/* Animated Image Section */}
           <Animated.View
             style={[
               styles.imageContainer,
@@ -136,7 +149,6 @@ export default function OnboardingScreen() {
             </View>
           </Animated.View>
 
-          {/* Text Section */}
           <Animated.View style={{ opacity, alignItems: 'center' }}>
             <Text style={styles.subtitle}>{item.subtitle.toUpperCase()}</Text>
             <Text style={styles.title}>{item.title}</Text>
@@ -149,7 +161,6 @@ export default function OnboardingScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Fixed Skip Button (Top Right) */}
       <TouchableOpacity
         onPress={navigateToNextScreen}
         style={styles.skipButton}
@@ -176,9 +187,7 @@ export default function OnboardingScreen() {
         bounces={false}
       />
 
-      {/* Bottom Controls Area */}
       <View style={styles.bottomControls}>
-        {/* Indicators */}
         <View style={styles.indicatorContainer}>
           {slides.map((_, i) => {
             const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
@@ -205,7 +214,6 @@ export default function OnboardingScreen() {
           })}
         </View>
 
-        {/* Modern Floating Action Button */}
         <TouchableOpacity
           onPress={handleNext}
           style={styles.nextButton}
@@ -239,7 +247,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-  // Abstract Shapes
   backgroundCircleTop: {
     position: 'absolute',
     top: -100,
@@ -266,7 +273,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)', // Glassmorphic feel
+    backgroundColor: 'rgba(255,255,255,0.1)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
   },
@@ -281,7 +288,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
-    paddingBottom: 80, // Space for bottom controls
+    paddingBottom: 80,
   },
   imageContainer: {
     marginBottom: 40,
@@ -293,7 +300,6 @@ const styles = StyleSheet.create({
     height: 200,
     justifyContent: 'center',
     alignItems: 'center',
-    // Add a soft shadow glow behind the image
     shadowColor: '#fff',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.3,
@@ -308,12 +314,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: 'rgba(255,255,255,0.7)',
-    letterSpacing: 2, // Modern spacing
+    letterSpacing: 2,
     marginBottom: 10,
   },
   title: {
     fontSize: 28,
-    fontWeight: '800', // Extra bold
+    fontWeight: '800',
     color: '#ffffff',
     textAlign: 'center',
     marginBottom: 16,

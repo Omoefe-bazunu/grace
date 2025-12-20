@@ -36,7 +36,7 @@ const cards = [
     title: 'Songs of Praises',
     subtitle: 'Enjoy rich songs in worship to God.',
     image:
-      'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/CHOIR.png?alt=media&token=92dd7301-75bd-4ea8-a042-371e94649186',
+      'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006527/CHOIR_o1kzpt.png',
     path: '/songs',
     icon: Music,
   },
@@ -44,7 +44,7 @@ const cards = [
     title: 'Edifying Sermons',
     subtitle: 'Grow the knowledge of God with sound sermons.',
     image:
-      'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/SERMON.png?alt=media&token=b288818c-4d0e-426b-b40a-dd8f532b0a75',
+      'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006515/SERMON_xeajaz.png',
     path: '/sermons',
     icon: Mic,
   },
@@ -53,7 +53,7 @@ const cards = [
     title: 'Bible-based Stories',
     subtitle: 'Get inspired & informed by stories of spiritual values.',
     image:
-      'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/ANIMATIONS.png?alt=media&token=2e09351a-c50c-4dd8-8ea3-a093f8768ff1',
+      'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006506/ANIMATIONS_hkemjy.png',
     path: '/animations',
     icon: Film,
   },
@@ -61,7 +61,7 @@ const cards = [
     title: 'Tithes & Offering',
     subtitle: 'Support the work of God with your donations.',
     image:
-      'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/PAYMENTS.png?alt=media&token=21f61afe-a674-4520-b346-f5617468d0b5',
+      'https://res.cloudinary.com/db6lml0b5/image/upload/v1766007156/PAYMENTS_ccgkod.png',
     path: '/donations',
     icon: HandCoins,
   },
@@ -69,7 +69,7 @@ const cards = [
     title: 'Live Events',
     subtitle: 'Join live services and events.',
     image:
-      'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/STREAM.png?alt=media&token=9378a13e-7695-4aff-b5d9-002ce2033b68',
+      'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006543/STREAM_og07ye.png',
     path: '/live',
     icon: Video,
   },
@@ -148,7 +148,7 @@ export default function HomeScreen() {
       <View style={styles.banner}>
         <Image
           source={{
-            uri: 'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/SHEPHARD.png?alt=media&token=6662b885-56ef-4dc5-8961-d3ef8f8c4565',
+            uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006527/SHEPHARD_izw9ve.png',
           }}
           style={styles.bannerImage}
         />

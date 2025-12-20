@@ -90,7 +90,7 @@ export default function SermonsScreen() {
       <View style={styles.bannerContainer}>
         <ImageBackground
           source={{
-            uri: 'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/SERMON.png?alt=media&token=b288818c-4d0e-426b-b40a-dd8f532b0a75',
+            uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006515/SERMON_xeajaz.png',
           }}
           style={styles.bannerImage}
         >

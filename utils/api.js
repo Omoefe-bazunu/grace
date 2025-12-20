@@ -62,6 +62,11 @@ export const apiClient = {
 
   post: (path, data) => api.post(`/${clean(path)}`, data),
 
+  requestPasswordReset: (email) => api.post('/api/forgot-password', { email }),
+
+  confirmPasswordReset: (email, otp, newPassword) =>
+    api.post('/api/reset-password', { email, otp, newPassword }),
+
   // ✅ SMART PUT: Handles both (collection, id, data) AND (path, data)
   put: (pathOrCollection, idOrData, data) => {
     const p = clean(pathOrCollection);

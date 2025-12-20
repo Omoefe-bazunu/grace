@@ -656,7 +656,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    maxHeight: '90%',
+    maxHeight: '90%', // This keeps the modal from covering the whole screen
+    width: '100%', // Ensure full width
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     overflow: 'hidden',
@@ -675,7 +676,7 @@ const styles = StyleSheet.create({
   },
   formContent: {
     padding: 20,
-    maxHeight: 500,
+    flexShrink: 1,
   },
   label: {
     fontSize: 16,

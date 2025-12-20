@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     height: 55,
     paddingHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 2,
     width: 300,
     fontSize: 16,
     color: '#333333',
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffc700', // Yellow/Gold background
     borderRadius: 30,
     height: 55,
-    width: '90%',
+    width: 300,
     justifyContent: 'center',
     alignItems: 'center',
   },

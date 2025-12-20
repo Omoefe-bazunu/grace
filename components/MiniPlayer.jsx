@@ -7,7 +7,7 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
-import { usePlayer } from '../app/contexts/PlayContext';
+import { usePlayer } from '../contexts/PlayListContext';
 import { Play, Pause, X } from 'lucide-react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useRouter } from 'expo-router';

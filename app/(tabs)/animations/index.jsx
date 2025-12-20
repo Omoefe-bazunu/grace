@@ -295,7 +295,7 @@ export default function AnimationsScreen() {
       <View style={styles.bannerContainer}>
         <ImageBackground
           source={{
-            uri: 'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/ANIMATIONS.png?alt=media&token=2e09351a-c50c-4dd8-8ea3-a093f8768ff1',
+            uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006506/ANIMATIONS_hkemjy.png',
           }}
           style={styles.bannerImage}
         >

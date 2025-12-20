@@ -55,7 +55,7 @@ export default function MinistersGallery() {
           <View style={styles.bannerContainer}>
             <ImageBackground
               source={{
-                uri: 'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/GALLERY.png?alt=media&token=dbe70e9e-616e-45d0-8f16-8d05fb67715b',
+                uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766007961/GALLERY_c5xle3.png',
               }}
               style={styles.bannerImage}
             >
