@@ -8,14 +8,20 @@ import {
   ActivityIndicator,
   ImageBackground,
   TextInput,
+  TouchableOpacity,
+  Modal,
+  Dimensions,
 } from 'react-native';
 import { getGalleryPictures } from '../../../../../services/dataService';
 import { groupBy } from 'lodash';
 import { SafeAreaWrapper } from '../../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../../components/TopNavigation';
 import { LinearGradient } from 'expo-linear-gradient';
+import { X } from 'lucide-react-native'; // Ensure lucide-react-native is installed
 
-function EventCard({ event, items }) {
+const { width, height } = Dimensions.get('window');
+
+function EventCard({ event, items, onImagePress }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleScroll = (e) => {
@@ -40,12 +46,17 @@ function EventCard({ event, items }) {
           scrollEventThrottle={16}
         >
           {items.map((pic) => (
-            <Image
+            <TouchableOpacity
               key={pic.id}
-              source={{ uri: pic.url }}
-              style={styles.image}
-              resizeMode="cover"
-            />
+              onPress={() => onImagePress(pic.url)}
+              activeOpacity={0.9}
+            >
+              <Image
+                source={{ uri: pic.url }}
+                style={styles.image}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
           ))}
         </ScrollView>
         <View style={styles.indicatorContainer}>
@@ -68,6 +79,7 @@ export default function GalleryPictures() {
   const [pictures, setPictures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -143,10 +155,46 @@ export default function GalleryPictures() {
           </Text>
         ) : (
           filteredPictures.map(([event, items]) => (
-            <EventCard key={event} event={event} items={items} />
+            <EventCard
+              key={event}
+              event={event}
+              items={items}
+              onImagePress={(url) => setSelectedImage(url)}
+            />
           ))
         )}
       </ScrollView>
+
+      {/* Full Screen Image Modal */}
+      <Modal visible={!!selectedImage} transparent={true} animationType="fade">
+        <View style={styles.modalContainer}>
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setSelectedImage(null)}
+          >
+            <LinearGradient
+              colors={['rgba(0,0,0,0.9)', 'black']}
+              style={StyleSheet.absoluteFill}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setSelectedImage(null)}
+          >
+            <X color="white" size={32} />
+          </TouchableOpacity>
+
+          {selectedImage && (
+            <Image
+              source={{ uri: selectedImage }}
+              style={styles.fullImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
     </SafeAreaWrapper>
   );
 }
@@ -176,6 +224,10 @@ const styles = StyleSheet.create({
   },
   bannerText: {
     paddingHorizontal: 28,
+    position: 'absolute',
+    top: 40,
+    left: 0,
+    right: 0,
     alignItems: 'center',
     zIndex: 1,
   },
@@ -276,5 +328,26 @@ const styles = StyleSheet.create({
   indicatorActive: {
     backgroundColor: '#1E3A8A',
     width: 24,
+  },
+  // Modal Styles
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'black',
+  },
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  fullImage: {
+    width: width,
+    height: height * 0.8,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 50,
+    right: 25,
+    zIndex: 10,
+    padding: 10,
   },
 });

@@ -180,6 +180,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     borderBottomWidth: 4,
     borderColor: '#fff',
+    // Removed textAlign: 'center' from View
   },
   bannerImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   bannerGradient: {
@@ -192,12 +193,22 @@ const styles = StyleSheet.create({
   bannerText: {
     position: 'absolute',
     top: 40,
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    left: 0, // Added to ensure the container starts at the edge
+    right: 0, // Added to ensure the container ends at the edge
+    alignItems: 'center', // Centers children horizontally
+    justifyContent: 'center', // Centers children vertically
   },
-  bannerSociety: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  bannerChurch: { color: '#fff', fontSize: 12 },
+  bannerSociety: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center', // Added to center text within itself
+  },
+  bannerChurch: {
+    color: '#fff',
+    fontSize: 12,
+    textAlign: 'center',
+  },
   bannerTitle: {
     color: '#FFD700',
     fontSize: 28,
