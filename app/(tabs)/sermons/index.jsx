@@ -77,7 +77,7 @@ export default function SermonsScreen() {
         console.log('Searching for:', query);
       }
     }, 500),
-    []
+    [],
   );
 
   useEffect(() => {

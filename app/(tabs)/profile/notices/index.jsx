@@ -1,23 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-} from 'react-native';
+import { View, Text, FlatList, StyleSheet, Dimensions } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
 import { TopNavigation } from '@/components/TopNavigation';
-import {
-  subscribeToNotices,
-  subscribeToReadNotices,
-  markNoticeAsRead,
-} from '@/services/dataService';
-import { useAuth } from '@/contexts/AuthContext';
-import { Bell, CheckCircle2 } from 'lucide-react-native';
+import { subscribeToNotices } from '@/services/dataService';
+import { Bell } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -25,9 +13,7 @@ const { width } = Dimensions.get('window');
 const formatTime = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  // Check if date is valid
   if (isNaN(date.getTime())) return '';
-
   return date.toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
@@ -51,55 +37,22 @@ const SkeletonCard = () => {
   const { colors } = useTheme();
   return (
     <View style={[styles.noticeCard, { backgroundColor: colors.card }]}>
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          marginBottom: 10,
-        }}
-      >
+      <View style={styles.skeletonHeader}>
         <View
-          style={{
-            width: 24,
-            height: 24,
-            borderRadius: 12,
-            backgroundColor: colors.skeleton,
-          }}
+          style={[styles.skeletonCircle, { backgroundColor: colors.skeleton }]}
         />
         <View
-          style={{
-            width: 60,
-            height: 16,
-            borderRadius: 4,
-            backgroundColor: colors.skeleton,
-          }}
+          style={[styles.skeletonTime, { backgroundColor: colors.skeleton }]}
         />
       </View>
       <View
-        style={{
-          width: '70%',
-          height: 20,
-          borderRadius: 4,
-          backgroundColor: colors.skeleton,
-          marginBottom: 8,
-        }}
+        style={[styles.skeletonTitle, { backgroundColor: colors.skeleton }]}
       />
       <View
-        style={{
-          width: '100%',
-          height: 14,
-          borderRadius: 4,
-          backgroundColor: colors.skeleton,
-          marginBottom: 4,
-        }}
+        style={[styles.skeletonText, { backgroundColor: colors.skeleton }]}
       />
       <View
-        style={{
-          width: '90%',
-          height: 14,
-          borderRadius: 4,
-          backgroundColor: colors.skeleton,
-        }}
+        style={[styles.skeletonTextShort, { backgroundColor: colors.skeleton }]}
       />
     </View>
   );
@@ -107,91 +60,49 @@ const SkeletonCard = () => {
 
 export default function NoticesScreen() {
   const [allNotices, setAllNotices] = useState([]);
-  const [readNoticeIds, setReadNoticeIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const { translations } = useLanguage();
   const { colors } = useTheme();
-  const { user } = useAuth();
-  const userId = user?.uid;
 
   useEffect(() => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
-
+    // PUBLIC: Always fetch notices
     const unsubscribeNotices = subscribeToNotices((newNotices) => {
-      // Sort by createdAt descending
       const sorted = [...newNotices].sort(
         (a, b) =>
-          new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
+          new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date),
       );
       setAllNotices(sorted);
       setLoading(false);
     });
 
-    const unsubscribeReadNotices = subscribeToReadNotices(
-      userId,
-      (newReadIds) => {
-        setReadNoticeIds(newReadIds);
-      }
-    );
-
-    return () => {
-      unsubscribeNotices();
-      unsubscribeReadNotices();
-    };
-  }, [userId]);
-
-  const handleReadNotice = async (noticeId) => {
-    if (!readNoticeIds.includes(noticeId)) {
-      await markNoticeAsRead(userId, noticeId);
-    }
-  };
+    return () => unsubscribeNotices();
+  }, []);
 
   const renderNoticeItem = ({ item }) => {
-    const isRead = readNoticeIds.includes(item.id);
     const timestamp = item.createdAt || item.date;
 
     return (
-      <TouchableOpacity
+      <View
         style={[
           styles.noticeCard,
           {
             backgroundColor: colors.card,
-            opacity: isRead ? 0.85 : 1,
-            borderLeftColor: isRead ? 'transparent' : colors.primary,
-            borderLeftWidth: isRead ? 0 : 4, // Left border highlight for unread
+            borderLeftColor: colors.primary,
+            borderLeftWidth: 4,
           },
         ]}
-        activeOpacity={0.8}
-        onPress={() => handleReadNotice(item.id)}
       >
-        {/* Header: Icon - Title - Time */}
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
-            {/* Icon moved to top left edge */}
-            {isRead ? (
-              <CheckCircle2
-                size={20}
-                color={colors.textSecondary}
-                style={styles.icon}
-              />
-            ) : (
-              <Bell size={20} color={colors.primary} style={styles.icon} />
-            )}
+            <Bell size={20} color={colors.primary} style={styles.icon} />
             <Text
-              style={[
-                styles.title,
-                { color: colors.text, fontWeight: isRead ? '600' : '700' },
-              ]}
+              style={[styles.title, { color: colors.text, fontWeight: '700' }]}
               numberOfLines={1}
             >
               {item.title || translations.noTitle}
             </Text>
           </View>
 
-          {/* Actual Time on the right */}
           <View style={styles.timeContainer}>
             <Text style={[styles.timeText, { color: colors.textSecondary }]}>
               {formatTime(timestamp)}
@@ -199,35 +110,16 @@ export default function NoticesScreen() {
           </View>
         </View>
 
-        {/* Message Body */}
-        <Text
-          style={[
-            styles.message,
-            { color: isRead ? colors.textSecondary : colors.text },
-          ]}
-        >
+        <Text style={[styles.message, { color: colors.text }]}>
           {item.message || translations.noMessage}
         </Text>
 
-        {/* Footer: Date & Action */}
         <View style={styles.cardFooter}>
           <Text style={[styles.dateText, { color: colors.textSecondary }]}>
             {formatDate(timestamp)}
           </Text>
-
-          {/* Explicit "Mark as Read" Button */}
-          {!isRead && (
-            <TouchableOpacity
-              onPress={() => handleReadNotice(item.id)}
-              style={styles.markReadButton}
-            >
-              <Text style={[styles.markReadText, { color: colors.primary }]}>
-                Mark as Read
-              </Text>
-            </TouchableOpacity>
-          )}
         </View>
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -247,8 +139,7 @@ export default function NoticesScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} />
-
+      <TopNavigation showBackButton={true} title="Notices" />
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {loading ? (
           <View style={styles.listContent}>
@@ -272,18 +163,12 @@ export default function NoticesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  listContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
+  container: { flex: 1 },
+  listContent: { padding: 16, paddingBottom: 40 },
   noticeCard: {
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    // Modern Shadow
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -302,25 +187,11 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  icon: {
-    marginRight: 8,
-  },
-  title: {
-    fontSize: 16,
-    flex: 1, // Allow title to take remaining space
-  },
-  timeContainer: {
-    justifyContent: 'center',
-  },
-  timeText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  message: {
-    fontSize: 14,
-    lineHeight: 22,
-    marginBottom: 12,
-  },
+  icon: { marginRight: 8 },
+  title: { fontSize: 16, flex: 1 },
+  timeContainer: { justifyContent: 'center' },
+  timeText: { fontSize: 12, fontWeight: '500' },
+  message: { fontSize: 14, lineHeight: 22, marginBottom: 12 },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -330,19 +201,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.05)',
   },
-  dateText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  markReadButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
-  markReadText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  // Empty State Styles
+  dateText: { fontSize: 12, fontWeight: '500' },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -361,14 +220,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
   },
-  emptyText: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 8,
+  emptyText: { fontSize: 20, fontWeight: '700', marginBottom: 8 },
+  emptySubText: { fontSize: 15, textAlign: 'center', maxWidth: '70%' },
+  // Skeleton Styles
+  skeletonHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
-  emptySubText: {
-    fontSize: 15,
-    textAlign: 'center',
-    maxWidth: '70%',
-  },
+  skeletonCircle: { width: 24, height: 24, borderRadius: 12 },
+  skeletonTime: { width: 60, height: 16, borderRadius: 4 },
+  skeletonTitle: { width: '70%', height: 20, borderRadius: 4, marginBottom: 8 },
+  skeletonText: { width: '100%', height: 14, borderRadius: 4, marginBottom: 4 },
+  skeletonTextShort: { width: '90%', height: 14, borderRadius: 4 },
 });

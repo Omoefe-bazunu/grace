@@ -83,11 +83,11 @@ export default function TextSermonsScreen() {
           query,
           null,
           100,
-          null
+          null,
         );
         const grouped = SERMON_CATEGORIES.reduce(
           (acc, cat) => ({ ...acc, [cat]: [] }),
-          {}
+          {},
         );
         sermons.forEach((s) => {
           if (grouped[s.category]) grouped[s.category].push(s);
@@ -99,7 +99,7 @@ export default function TextSermonsScreen() {
         setRefreshing(false);
       }
     }, 500),
-    []
+    [],
   );
 
   useEffect(() => {
@@ -110,7 +110,7 @@ export default function TextSermonsScreen() {
   const closeModal = () => setExpandedCategory(null);
 
   const categoriesWithSermons = SERMON_CATEGORIES.filter(
-    (cat) => categorizedSermons[cat]?.length > 0
+    (cat) => categorizedSermons[cat]?.length > 0,
   );
 
   return (
@@ -182,7 +182,7 @@ export default function TextSermonsScreen() {
               ? sermons.filter((s) =>
                   (s.translations?.en?.title || s.title || '')
                     .toLowerCase()
-                    .includes(searchQuery.toLowerCase())
+                    .includes(searchQuery.toLowerCase()),
                 )
               : sermons;
 

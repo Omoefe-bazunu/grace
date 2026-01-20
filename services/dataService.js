@@ -28,7 +28,7 @@ export const getSermonsPaginated = async (limit = 15, after = null) => {
 export const getSermonsByCategoryPaginated = async (
   category,
   limit = 10,
-  after = null
+  after = null,
 ) => {
   try {
     const params = { category, limit, sort: 'createdAt', order: 'desc' };
@@ -81,7 +81,7 @@ export const getSermonVideosPaginated = async (limit = 12, after = null) => {
 export const getSermonVideosByCategoryPaginated = async (
   category,
   limit = 10,
-  after = null
+  after = null,
 ) => {
   try {
     const params = { category, limit, sort: 'createdAt', order: 'desc' };
@@ -134,7 +134,7 @@ export const getSongsPaginated = async (limit = 15, after = null) => {
 export const getSongsByCategoryPaginated = async (
   category,
   limit = 10,
-  after = null
+  after = null,
 ) => {
   try {
     const params = { category, limit };
@@ -219,7 +219,7 @@ export const getDailyDevotionals = async () => {
 
 export const getDailyDevotionalsPaginated = async (
   limit = 10,
-  after = null
+  after = null,
 ) => {
   try {
     const params = { limit, sort: 'date', order: 'desc' };
@@ -263,32 +263,10 @@ export const subscribeToNotices = (callback) => {
       callback([]);
     }
   };
-  fetch();
-  const interval = setInterval(fetch, 10000);
-  return () => clearInterval(interval);
-};
-
-export const markNoticeAsRead = async (userId, noticeId) => {
-  return apiClient.post(`users/${userId}/readNotices`, { noticeId });
-};
-
-export const subscribeToReadNotices = (userId, callback) => {
-  // FIX: Stop execution immediately if userId is missing
-  if (!userId || userId === 'undefined') {
-    return () => {}; // Return an empty cleanup function
-  }
-
-  const fetch = async () => {
-    try {
-      const response = await apiClient.get(`users/${userId}/readNotices`);
-      callback(response.data || []);
-    } catch {
-      callback([]);
-    }
-  };
 
   fetch();
-  const interval = setInterval(fetch, 10000);
+  // Poll every 30 seconds to keep it "live" without over-taxing the server
+  const interval = setInterval(fetch, 30000);
   return () => clearInterval(interval);
 };
 
@@ -426,7 +404,7 @@ export const searchContentPaginated = async (
   term,
   category = null,
   limit = 20,
-  after = null
+  after = null,
 ) => {
   try {
     const [sermons, songs, videos, sermonVideos, devotionals] =
@@ -443,7 +421,7 @@ export const searchContentPaginated = async (
       list.filter(
         (item) =>
           (item.title && item.title.toLowerCase().includes(lowerTerm)) ||
-          (item.content && item.content.toLowerCase().includes(lowerTerm))
+          (item.content && item.content.toLowerCase().includes(lowerTerm)),
       );
 
     return {

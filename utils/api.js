@@ -19,7 +19,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 api.interceptors.response.use(
@@ -30,7 +30,7 @@ api.interceptors.response.use(
       error.message,
       error.response?.status,
       'URL:',
-      error.config?.url
+      error.config?.url,
     );
 
     if (error.response?.status === 401) {
@@ -41,7 +41,7 @@ api.interceptors.response.use(
       throw new Error('Server is waking up. Please try again in a moment.');
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // Helper to clean paths (prevents 'api/api/' issues)
@@ -97,16 +97,11 @@ export const apiClient = {
     api.post(
       `/api/sermons/${sermonId}/generate-audio`,
       { languageCode, voiceName },
-      { timeout: 300000 }
+      { timeout: 300000 },
     ),
 
   getSermonAudioStatus: (sermonId) =>
     api.get(`/api/sermons/${sermonId}/audio-status`),
-
-  markNoticeAsRead: (userId, noticeId) =>
-    api.post(`/api/users/${userId}/readNotices`, { noticeId }),
-
-  getReadNotices: (userId) => api.get(`/api/users/${userId}/readNotices`),
 
   generateTTS: (text, languageCode, voiceName) =>
     api.post('/api/tts/synthesize', { text, languageCode, voiceName }),

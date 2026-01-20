@@ -21,7 +21,7 @@ export default function LanguageSelectionScreen() {
 
   const handleContinue = () => {
     // Navigate to the next screen after language selection
-    router.replace('/(auth)/login');
+    router.replace('/(tabs)/home');
   };
 
   // === 1. Sorting Logic ===
