@@ -12,16 +12,19 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaWrapper } from '../../../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../../../components/TopNavigation';
 import { useTheme } from '../../../../../../contexts/ThemeContext';
+// helpers from dataService.js [cite: 491-501]
 import {
   getGalleryPictures,
   getGalleryVideos,
-  getMinisters,
+  getGalleryMinisters,
+  updateGalleryEntry,
+  deleteGalleryEntry,
 } from '@/services/dataService';
-import apiClient from '../../../../../../utils/api';
 import {
   Edit2,
   Trash2,
@@ -43,65 +46,38 @@ export default function AdminGalleryManager() {
 
   const fetchAll = async () => {
     try {
-      // Helper to safely extract array from response
-      const getArray = (data) => {
-        if (Array.isArray(data)) return data;
-        if (data && Array.isArray(data.galleryPictures))
-          return data.galleryPictures;
-        if (data && Array.isArray(data.galleryVideos))
-          return data.galleryVideos;
-        if (data && Array.isArray(data.ministers)) return data.ministers;
-        return [];
-      };
-
-      const [picsData, vidsData, ministersData] = await Promise.all([
+      // Fetching from three separate collections
+      const [pics, vids, mins] = await Promise.all([
         getGalleryPictures(),
         getGalleryVideos(),
-        getMinisters(),
+        getGalleryMinisters(),
       ]);
 
-      const pics = getArray(picsData);
-      const vids = getArray(vidsData);
-      const ministers = getArray(ministersData);
-
       const formatted = [
-        ...pics.map((p) => ({
+        ...(pics || []).map((p) => ({
           ...p,
-          id: p.id,
-          title: p.event || 'Untitled Event',
-          type: 'galleryPicture',
-          url: p.url,
-          description: p.description,
+          type: 'galleryPictures',
+          displayTitle: p.event || 'No Title',
         })),
-        ...vids.map((v) => ({
+        ...(vids || []).map((v) => ({
           ...v,
-          id: v.id,
-          title: v.event || 'Untitled Video',
-          type: 'galleryVideo',
-          url: v.url,
-          description: v.description,
+          type: 'galleryVideos',
+          displayTitle: v.event || 'No Title',
         })),
-        ...ministers.map((m) => ({
+        ...(mins || []).map((m) => ({
           ...m,
-          id: m.id,
-          title: m.name || 'Unnamed Minister',
-          type: 'minister',
-          imageUrl: m.imageUrl,
-          category: m.category,
-          station: m.station,
-          maritalStatus: m.maritalStatus,
-          contact: m.contact,
+          type: 'galleryMinisters',
+          displayTitle: m.name || 'No Name',
         })),
       ];
 
       setItems(
         formatted.sort((a, b) =>
-          (b.createdAt || '').localeCompare(a.createdAt || '')
-        )
+          (b.createdAt || '').localeCompare(a.createdAt || ''),
+        ),
       );
     } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'Failed to load data');
+      Alert.alert('Error', 'Failed to load gallery items');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -112,474 +88,197 @@ export default function AdminGalleryManager() {
     fetchAll();
   }, []);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchAll();
-  };
-
-  const getCollectionName = (type) => {
-    const map = {
-      galleryPicture: 'galleryPictures',
-      galleryVideo: 'galleryVideos',
-      minister: 'ministers',
-    };
-    return map[type] || 'galleryPictures';
-  };
-
   const handleDelete = (item) => {
-    Alert.alert(
-      `Delete ${getTypeLabel(item.type)}`,
-      `Delete "${item.title}"?`,
-      [
-        { text: 'Cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const collection = getCollectionName(item.type);
-              await apiClient.delete(`${collection}/${item.id}`);
-              setItems((prev) => prev.filter((i) => i.id !== item.id));
-              Alert.alert('Success', 'Deleted successfully');
-            } catch (err) {
-              console.error(err);
-              Alert.alert('Error', 'Failed to delete item');
-            }
-          },
+    Alert.alert('Delete', `Remove this ${getTypeLabel(item.type)}?`, [
+      { text: 'Cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            // Hits DELETE /api/gallery/:collection/:id [cite: 561]
+            await deleteGalleryEntry(item.type, item.id);
+            setItems((prev) => prev.filter((i) => i.id !== item.id));
+          } catch {
+            Alert.alert('Error', 'Delete failed');
+          }
         },
-      ]
-    );
+      },
+    ]);
+  };
+
+  const handleSave = async () => {
+    try {
+      // Hits PUT /api/gallery/:collection/:id [cite: 560]
+      await updateGalleryEntry(editingItem.type, editingItem.id, form);
+      fetchAll();
+      setModalVisible(false);
+      Alert.alert('Success', 'Updated successfully');
+    } catch {
+      Alert.alert('Error', 'Update failed');
+    }
   };
 
   const openEditModal = (item) => {
     setEditingItem(item);
-    if (item.type === 'minister') {
-      setForm({
-        name: item.title,
-        category: item.category || '',
-        station: item.station || '',
-        maritalStatus: item.maritalStatus || '',
-        contact: item.contact || '',
-      });
-    } else {
-      setForm({
-        event: item.title,
-        description: item.description || '',
-      });
-    }
+    setForm(
+      item.type === 'galleryMinisters'
+        ? {
+            name: item.name,
+            category: item.category,
+            dateDevoted: item.dateDevoted,
+            contact: item.contact,
+          }
+        : { event: item.event, description: item.description },
+    );
     setModalVisible(true);
   };
 
-  const handleSave = async () => {
-    const collection = getCollectionName(editingItem.type);
-    let payload = {};
-
-    if (editingItem.type === 'minister') {
-      if (!form.name?.trim()) return Alert.alert('Error', 'Name is required');
-      payload = {
-        name: form.name.trim(),
-        category: form.category.trim(),
-        station: form.station.trim(),
-        maritalStatus: form.maritalStatus.trim(),
-        contact: form.contact.trim(),
-      };
-    } else {
-      if (!form.event?.trim())
-        return Alert.alert('Error', 'Event title is required');
-      payload = {
-        event: form.event.trim(),
-        description: form.description.trim(),
-      };
-    }
-
-    try {
-      // ✅ FIXED: Pass 3 arguments (collection, id, payload) explicitly
-      // This ensures utils/api.js forms the correct URL: /api/ministers/ID
-      await apiClient.put(collection, editingItem.id, payload);
-
-      setItems((prev) =>
-        prev.map((i) =>
-          i.id === editingItem.id
-            ? {
-                ...i,
-                title: editingItem.type === 'minister' ? form.name : form.event,
-                ...payload,
-              }
-            : i
-        )
-      );
-      setModalVisible(false);
-      Alert.alert('Success', 'Updated successfully');
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'Failed to save changes');
-    }
-  };
-
-  const getTypeColor = (type) => {
-    return type === 'galleryPicture'
-      ? '#EC4899'
-      : type === 'galleryVideo'
-      ? '#F97316'
-      : '#6366F1';
-  };
-
-  const getTypeIcon = (type) => {
-    if (type === 'galleryPicture') return <ImageIcon size={20} color="#fff" />;
-    if (type === 'galleryVideo') return <Video size={20} color="#fff" />;
-    return <User size={20} color="#fff" />;
-  };
-
   const getTypeLabel = (type) => {
-    if (type === 'galleryPicture') return 'Photo';
-    if (type === 'galleryVideo') return 'Video';
+    if (type === 'galleryPictures') return 'Photo';
+    if (type === 'galleryVideos') return 'Video';
     return 'Minister';
   };
 
-  if (loading) {
+  if (loading)
     return (
       <SafeAreaWrapper>
-        <TopNavigation title="Gallery & Ministers" showBackButton />
-        <View
-          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
-        >
+        <TopNavigation title="Gallery Admin" showBackButton />
+        <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaWrapper>
     );
-  }
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title="Gallery & Ministers Admin" showBackButton />
-
+      <TopNavigation title="Gallery Admin" showBackButton />
       <ScrollView
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={fetchAll} />
         }
-        style={{ backgroundColor: colors.background }}
       >
-        {items.length === 0 ? (
-          <Text
-            style={{
-              textAlign: 'center',
-              marginTop: 50,
-              color: colors.textSecondary,
-            }}
+        {items.map((item) => (
+          <View
+            key={item.id}
+            style={[styles.card, { backgroundColor: colors.card }]}
           >
-            No items yet
-          </Text>
-        ) : (
-          items.map((item) => {
-            const color = getTypeColor(item.type);
-            const displayImage =
-              item.type === 'minister' ? item.imageUrl : item.url;
-
-            return (
-              <View
-                key={item.id}
-                style={{
-                  marginHorizontal: 20,
-                  marginVertical: 8,
-                  borderRadius: 16,
-                  overflow: 'hidden',
-                  backgroundColor: colors.card,
-                  elevation: 4,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                }}
-              >
-                <LinearGradient
-                  colors={[color + '20', 'transparent']}
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 6,
-                  }}
-                />
-
-                {displayImage ? (
-                  <Image
-                    source={{ uri: displayImage }}
-                    style={{
-                      width: '100%',
-                      height: 180,
-                      borderTopLeftRadius: 16,
-                      borderTopRightRadius: 16,
-                      backgroundColor: '#f0f0f0',
-                    }}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View
-                    style={{
-                      height: 180,
-                      backgroundColor: '#eee',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Text style={{ color: '#999' }}>No Image</Text>
-                  </View>
-                )}
-
-                <View style={{ padding: 16 }}>
-                  <View
-                    style={{ flexDirection: 'row', alignItems: 'flex-start' }}
-                  >
-                    <View
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 20,
-                        backgroundColor: color,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        marginRight: 12,
-                      }}
-                    >
-                      {getTypeIcon(item.type)}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={{
-                          fontSize: 17,
-                          fontWeight: '600',
-                          color: colors.text,
-                        }}
-                      >
-                        {item.title}
-                      </Text>
-                      <Text
-                        style={{ fontSize: 13, color: color, marginTop: 2 }}
-                      >
-                        {getTypeLabel(item.type)}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Safety Check: Ensure string exists before rendering */}
-                  {!!item.description && (
-                    <Text
-                      style={{ marginTop: 10, color: colors.textSecondary }}
-                      numberOfLines={2}
-                    >
-                      {item.description}
-                    </Text>
-                  )}
-
-                  {item.type === 'minister' && (
-                    <View style={{ marginTop: 10 }}>
-                      {/* Safety Check: Ensure boolean result */}
-                      {Boolean(item.category || item.station) && (
-                        <Text style={{ color: '#666', fontSize: 13 }}>
-                          {[item.category, item.station]
-                            .filter(Boolean)
-                            .join(' • ')}
-                        </Text>
-                      )}
-
-                      {!!item.contact && (
-                        <Text
-                          style={{
-                            color: colors.primary,
-                            marginTop: 4,
-                            fontSize: 13,
-                          }}
-                        >
-                          {item.contact}
-                        </Text>
-                      )}
-                    </View>
-                  )}
-                </View>
-
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'flex-end',
-                    padding: 16,
-                    paddingTop: 0,
-                    gap: 2,
-                  }}
-                >
-                  <TouchableOpacity
-                    onPress={() => openEditModal(item)}
-                    style={{ padding: 8 }}
-                  >
-                    <Text
-                      style={{
-                        color: '#ffff',
-                        backgroundColor: '#076423ff',
-                        borderRadius: 6,
-                        padding: 8,
-                      }}
-                    >
-                      Update
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => handleDelete(item)}
-                    style={{ padding: 8 }}
-                  >
-                    <Text
-                      style={{
-                        color: '#ffff',
-                        backgroundColor: '#e74c3c',
-                        borderRadius: 6,
-                        padding: 8,
-                      }}
-                    >
-                      Delete
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+            <Image source={{ uri: item.url }} style={styles.cardImage} />
+            <View style={styles.cardBody}>
+              <View>
+                <Text style={[styles.itemTitle, { color: colors.text }]}>
+                  {item.displayTitle}
+                </Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+                  {getTypeLabel(item.type)}
+                </Text>
               </View>
-            );
-          })
-        )}
+              <View style={styles.actions}>
+                <TouchableOpacity onPress={() => openEditModal(item)}>
+                  <Edit2 size={20} color={colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDelete(item)}>
+                  <Trash2 size={20} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        ))}
       </ScrollView>
 
-      {/* Edit Modal */}
-      <Modal visible={modalVisible} transparent animationType="slide">
+      <Modal visible={modalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            justifyContent: 'flex-end',
-          }}
+          style={styles.modalOverlay}
         >
           <View
-            style={{
-              backgroundColor: colors.background,
-              borderTopLeftRadius: 20,
-              borderTopRightRadius: 20,
-              maxHeight: '90%',
-            }}
+            style={[
+              styles.modalContent,
+              { backgroundColor: colors.background },
+            ]}
           >
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                padding: 20,
-                borderBottomWidth: 1,
-                borderColor: '#eee',
-              }}
-            >
-              <Text
-                style={{ fontSize: 18, fontWeight: '600', color: colors.text }}
-              >
-                Edit {getTypeLabel(editingItem?.type)}
-              </Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <X size={24} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
+            <Text style={[styles.modalHeader, { color: colors.text }]}>
+              Edit {getTypeLabel(editingItem?.type)}
+            </Text>
 
-            <ScrollView style={{ padding: 20 }}>
-              {editingItem?.type === 'minister' ? (
+            <ScrollView>
+              {editingItem?.type === 'galleryMinisters' ? (
                 <>
-                  <Text style={labelStyle(colors)}>Name</Text>
                   <TextInput
-                    placeholder="Name *"
+                    style={[
+                      styles.input,
+                      { color: colors.text, borderColor: colors.border },
+                    ]}
                     value={form.name}
                     onChangeText={(t) => setForm({ ...form, name: t })}
-                    style={inputStyle(colors)}
+                    placeholder="Name"
                   />
-                  <Text style={labelStyle(colors)}>Category</Text>
                   <TextInput
-                    placeholder="Category (e.g. Pastor)"
+                    style={[
+                      styles.input,
+                      { color: colors.text, borderColor: colors.border },
+                    ]}
                     value={form.category}
                     onChangeText={(t) => setForm({ ...form, category: t })}
-                    style={inputStyle(colors)}
+                    placeholder="Category"
                   />
-                  <Text style={labelStyle(colors)}>Station</Text>
                   <TextInput
-                    placeholder="Station"
-                    value={form.station}
-                    onChangeText={(t) => setForm({ ...form, station: t })}
-                    style={inputStyle(colors)}
+                    style={[
+                      styles.input,
+                      { color: colors.text, borderColor: colors.border },
+                    ]}
+                    value={form.dateDevoted}
+                    onChangeText={(t) => setForm({ ...form, dateDevoted: t })}
+                    placeholder="Date Devoted"
                   />
-                  <Text style={labelStyle(colors)}>Marital Status</Text>
                   <TextInput
-                    placeholder="Marital Status"
-                    value={form.maritalStatus}
-                    onChangeText={(t) => setForm({ ...form, maritalStatus: t })}
-                    style={inputStyle(colors)}
-                  />
-                  <Text style={labelStyle(colors)}>Contact</Text>
-                  <TextInput
-                    placeholder="Contact"
+                    style={[
+                      styles.input,
+                      { color: colors.text, borderColor: colors.border },
+                    ]}
                     value={form.contact}
                     onChangeText={(t) => setForm({ ...form, contact: t })}
-                    style={inputStyle(colors)}
+                    placeholder="Contact"
                   />
                 </>
               ) : (
                 <>
-                  <Text style={labelStyle(colors)}>Title</Text>
                   <TextInput
-                    placeholder="Event Title *"
+                    style={[
+                      styles.input,
+                      { color: colors.text, borderColor: colors.border },
+                    ]}
                     value={form.event}
                     onChangeText={(t) => setForm({ ...form, event: t })}
-                    style={inputStyle(colors)}
+                    placeholder="Event Title"
                   />
-                  <Text style={labelStyle(colors)}>Description</Text>
                   <TextInput
-                    placeholder="Description"
+                    style={[
+                      styles.input,
+                      {
+                        color: colors.text,
+                        borderColor: colors.border,
+                        height: 100,
+                      },
+                    ]}
                     value={form.description}
                     onChangeText={(t) => setForm({ ...form, description: t })}
                     multiline
-                    style={[
-                      inputStyle(colors),
-                      { height: 120, textAlignVertical: 'top' },
-                    ]}
+                    placeholder="Description"
                   />
                 </>
               )}
             </ScrollView>
 
-            <View
-              style={{
-                flexDirection: 'row',
-                padding: 20,
-                gap: 12,
-                borderTopWidth: 1,
-                borderColor: '#eee',
-              }}
-            >
-              <TouchableOpacity
-                onPress={() => setModalVisible(false)}
-                style={{
-                  flex: 1,
-                  padding: 15,
-                  backgroundColor: '#E5E7EB',
-                  borderRadius: 12,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: '#374151', fontWeight: '600' }}>
-                  Cancel
-                </Text>
+            <View style={styles.modalFooter}>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Text style={{ color: colors.textSecondary }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleSave}
-                style={{
-                  flex: 1,
-                  padding: 15,
-                  backgroundColor: colors.primary,
-                  borderRadius: 12,
-                  alignItems: 'center',
-                }}
+                style={[styles.saveBtn, { backgroundColor: colors.primary }]}
               >
-                <Text style={{ color: '#fff', fontWeight: '600' }}>
-                  Save Changes
-                </Text>
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -589,21 +288,32 @@ export default function AdminGalleryManager() {
   );
 }
 
-const inputStyle = (colors) => ({
-  backgroundColor: colors.card,
-  color: colors.text,
-  padding: 16,
-  borderRadius: 12,
-  marginBottom: 16,
-  fontSize: 16,
-  borderWidth: 1,
-  borderColor: '#E5E7EB',
-});
-
-const labelStyle = (colors) => ({
-  fontSize: 14,
-  fontWeight: '600',
-  color: colors.textSecondary,
-  marginBottom: 6,
-  marginLeft: 4,
+const styles = StyleSheet.create({
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  card: { margin: 15, borderRadius: 12, overflow: 'hidden', elevation: 3 },
+  cardImage: { width: '100%', height: 180 },
+  cardBody: {
+    padding: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  itemTitle: { fontSize: 16, fontWeight: 'bold' },
+  actions: { flexDirection: 'row', gap: 20 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: { padding: 20, borderRadius: 15, maxHeight: '80%' },
+  modalHeader: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
+  input: { borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 15 },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  saveBtn: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
 });

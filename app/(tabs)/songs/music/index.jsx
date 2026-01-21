@@ -1,4 +1,3 @@
-// MusicScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -27,7 +26,6 @@ import {
 import debounce from 'lodash.debounce';
 import { TopNavigation } from '../../../../components/TopNavigation';
 
-// Placeholder for the image path (Ensure this path is correct in your project)
 const HEADER_IMAGE_URI =
   'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006527/CHOIR_o1kzpt.png';
 
@@ -42,10 +40,9 @@ export default function MusicScreen() {
   const [nextCursor, setNextCursor] = useState(null);
   const [error, setError] = useState(null);
   const { translations } = useLanguage();
-  const { colors } = useTheme();
+  const { colors } = useTheme(); // ✅ Hook used for dynamic theme
 
-  // === DATA FETCHING LOGIC ===
-
+  // === DATA FETCHING LOGIC === (Kept identical as requested)
   const loadSongs = async (isRefresh = false) => {
     try {
       if (isRefresh) {
@@ -76,11 +73,9 @@ export default function MusicScreen() {
         result = await getSongsPaginated(15, isRefresh ? null : nextCursor);
       }
 
-      // When loading initial data or refreshing, replace the whole list
       if (isRefresh) {
         setSongs(result.songs);
       } else {
-        // When initially loading (and not refreshing), ensure no duplicates are added
         setSongs((prev) => {
           const existingIds = new Set(prev.map((song) => song.id));
           const uniqueNewSongs = result.songs.filter(
@@ -123,19 +118,13 @@ export default function MusicScreen() {
         result = await getSongsPaginated(15, nextCursor);
       }
 
-      // === FIX for Duplicate Key Error ===
       setSongs((prevSongs) => {
         const existingIds = new Set(prevSongs.map((song) => song.id));
-
-        // Filter out any new songs whose IDs already exist
         const uniqueNewSongs = result.songs.filter(
           (song) => !existingIds.has(song.id),
         );
-
-        // Combine unique lists
         return [...prevSongs, ...uniqueNewSongs];
       });
-      // ====================================
 
       setHasMore(result.hasMore);
       setNextCursor(result.nextCursor);
@@ -189,78 +178,100 @@ export default function MusicScreen() {
 
   const renderSongItem = ({ item }) => (
     <TouchableOpacity
-      style={styles.songCard}
+      style={[
+        styles.songCard,
+        { backgroundColor: colors.card, borderColor: colors.primary },
+      ]}
       onPress={() => router.push(`/(tabs)/songs/music/${item.id}`)}
     >
-      <View style={styles.iconContainer}>
+      <View
+        style={[styles.iconContainer, { backgroundColor: colors.background }]}
+      >
         <Mic2 size={24} color={colors.primary} />
       </View>
       <View style={styles.titleContainer}>
-        <AppText style={styles.songTitle}>{item.title || 'Untitled'}</AppText>
+        <AppText style={[styles.songTitle, { color: colors.text }]}>
+          {item.title || 'Untitled'}
+        </AppText>
       </View>
       <TouchableOpacity
-        style={styles.playButton}
+        style={[styles.playButton, { backgroundColor: '#ffcc00' }]}
         onPress={() => router.push(`/(tabs)/songs/music/${item.id}`)}
       >
-        <AppText style={styles.playText}>Start Playing</AppText>
+        <AppText style={[styles.playText, { color: '#000' }]}>
+          Start Playing
+        </AppText>
       </TouchableOpacity>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaWrapper backgroundColor={colors.background}>
-      <TopNavigation showBackButton={true} />
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <SafeAreaWrapper backgroundColor={colors.background}>
+        <TopNavigation showBackButton={true} />
 
-      <ImageBackground
-        source={{
-          uri: HEADER_IMAGE_URI,
-        }}
-        style={styles.headerImageContainer}
-        resizeMode="cover"
-      >
-        <View style={styles.headerOverlay} />
-        <AppText style={styles.headerTitle}>{category || 'Category'}</AppText>
-      </ImageBackground>
+        <ImageBackground
+          source={{ uri: HEADER_IMAGE_URI }}
+          style={styles.headerImageContainer}
+          resizeMode="cover"
+        >
+          <View style={styles.headerOverlay} />
+          <AppText style={styles.headerTitle}>{category || 'Category'}</AppText>
+        </ImageBackground>
 
-      <View style={styles.searchWrapper}>
-        <Search size={20} color="#888" style={styles.searchIcon} />
-        <TextInput
-          placeholder="Search songs..."
-          placeholderTextColor="#aaa"
-          style={styles.searchInput}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
-
-      <FlatList
-        data={songs}
-        renderItem={renderSongItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primary}
+        <View style={[styles.searchWrapper, { backgroundColor: colors.card }]}>
+          <Search
+            size={20}
+            color={colors.textSecondary}
+            style={styles.searchIcon}
           />
-        }
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={
-          loadingMore && (
-            <ActivityIndicator style={{ margin: 20 }} color={colors.primary} />
-          )
-        }
-        ListEmptyComponent={
-          loading ? (
-            <ActivityIndicator />
-          ) : (
-            <AppText style={styles.empty}>No songs found</AppText>
-          )
-        }
-      />
-    </SafeAreaWrapper>
+          <TextInput
+            placeholder="Search songs..."
+            placeholderTextColor={colors.textSecondary}
+            style={[styles.searchInput, { color: colors.text }]}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+
+        <FlatList
+          data={songs}
+          renderItem={renderSongItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore && (
+              <ActivityIndicator
+                style={{ margin: 20 }}
+                color={colors.primary}
+              />
+            )
+          }
+          ListEmptyComponent={
+            loading ? (
+              <ActivityIndicator
+                color={colors.primary}
+                style={{ marginTop: 50 }}
+              />
+            ) : (
+              <AppText style={[styles.empty, { color: colors.textSecondary }]}>
+                No songs found
+              </AppText>
+            )
+          }
+        />
+      </SafeAreaWrapper>
+    </View>
   );
 }
 
@@ -270,15 +281,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingBottom: 30,
     paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
   headerOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -293,59 +295,51 @@ const styles = StyleSheet.create({
     width: '90%',
     marginHorizontal: 'auto',
   },
-
-  backButton: { padding: 8 },
   searchWrapper: {
     marginHorizontal: 20,
     marginTop: -30,
     marginBottom: 20,
-    backgroundColor: '#fff',
     borderRadius: 30,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
+    elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
-    elevation: 8,
   },
   searchIcon: { marginRight: 10 },
   searchInput: { flex: 1, paddingVertical: 16, fontSize: 16 },
   list: { paddingHorizontal: 20, paddingVertical: 20 },
   songCard: {
-    backgroundColor: '#fff',
     borderLeftWidth: 4,
-    borderColor: '#1E3A8A',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     gap: 12,
     flexDirection: 'column',
     alignItems: 'center',
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 4,
   },
   iconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
   },
   titleContainer: { flex: 1 },
-  songTitle: { fontSize: 17, fontWeight: '600', color: '#1E3A8A' },
+  songTitle: { fontSize: 17, fontWeight: '600', textAlign: 'center' },
   playButton: {
-    backgroundColor: '#ffcc00',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 25,
   },
-  playText: { color: '#000', fontWeight: '600', fontSize: 14 },
-  empty: { textAlign: 'center', marginTop: 50, color: '#888', fontSize: 16 },
+  playText: { fontWeight: '600', fontSize: 14 },
+  empty: { textAlign: 'center', marginTop: 50, fontSize: 16 },
 });

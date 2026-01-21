@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ImageBackground,
+  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Image, Video, Users } from 'lucide-react-native';
@@ -22,71 +23,84 @@ export default function ArchiveScreen() {
   const cards = [
     {
       title: translations.pictures || 'Pictures',
-      icon: <Image size={30} color={colors.primary} />, // Use theme primary color
+      icon: <Image size={30} color={colors.primary} />,
       route: 'pictures',
     },
     {
       title: translations.videos || 'Videos',
-      icon: <Video size={30} color={colors.primary} />, // Use theme primary color
+      icon: <Video size={30} color={colors.primary} />,
       route: 'videos',
     },
   ];
 
   return (
-    <View>
+    // Root View with dynamic background color to prevent white flashes in dark mode
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <TopNavigation showBackButton={true} />
-      <SafeAreaWrapper style={styles.cardsWrapper}>
-        <View style={styles.bannerContainer}>
-          <ImageBackground
-            source={{
-              uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766007961/GALLERY_c5xle3.png',
-            }}
-            style={styles.bannerImage}
-          >
-            <LinearGradient
-              colors={['transparent', `black`]}
-              style={styles.bannerGradient}
-            />
-            <View style={styles.bannerText}>
-              <AppText style={styles.bannerTitle}>ARCHIVE</AppText>
-              <AppText style={styles.bannerSubtitle}>
-                Here you will find pictures and videos from old events of the
-                church, kept for reference and memories.
-              </AppText>
-            </View>
-          </ImageBackground>
-        </View>
-        <View
-          style={[
-            styles.cardsContainer,
-            { backgroundColor: colors.background },
-          ]}
+
+      <SafeAreaWrapper
+        style={[styles.cardsWrapper, { backgroundColor: colors.background }]}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
         >
-          {cards.map((card, index) => (
-            <TouchableOpacity
-              key={card.route}
-              style={[
-                styles.card,
-                { backgroundColor: colors.card, shadowColor: colors.shadow }, // Use theme colors
-                index === cards.length - 1 ? styles.lastCardMargin : null, // Add bottom margin to all but the last card
-              ]}
-              onPress={() => router.push(`/(tabs)/archive/${card.route}/`)}
+          <View style={styles.bannerContainer}>
+            <ImageBackground
+              source={{
+                uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766007961/GALLERY_c5xle3.png',
+              }}
+              style={styles.bannerImage}
             >
-              {/* Orange accent bar */}
-              <View
-                style={[styles.cardAccent, { backgroundColor: '#ca5e0cff' }]}
+              <LinearGradient
+                colors={['transparent', 'black']}
+                style={styles.bannerGradient}
               />
-              {/* Hardcoded orange from design */}
-              <View style={styles.cardContent}>
-                {card.icon}
-                <AppText style={[styles.cardText, { color: colors.text }]}>
-                  {/* Use theme text color */}
-                  {card.title}
+              <View style={styles.bannerText}>
+                <AppText style={styles.bannerTitle}>ARCHIVE</AppText>
+                <AppText style={styles.bannerSubtitle}>
+                  Here you will find pictures and videos from old events of the
+                  church, kept for reference and memories.
                 </AppText>
               </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+            </ImageBackground>
+          </View>
+
+          <View
+            style={[
+              styles.cardsContainer,
+              { backgroundColor: colors.background },
+            ]}
+          >
+            {cards.map((card, index) => (
+              <TouchableOpacity
+                key={card.route}
+                activeOpacity={0.8}
+                style={[
+                  styles.card,
+                  {
+                    backgroundColor: colors.card,
+                    shadowColor: colors.text, // Using text color for shadow helps visibility in both modes
+                  },
+                  index === cards.length - 1 ? styles.lastCardMargin : null,
+                ]}
+                onPress={() => router.push(`/(tabs)/archive/${card.route}/`)}
+              >
+                {/* Orange accent bar */}
+                <View
+                  style={[styles.cardAccent, { backgroundColor: '#ca5e0cff' }]}
+                />
+
+                <View style={styles.cardContent}>
+                  {card.icon}
+                  <AppText style={[styles.cardText, { color: colors.text }]}>
+                    {card.title}
+                  </AppText>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
       </SafeAreaWrapper>
     </View>
   );
@@ -95,12 +109,12 @@ export default function ArchiveScreen() {
 const styles = StyleSheet.create({
   bannerContainer: {
     overflow: 'hidden',
-    height: 200,
+    height: 120,
     marginBottom: 10,
   },
   bannerImage: {
     width: '100%',
-    height: 200,
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -118,65 +132,42 @@ const styles = StyleSheet.create({
   },
   bannerTitle: {
     color: '#fff',
-    fontSize: 28,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 6,
   },
   bannerSubtitle: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 12,
     textAlign: 'center',
     lineHeight: 20,
   },
-
-  imageBackground: {
-    width: '100%',
-    height: 250, // Height based on design approximation
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: -50, // Pull up the cards container to overlap
-  },
-  imageBackgroundStyle: {
-    resizeMode: 'cover',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-
   cardsWrapper: {
     flex: 1,
-    zIndex: 1, // Ensure cards are above the image if there's any overflow
+    zIndex: 1,
   },
   cardsContainer: {
     flex: 1,
-    backgroundColor: '#F8FAFC', // Background color for the card section
-    borderTopLeftRadius: 30, // Rounded top corners
-    borderTopRightRadius: 30,
-    paddingTop: 30, // Padding inside the rounded container
     paddingHorizontal: 20,
-    alignItems: 'center', // Center cards horizontally
+    alignItems: 'center',
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%', // Full width as per design
-    height: 100, // Fixed height for each card
-    // backgroundColor: '#FFFFFF',
+    width: '100%',
+    height: 100,
     borderRadius: 15,
-    marginBottom: 20, // Space between cards
-    elevation: 4, // Shadow for Android
-    shadowColor: '#000', // Shadow for iOS
+    marginBottom: 20,
+    elevation: 4,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 3.84,
-    overflow: 'hidden', // Ensures accent bar is clipped
+    overflow: 'hidden',
   },
   cardAccent: {
-    width: 10, // Width of the orange accent bar
+    width: 10,
     height: '100%',
-    backgroundColor: '#ca5e0cff', // Orange color from design
     borderTopLeftRadius: 15,
     borderBottomLeftRadius: 15,
   },
@@ -184,38 +175,14 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 20, // Padding after the accent bar
+    paddingLeft: 20,
   },
   cardText: {
     marginLeft: 20,
     fontSize: 20,
     fontWeight: '600',
-    color: '#333333', // Default dark text, can be overridden by theme
   },
   lastCardMargin: {
-    marginBottom: 40, // Add more margin to the last card to prevent it from hugging the bottom tab bar
-  },
-  // Skeleton styles (adapt if you have a SkeletonGallery component)
-  skeletonHeaderTitle: {
-    height: 34,
-    width: '70%',
-    borderRadius: 4,
-    marginBottom: 10,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  skeletonHeaderDescription: {
-    height: 16,
-    width: '90%',
-    borderRadius: 4,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  skeletonCard: {
-    height: 100,
-    width: '100%',
-    borderRadius: 15,
-    marginBottom: 20,
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    marginBottom: 40,
   },
 });

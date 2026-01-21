@@ -1,295 +1,230 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
-  Text,
   FlatList,
-  TouchableOpacity,
   StyleSheet,
   TextInput,
+  TouchableOpacity,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Search, ArrowLeft, Book } from 'lucide-react-native';
+import { Search, FileText, Download, ChevronRight } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
 import { TopNavigation } from '@/components/TopNavigation';
-import { getQuizResources, searchContent } from '@/services/dataService';
-import { LinearGradient } from 'expo-linear-gradient';
-import debounce from 'lodash.debounce';
+import { getQuizResources } from '@/services/dataService';
 import { AppText } from '../../../../components/ui/AppText';
+import debounce from 'lodash.debounce';
 
-// Component for a single quiz card
-const QuizCard = ({ item, translations, colors }) => {
-  const title = item.title || translations.noTitle;
-  const category = `${item.year} - ${item.age} - ${item.gender}`;
+const QuizCard = ({ item, colors }) => {
+  const openPdf = () => {
+    if (item.pdfUrl) Linking.openURL(item.pdfUrl);
+  };
 
   return (
-    <TouchableOpacity
-      style={[styles.card, { backgroundColor: colors.card }]}
-      onPress={() => router.push(`/(tabs)/profile/quizresources/${item.id}`)}
-    >
-      <AppText
-        style={[styles.quizTitle, { color: colors.text }]}
-        numberOfLines={1}
-      >
-        {title}
-      </AppText>
-      <AppText style={[styles.quizMeta, { color: colors.textSecondary }]}>
-        {category}
-      </AppText>
-      <TouchableOpacity
-        style={styles.studyButton}
-        onPress={() => router.push(`/(tabs)/profile/quizresources/${item.id}`)}
-      >
-        <AppText style={[styles.studyButtonText, { color: '#fff' }]}>
-          {translations.study || 'Start Study'}
-        </AppText>
-      </TouchableOpacity>
-    </TouchableOpacity>
+    <View style={[styles.card, { backgroundColor: colors.card }]}>
+      <View style={styles.cardMain}>
+        <View style={styles.iconContainer}>
+          <FileText size={24} color={colors.primary} />
+        </View>
+        <View style={styles.infoContainer}>
+          <AppText
+            style={[styles.quizTitle, { color: colors.text }]}
+            numberOfLines={2}
+          >
+            {item.title}
+          </AppText>
+          <View style={styles.tagRow}>
+            <View
+              style={[styles.tag, { backgroundColor: colors.primary + '15' }]}
+            >
+              <AppText style={[styles.tagText, { color: colors.primary }]}>
+                {item.year}
+              </AppText>
+            </View>
+            <View style={[styles.tag, { backgroundColor: '#F3F4F6' }]}>
+              <AppText style={styles.tagText}>{item.ageCategory}</AppText>
+            </View>
+            <View style={[styles.tag, { backgroundColor: '#F3F4F6' }]}>
+              <AppText style={styles.tagText}>{item.genderCategory}</AppText>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={[styles.actionBtn, { backgroundColor: colors.primary }]}
+          onPress={openPdf}
+        >
+          <Download size={16} color="#FFF" />
+          <AppText style={styles.actionBtnText}>Download PDF</AppText>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.detailsBtn, { borderColor: colors.border }]}
+          onPress={() =>
+            router.push(`/(tabs)/profile/quizresources/${item.id}`)
+          }
+        >
+          <AppText
+            style={[styles.detailsBtnText, { color: colors.textSecondary }]}
+          >
+            Details
+          </AppText>
+          <ChevronRight size={16} color={colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
-// Component for a skeleton loading card
-const SkeletonCard = ({ colors }) => (
-  <View style={[styles.card, { backgroundColor: colors.card }]}>
-    <LinearGradient
-      colors={[colors.skeleton, colors.skeletonHighlight]}
-      style={styles.skeletonTitle}
-    />
-    <LinearGradient
-      colors={[colors.skeleton, colors.skeletonHighlight]}
-      style={styles.skeletonMeta}
-    />
-    <LinearGradient
-      colors={[colors.skeleton, colors.skeletonHighlight]}
-      style={styles.skeletonCTA}
-    />
-  </View>
-);
-
-const SKELETON_COUNT = 3;
-
 export default function QuizResourcesScreen() {
-  const [searchQuery, setSearchQuery] = useState('');
   const [quizzes, setQuizzes] = useState([]);
+  const [filteredQuizzes, setFilteredQuizzes] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [searching, setSearching] = useState(false);
-  const { translations } = useLanguage();
+
   const { colors } = useTheme();
 
-  // Fetches initial list of quizzes
-  const fetchAllQuizzes = async () => {
+  useEffect(() => {
+    fetchQuizzes();
+  }, []);
+
+  const fetchQuizzes = async () => {
     setLoading(true);
     try {
       const data = await getQuizResources();
       setQuizzes(data);
+      setFilteredQuizzes(data);
     } catch (error) {
-      console.error('Error fetching quizzes:', error);
-      setQuizzes([]);
+      console.error('Error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce(async (query) => {
-      setSearching(true);
-      if (!query.trim()) {
-        await fetchAllQuizzes();
-      } else {
-        try {
-          const results = await searchContent(query, 'quizResources');
-          setQuizzes(results.quizResources || []);
-        } catch (error) {
-          console.error('Error searching quizzes:', error);
-          setQuizzes([]);
-        }
-      }
-      setSearching(false);
-    }, 500),
-    [],
-  );
-
-  useEffect(() => {
-    fetchAllQuizzes();
-  }, []);
-
-  useEffect(() => {
-    debouncedSearch(searchQuery);
-  }, [searchQuery, debouncedSearch]);
-
-  const renderQuizItem = ({ item }) => (
-    <QuizCard item={item} translations={translations} colors={colors} />
-  );
-
-  const renderEmptyList = () => {
-    if (loading || searching) {
-      return (
-        <>
-          {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
-            <SkeletonCard key={index} colors={colors} />
-          ))}
-        </>
+  const handleSearch = useCallback(
+    debounce((query) => {
+      const lowerQuery = query.toLowerCase();
+      const filtered = quizzes.filter(
+        (q) =>
+          q.title.toLowerCase().includes(lowerQuery) ||
+          q.year.toString().includes(lowerQuery) ||
+          q.ageCategory.toLowerCase().includes(lowerQuery) ||
+          q.genderCategory.toLowerCase().includes(lowerQuery),
       );
-    }
-    return (
-      <View style={styles.noResultsContainer}>
-        <AppText
-          style={[styles.noResultsText, { color: colors.textSecondary }]}
-        >
-          {translations.noResults || 'No quizzes found.'}
-        </AppText>
-      </View>
-    );
-  };
+      setFilteredQuizzes(filtered);
+    }, 300),
+    [quizzes],
+  );
+
+  useEffect(() => {
+    handleSearch(searchQuery);
+  }, [searchQuery]);
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} />
-      <View>
-        <AppText
-          style={[
-            {
-              marginHorizontal: 'auto',
-              fontWeight: 'bold',
-              fontSize: 24,
-              marginVertical: 12,
-            },
-          ]}
-        >
-          Quiz Resources
-        </AppText>
-      </View>
-      <View
-        style={[styles.searchContainer, { backgroundColor: colors.surface }]}
-      >
-        <Search
-          size={20}
-          color={colors.textSecondary}
-          style={styles.searchIcon}
-        />
-        <TextInput
-          placeholder={translations.search || 'Search by year, age, gender'}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor={colors.textSecondary}
-          style={[styles.searchInput, { color: colors.text }]}
-        />
-        {searching && (
+      <TopNavigation showBackButton title="Quiz Materials" />
+
+      <View style={styles.container}>
+        <View style={[styles.searchBar, { backgroundColor: colors.surface }]}>
+          <Search size={20} color={colors.textSecondary} />
+          <TextInput
+            placeholder="Search by title, year, or category..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholderTextColor={colors.textSecondary}
+          />
+        </View>
+
+        {loading ? (
           <ActivityIndicator
+            size="large"
             color={colors.primary}
-            style={styles.searchIndicator}
+            style={{ marginTop: 50 }}
+          />
+        ) : (
+          <FlatList
+            data={filteredQuizzes}
+            renderItem={({ item }) => <QuizCard item={item} colors={colors} />}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <AppText style={{ color: colors.textSecondary }}>
+                  No resources found.
+                </AppText>
+              </View>
+            }
           />
         )}
       </View>
-
-      <FlatList
-        data={quizzes}
-        renderItem={renderQuizItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[
-          styles.listContainer,
-          { backgroundColor: colors.background },
-        ]}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={renderEmptyList}
-      />
     </SafeAreaWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  searchContainer: {
+  container: { flex: 1 },
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginHorizontal: 20,
-    marginVertical: 10,
-  },
-  searchIcon: {
-    position: 'absolute',
-    left: 30,
-    zIndex: 1,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    paddingLeft: 40,
-    paddingVertical: 8,
-    height: 40,
-    marginBottom: 0,
-  },
-  searchIndicator: {
-    position: 'absolute',
-    right: 30,
-    zIndex: 1,
-  },
-  backText: {
-    color: '#1E3A8A',
-    fontSize: 16,
-    marginHorizontal: 'auto',
-    marginVertical: 10,
-    fontWeight: '600',
-    textDecorationLine: 'underline',
-  },
-  listContainer: {
-    padding: 20,
-  },
-  card: {
+    margin: 20,
+    paddingHorizontal: 15,
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 5,
+    height: 50,
+    elevation: 2,
   },
-  quizTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  quizMeta: {
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  studyButton: {
-    backgroundColor: '#3498db',
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  studyButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  skeletonTitle: {
-    height: 20,
-    width: '80%',
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  skeletonMeta: {
-    height: 14,
-    width: '60%',
-    borderRadius: 4,
-    marginBottom: 12,
-  },
-  skeletonCTA: {
-    height: 40,
-    width: '100%',
-    borderRadius: 8,
-  },
-  noResultsContainer: {
-    flex: 1,
+  searchInput: { flex: 1, marginLeft: 10, fontSize: 16 },
+  listContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  card: { borderRadius: 16, padding: 16, marginBottom: 16, elevation: 3 },
+  cardMain: { flexDirection: 'row', alignItems: 'flex-start' },
+  iconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: '#EBF4FF',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    marginRight: 15,
   },
-  noResultsText: {
-    fontSize: 16,
-    textAlign: 'center',
+  infoContainer: { flex: 1 },
+  quizTitle: { fontSize: 16, fontWeight: '700', marginBottom: 8 },
+  tagRow: { flexDirection: 'row', gap: 6 },
+  tag: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  tagText: { fontSize: 10, fontWeight: '600' },
+  actionRow: {
+    flexDirection: 'row',
+    marginTop: 15,
+    gap: 10,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
   },
+  actionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    height: 40,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  actionBtnText: { color: '#FFF', fontSize: 13, fontWeight: '700' },
+  detailsBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    height: 40,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 4,
+  },
+  detailsBtnText: { fontSize: 13, fontWeight: '600' },
+  empty: { alignItems: 'center', marginTop: 100 },
 });

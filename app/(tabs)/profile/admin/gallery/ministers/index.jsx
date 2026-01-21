@@ -7,244 +7,210 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Image,
+  StyleSheet,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import * as ImageManipulator from 'expo-image-manipulator'; // ✅ IMPORT THIS
+import * as ImageManipulator from 'expo-image-manipulator';
 import { SafeAreaWrapper } from '../../../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../../../components/TopNavigation';
 import { apiClient } from '../../../../../../utils/api';
+import { X, CheckCircle, User } from 'lucide-react-native';
 
-const ProgressBar = ({ progress }) => (
-  <View
-    style={{
-      height: 4,
-      backgroundColor: '#E5E7EB',
-      borderRadius: 2,
-      marginTop: 8,
-      overflow: 'hidden',
-    }}
-  >
-    <View
-      style={{
-        height: '100%',
-        width: `${progress}%`,
-        backgroundColor: '#007AFF',
-      }}
-    />
-  </View>
-);
-
-export default function UploadMinister() {
-  const [form, setForm] = useState({
-    name: '',
-    category: '',
-    station: '',
-    maritalStatus: '',
-    contact: '',
-  });
+export default function UploadMinisters() {
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
+  const [dateDevoted, setDateDevoted] = useState('');
+  const [contact, setContact] = useState('');
   const [file, setFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploading, setUploading] = useState(false);
 
-  const pickPhoto = async () => {
+  const pickFile = async () => {
     const res = await DocumentPicker.getDocumentAsync({
+      multiple: false,
       type: 'image/*',
       copyToCacheDirectory: true,
     });
-    if (!res.canceled) setFile(res.assets[0]);
+    if (!res.canceled) {
+      setFile(res.assets[0]);
+    }
   };
 
-  // ✅ COMPRESSION HELPER
   const compressImage = async (uri) => {
     try {
-      const result = await ImageManipulator.manipulateAsync(
+      return await ImageManipulator.manipulateAsync(
         uri,
-        [{ resize: { width: 1080 } }], // Resize to 1080px width
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG } // 70% quality JPEG
+        [{ resize: { width: 800 } }], // Standard size for profile pics
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
       );
-      return result;
     } catch (err) {
-      console.log('Compression failed, using original', err);
-      return { uri }; // Fallback to original
+      return { uri };
     }
   };
 
-  const handleChange = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const upload = async () => {
-    if (!form.name.trim() || !file) {
-      return Alert.alert('Required', 'Name and photo are required');
+  const handleUpload = async () => {
+    if (!name.trim() || !category.trim() || !file) {
+      return Alert.alert('Error', 'Name, Category, and Picture are required');
     }
 
-    setUploading(true);
-    setUploadProgress(0);
-
+    setIsUploading(true);
     try {
-      // 1. ✅ COMPRESS BEFORE UPLOAD
+      // 1. Compress Image
       const compressed = await compressImage(file.uri);
 
-      // 2. Get Signature
-      const signRes = await apiClient.get(`sign-upload?folder=ministers`);
-      const { signature, timestamp, cloudName, apiKey, folder } = signRes.data;
+      // 2. Get Firebase Signed URL
+      const configRes = await apiClient.getUploadConfig(
+        'galleryMinisters',
+        file.name,
+        'image/jpeg',
+      );
+      const { uploadUrl, fileUrl } = configRes.data;
 
-      // 3. Upload Photo (Direct)
-      const formData = new FormData();
-      formData.append('file', {
-        uri: compressed.uri, // Use compressed URI
-        name: file.name.replace(/\.[^/.]+$/, '') + '.jpg', // Ensure .jpg extension
-        type: 'image/jpeg', // Force jpeg type
-      });
-      formData.append('api_key', apiKey);
-      formData.append('timestamp', timestamp.toString());
-      formData.append('signature', signature);
-      formData.append('folder', folder);
+      // 3. Upload to Firebase Storage
+      const response = await fetch(compressed.uri);
+      const blob = await response.blob();
 
-      const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
-
-      const imageUrl = await new Promise((resolve, reject) => {
+      await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', cloudinaryUrl);
+        xhr.open('PUT', uploadUrl);
+        xhr.setRequestHeader('Content-Type', 'image/jpeg');
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
             setUploadProgress(Math.round((e.loaded / e.total) * 100));
           }
         };
-        xhr.onload = () => {
-          if (xhr.status < 300)
-            resolve(JSON.parse(xhr.responseText).secure_url);
-          else reject(xhr.responseText);
-        };
-        xhr.onerror = () => reject('Network Error');
-        xhr.send(formData);
+        xhr.onload = () =>
+          xhr.status === 200 || xhr.status === 201 ? resolve() : reject();
+        xhr.onerror = () => reject();
+        xhr.send(blob);
       });
 
-      // 4. Save Minister Data
-      await apiClient.post('ministers', {
-        name: form.name.trim(),
-        category: form.category.trim(),
-        station: form.station.trim(),
-        maritalStatus: form.maritalStatus.trim(),
-        contact: form.contact.trim(),
-        imageUrl: imageUrl, // Save the cloud URL
+      // 4. Save Metadata to Backend
+      await apiClient.post('gallery/upload', {
+        type: 'minister',
+        name: name.trim(),
+        category: category.trim(),
+        dateDevoted: dateDevoted.trim(),
+        contact: contact.trim(),
+        url: fileUrl,
       });
 
-      Alert.alert('Success', 'Minister added successfully!');
-      setForm({
-        name: '',
-        category: '',
-        station: '',
-        maritalStatus: '',
-        contact: '',
-      });
+      Alert.alert('Success', 'Minister profile created successfully!');
+      setName('');
+      setCategory('');
+      setDateDevoted('');
+      setContact('');
       setFile(null);
       setUploadProgress(0);
-    } catch (e) {
-      Alert.alert('Upload Failed', e.message || 'Please try again');
+    } catch (err) {
+      console.error(err);
+      Alert.alert(
+        'Error',
+        'Failed to save minister data. Check server routes.',
+      );
     } finally {
-      setUploading(false);
+      setIsUploading(false);
     }
   };
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} />
-      <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
-        <View>
-          <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Name *</Text>
+      <TopNavigation showBackButton={true} title="Add Minister" />
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Full Name *</Text>
           <TextInput
-            value={form.name}
-            onChangeText={(t) => handleChange('name', t)}
-            placeholder="Full name"
+            value={name}
+            onChangeText={setName}
+            placeholder="Minister's Name"
             style={styles.input}
-            editable={!uploading}
           />
         </View>
 
-        <View>
-          <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Category</Text>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Category / Title *</Text>
           <TextInput
-            value={form.category}
-            onChangeText={(t) => handleChange('category', t)}
-            placeholder="e.g. Pastor, Deacon, Evangelist"
+            value={category}
+            onChangeText={setCategory}
+            placeholder="e.g. Senior Minister, Intermediate Minister"
             style={styles.input}
-            editable={!uploading}
           />
         </View>
 
-        <View>
-          <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Station</Text>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Date Devoted</Text>
           <TextInput
-            value={form.station}
-            onChangeText={(t) => handleChange('station', t)}
-            placeholder="e.g. Warri, Lagos, Abuja"
+            value={dateDevoted}
+            onChangeText={setDateDevoted}
+            placeholder="YYYY-MM-DD"
             style={styles.input}
-            editable={!uploading}
           />
         </View>
 
-        <View>
-          <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>
-            Marital Status
-          </Text>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Contact Number</Text>
           <TextInput
-            value={form.maritalStatus}
-            onChangeText={(t) => handleChange('maritalStatus', t)}
-            placeholder="e.g. Married, Single"
+            value={contact}
+            onChangeText={setContact}
+            placeholder="Phone number"
+            keyboardType="phone-pad"
             style={styles.input}
-            editable={!uploading}
           />
         </View>
 
-        <View>
-          <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>
-            Contact (Phone/Email)
-          </Text>
-          <TextInput
-            value={form.contact}
-            onChangeText={(t) => handleChange('contact', t)}
-            placeholder="Optional"
-            style={styles.input}
-            editable={!uploading}
-          />
-        </View>
-
-        <TouchableOpacity
-          onPress={pickPhoto}
-          disabled={uploading}
-          style={styles.pickButton}
-        >
-          <Text style={{ color: '#fff', fontWeight: '600' }}>
-            {file ? `Photo Selected: ${file.name}` : 'Pick Photo *'}
-          </Text>
+        <TouchableOpacity onPress={pickFile} style={styles.imagePicker}>
+          {file ? (
+            <View style={styles.previewCont}>
+              <Image source={{ uri: file.uri }} style={styles.previewImage} />
+              <TouchableOpacity
+                onPress={() => setFile(null)}
+                style={styles.removeBtn}
+              >
+                <X size={16} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.placeholder}>
+              <User size={40} color="#999" />
+              <Text style={{ color: '#999', marginTop: 8 }}>
+                Select Profile Picture
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
 
-        {uploading && uploadProgress > 0 && (
-          <ProgressBar progress={uploadProgress} />
+        {isUploading && (
+          <View style={styles.progressCont}>
+            <View
+              style={[styles.progressBar, { width: `${uploadProgress}%` }]}
+            />
+            <Text style={styles.progressText}>
+              {uploadProgress}% Uploading...
+            </Text>
+          </View>
         )}
 
         <TouchableOpacity
-          onPress={upload}
-          disabled={uploading || !form.name || !file}
-          style={[
-            styles.uploadButton,
-            (uploading || !form.name || !file) && styles.disabled,
-          ]}
+          onPress={handleUpload}
+          disabled={isUploading}
+          style={[styles.saveBtn, isUploading && styles.disabled]}
         >
-          {uploading && (
-            <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
+          {isUploading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.saveBtnText}>Save Minister Profile</Text>
           )}
-          <Text style={{ color: '#fff', fontWeight: '600' }}>
-            {uploading ? 'Saving...' : 'Save Minister'}
-          </Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaWrapper>
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
+  container: { padding: 20, gap: 16 },
+  inputGroup: { gap: 8 },
+  label: { fontWeight: 'bold', fontSize: 14 },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -252,20 +218,56 @@ const styles = {
     padding: 12,
     backgroundColor: '#fff',
   },
-  pickButton: {
-    backgroundColor: '#007AFF',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 8,
+  imagePicker: {
+    height: 150,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: '#999',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
-  uploadButton: {
-    backgroundColor: '#34C759',
-    padding: 16,
-    borderRadius: 8,
+  placeholder: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    flexDirection: 'row',
+    backgroundColor: '#f9f9f9',
+  },
+  previewCont: { flex: 1 },
+  previewImage: { width: '100%', height: '100%' },
+  removeBtn: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 5,
+    borderRadius: 15,
+  },
+  progressCont: {
+    height: 20,
+    backgroundColor: '#eee',
+    borderRadius: 10,
+    overflow: 'hidden',
     justifyContent: 'center',
   },
+  progressBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: '#007AFF',
+  },
+  progressText: {
+    textAlign: 'center',
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  saveBtn: {
+    backgroundColor: '#10B981',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  saveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   disabled: { backgroundColor: '#aaa' },
-};
+});

@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   ImageBackground,
   Dimensions,
-  RefreshControl, // ✅ Import RefreshControl
+  RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -27,20 +27,18 @@ const featuredPlaylist = {
 };
 
 export default function SongsScreen() {
-  const { colors } = useTheme();
+  const { colors } = useTheme(); // ✅ Access theme colors
   const [categories, setCategories] = useState([]);
   const [categoryCounts, setCategoryCounts] = useState({});
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false); // ✅ Refreshing state
+  const [refreshing, setRefreshing] = useState(false);
 
-  // ✅ Extracted fetching logic to reuse it
   const loadSongs = async () => {
     try {
       let allSongs = [];
       let cursor = null;
       let hasMore = true;
 
-      // Fetch all pages
       while (hasMore) {
         const result = await getSongsPaginated(50, cursor);
         allSongs = [...allSongs, ...result.songs];
@@ -48,7 +46,6 @@ export default function SongsScreen() {
         cursor = result.nextCursor;
       }
 
-      // Process categories
       const uniqueCategories = [
         ...new Set(allSongs.map((s) => s.category).filter(Boolean)),
       ].sort();
@@ -67,7 +64,6 @@ export default function SongsScreen() {
     }
   };
 
-  // Initial Load
   useEffect(() => {
     const init = async () => {
       setLoading(true);
@@ -77,7 +73,6 @@ export default function SongsScreen() {
     init();
   }, []);
 
-  // ✅ Refresh Handler
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadSongs();
@@ -85,7 +80,7 @@ export default function SongsScreen() {
   }, []);
 
   const SkeletonCard = () => (
-    <View style={styles.playlistCard}>
+    <View style={[styles.playlistCard, { backgroundColor: colors.card }]}>
       <View
         style={[styles.cardTopLine, { backgroundColor: colors.skeleton }]}
       />
@@ -126,7 +121,7 @@ export default function SongsScreen() {
   const renderPlaylist = (item, index) => (
     <TouchableOpacity
       key={index}
-      style={styles.playlistCard}
+      style={[styles.playlistCard, { backgroundColor: colors.card }]}
       onPress={() => {
         if (item.isFeatured) {
           router.push('/songs/hymns');
@@ -149,8 +144,11 @@ export default function SongsScreen() {
         >
           {item.subtitle}
         </AppText>
-        <TouchableOpacity style={styles.button}>
-          <AppText style={[styles.buttonText, { color: colors.text }]}>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: '#FFD700' }]}
+          disabled // Nested touchables can be tricky, the main card handles navigation
+        >
+          <AppText style={[styles.buttonText, { color: '#000' }]}>
             {item.button}
           </AppText>
         </TouchableOpacity>
@@ -159,60 +157,63 @@ export default function SongsScreen() {
   );
 
   return (
-    <SafeAreaWrapper>
-      <TopNavigation title="Songs" />
-      <View style={styles.bannerContainer}>
-        <ImageBackground
-          source={{
-            uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006527/CHOIR_o1kzpt.png',
-          }}
-          style={styles.bannerImage}
-        >
-          <LinearGradient
-            colors={['transparent', `black`]}
-            style={styles.bannerGradient}
-          />
-          <View style={styles.bannerText}>
-            <AppText style={styles.bannerTitle}>SONGS OF PRAISE</AppText>
-            <AppText style={styles.bannerSubtitle}>
-              Worship through a collection of uplifting spiritual songs and
-              hymns that strengthen your faith.
-            </AppText>
-          </View>
-        </ImageBackground>
-      </View>
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 30 }}
-        showsVerticalScrollIndicator={false}
-        style={{ backgroundColor: colors.background }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[colors.primary]} // Android spinner color
-            tintColor={colors.primary} // iOS spinner color
-          />
-        }
-      >
-        <View style={styles.playlistsContainer}>
-          {renderPlaylist(featuredPlaylist, 'featured')}
-          {loading
-            ? Array(3)
-                .fill(0)
-                .map((_, i) => <SkeletonCard key={i} />)
-            : categories.map((cat, i) =>
-                renderPlaylist(
-                  {
-                    title: cat,
-                    subtitle: `(${categoryCounts[cat] || 0} songs)`,
-                    button: 'See Playlist',
-                  },
-                  i,
-                ),
-              )}
+    // ✅ Applied root background color
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <SafeAreaWrapper>
+        <TopNavigation title="Songs" />
+        <View style={styles.bannerContainer}>
+          <ImageBackground
+            source={{
+              uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006527/CHOIR_o1kzpt.png',
+            }}
+            style={styles.bannerImage}
+          >
+            <LinearGradient
+              colors={['transparent', 'black']}
+              style={styles.bannerGradient}
+            />
+            <View style={styles.bannerText}>
+              <AppText style={styles.bannerTitle}>SONGS OF PRAISE</AppText>
+              <AppText style={styles.bannerSubtitle}>
+                Worship through a collection of uplifting spiritual songs and
+                hymns that strengthen your faith.
+              </AppText>
+            </View>
+          </ImageBackground>
         </View>
-      </ScrollView>
-    </SafeAreaWrapper>
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 30 }}
+          showsVerticalScrollIndicator={false}
+          style={{ backgroundColor: colors.background }} // ✅ Applied theme background
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
+          }
+        >
+          <View style={styles.playlistsContainer}>
+            {renderPlaylist(featuredPlaylist, 'featured')}
+            {loading
+              ? Array(3)
+                  .fill(0)
+                  .map((_, i) => <SkeletonCard key={i} />)
+              : categories.map((cat, i) =>
+                  renderPlaylist(
+                    {
+                      title: cat,
+                      subtitle: `(${categoryCounts[cat] || 0} songs)`,
+                      button: 'See Playlist',
+                    },
+                    i,
+                  ),
+                )}
+          </View>
+        </ScrollView>
+      </SafeAreaWrapper>
+    </View>
   );
 }
 
@@ -260,9 +261,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   playlistCard: {
-    backgroundColor: '#fff',
     borderRadius: 20,
     overflow: 'hidden',
+    // Elevation for Android
+    elevation: 3,
+    // Shadow for iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   cardTopLine: {
     height: 2,
@@ -281,7 +287,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   button: {
-    backgroundColor: '#FFD700',
     borderRadius: 30,
     paddingVertical: 12,
     paddingHorizontal: 32,

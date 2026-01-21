@@ -19,25 +19,31 @@ import { TopNavigation } from '../../../../components/TopNavigation';
 import { LinearGradient } from 'expo-linear-gradient';
 import { X } from 'lucide-react-native';
 import { AppText } from '../../../../components/ui/AppText';
+import { useTheme } from '../../../../contexts/ThemeContext'; // ✅ Added Theme Hook
 
 const { width, height } = Dimensions.get('window');
 
 function EventCard({ event, items, onImagePress }) {
+  const { colors } = useTheme(); // ✅ Access colors for the card
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleScroll = (e) => {
     const scrollX = e.nativeEvent.contentOffset.x;
-    const index = Math.round(scrollX / 292); // 280 width + 12 margin
+    const index = Math.round(scrollX / 292);
     setCurrentIndex(index);
   };
 
   return (
-    <View style={styles.eventCard}>
+    <View style={[styles.eventCard, { backgroundColor: colors.card }]}>
       <View style={styles.orangeBar} />
       <View style={styles.cardContent}>
-        <AppText style={styles.eventTitle}>{event || 'Untitled Event'}</AppText>
+        <AppText style={[styles.eventTitle, { color: colors.text }]}>
+          {event || 'Untitled Event'}
+        </AppText>
         {items[0]?.description && (
-          <AppText style={styles.desc}>{items[0].description}</AppText>
+          <AppText style={[styles.desc, { color: colors.textSecondary }]}>
+            {items[0].description}
+          </AppText>
         )}
         <ScrollView
           horizontal
@@ -66,7 +72,11 @@ function EventCard({ event, items, onImagePress }) {
               key={index}
               style={[
                 styles.indicator,
-                index === currentIndex && styles.indicatorActive,
+                { backgroundColor: colors.border }, // ✅ Theme-based indicator
+                index === currentIndex && [
+                  styles.indicatorActive,
+                  { backgroundColor: colors.primary },
+                ],
               ]}
             />
           ))}
@@ -77,6 +87,7 @@ function EventCard({ event, items, onImagePress }) {
 }
 
 export default function ArchivePictures() {
+  const { colors } = useTheme(); // ✅ Access colors for the screen
   const [pictures, setPictures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,114 +115,130 @@ export default function ArchivePictures() {
 
   if (loading)
     return (
-      <ActivityIndicator
-        size="large"
-        color="#1E3A8A"
-        style={{ flex: 1, justifyContent: 'center' }}
-      />
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator
+          size="large"
+          color={colors.primary}
+          style={{ flex: 1, justifyContent: 'center' }}
+        />
+      </View>
     );
 
   return (
-    <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} />
-      <ScrollView style={styles.container}>
-        <View style={styles.headerSection}>
-          <View style={styles.bannerContainer}>
-            <ImageBackground
-              source={{
-                uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766007961/GALLERY_c5xle3.png',
-              }}
-              style={styles.bannerImage}
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <SafeAreaWrapper>
+        <TopNavigation showBackButton={true} />
+        <ScrollView
+          style={[styles.container, { backgroundColor: colors.background }]}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.headerSection}>
+            <View style={styles.bannerContainer}>
+              <ImageBackground
+                source={{
+                  uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766007961/GALLERY_c5xle3.png',
+                }}
+                style={styles.bannerImage}
+              >
+                <LinearGradient
+                  colors={['transparent', 'black']}
+                  style={styles.bannerGradient}
+                />
+                <View style={styles.bannerText}>
+                  <AppText style={styles.bannerTitle}>PICTURE ARCHIVE</AppText>
+                  <AppText style={styles.bannerSubtitle}>
+                    This screen contains pictures of old events of the church,
+                    kept for reference and memories.
+                  </AppText>
+                </View>
+              </ImageBackground>
+            </View>
+            <View
+              style={[styles.searchContainer, { backgroundColor: colors.card }]}
+            >
+              <TextInput
+                style={[styles.searchInput, { color: colors.text }]}
+                placeholder="Search"
+                placeholderTextColor={colors.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
+          </View>
+
+          {filteredPictures.length === 0 ? (
+            <AppText style={[styles.empty, { color: colors.textSecondary }]}>
+              {searchQuery
+                ? 'No events found matching your search'
+                : 'No pictures yet'}
+            </AppText>
+          ) : (
+            filteredPictures.map(([event, items]) => (
+              <EventCard
+                key={event}
+                event={event}
+                items={items}
+                onImagePress={(url) => setSelectedImage(url)}
+              />
+            ))
+          )}
+        </ScrollView>
+
+        <Modal
+          visible={!!selectedImage}
+          transparent={true}
+          animationType="fade"
+        >
+          <View style={styles.modalContainer}>
+            <TouchableOpacity
+              style={styles.modalOverlay}
+              activeOpacity={1}
+              onPress={() => setSelectedImage(null)}
             >
               <LinearGradient
-                colors={['transparent', 'black']}
-                style={styles.bannerGradient}
+                colors={['rgba(0,0,0,0.9)', 'black']}
+                style={StyleSheet.absoluteFill}
               />
-              <View style={styles.bannerText}>
-                <AppText style={styles.bannerTitle}>PICTURE ARCHIVE</AppText>
-                <AppText style={styles.bannerSubtitle}>
-                  This screen contains pictures of old events of the church,
-                  kept for reference and memories.
-                </AppText>
-              </View>
-            </ImageBackground>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setSelectedImage(null)}
+            >
+              <X color="white" size={32} />
+            </TouchableOpacity>
+
+            {selectedImage && (
+              <Image
+                source={{ uri: selectedImage }}
+                style={styles.fullImage}
+                resizeMode="contain"
+              />
+            )}
           </View>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search"
-              placeholderTextColor="#999"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-        </View>
-
-        {filteredPictures.length === 0 ? (
-          <AppText style={styles.empty}>
-            {searchQuery
-              ? 'No events found matching your search'
-              : 'No pictures yet'}
-          </AppText>
-        ) : (
-          filteredPictures.map(([event, items]) => (
-            <EventCard
-              key={event}
-              event={event}
-              items={items}
-              onImagePress={(url) => setSelectedImage(url)}
-            />
-          ))
-        )}
-      </ScrollView>
-
-      {/* Full Screen Image Modal */}
-      <Modal visible={!!selectedImage} transparent={true} animationType="fade">
-        <View style={styles.modalContainer}>
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setSelectedImage(null)}
-          >
-            <LinearGradient
-              colors={['rgba(0,0,0,0.9)', 'black']}
-              style={StyleSheet.absoluteFill}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setSelectedImage(null)}
-          >
-            <X color="white" size={32} />
-          </TouchableOpacity>
-
-          {selectedImage && (
-            <Image
-              source={{ uri: selectedImage }}
-              style={styles.fullImage}
-              resizeMode="contain"
-            />
-          )}
-        </View>
-      </Modal>
-    </SafeAreaWrapper>
+        </Modal>
+      </SafeAreaWrapper>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   bannerContainer: {
     overflow: 'hidden',
-    height: 200,
+    height: 120,
     marginBottom: 10,
   },
   bannerImage: {
     width: '100%',
-    height: 200,
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -229,22 +256,21 @@ const styles = StyleSheet.create({
   },
   bannerTitle: {
     color: '#fff',
-    fontSize: 25,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 6,
   },
   bannerSubtitle: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 10,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 12,
   },
   searchContainer: {
     marginHorizontal: 20,
     marginTop: -30,
     marginBottom: 12,
-    backgroundColor: '#fff',
     borderRadius: 30,
     flexDirection: 'row',
     alignItems: 'center',
@@ -262,13 +288,11 @@ const styles = StyleSheet.create({
   },
   empty: {
     textAlign: 'center',
-    color: '#666',
     fontSize: 16,
     marginTop: 40,
   },
   eventCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
     marginBottom: 20,
     borderRadius: 12,
@@ -290,11 +314,9 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
     marginBottom: 8,
   },
   desc: {
-    color: '#666',
     fontSize: 13,
     marginBottom: 16,
     lineHeight: 20,
@@ -319,13 +341,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#D1D5DB',
   },
   indicatorActive: {
-    backgroundColor: '#1E3A8A',
     width: 24,
   },
-  // Modal Styles
   modalContainer: {
     flex: 1,
     justifyContent: 'center',

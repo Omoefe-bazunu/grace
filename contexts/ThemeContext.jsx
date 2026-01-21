@@ -164,7 +164,7 @@ export function ThemeProvider({ children }) {
       setIsDark(newTheme);
       await AsyncStorage.setItem(
         'themePreference',
-        newTheme ? 'dark' : 'light'
+        newTheme ? 'dark' : 'light',
       );
     } catch (error) {
       console.error('Error saving theme preference:', error);

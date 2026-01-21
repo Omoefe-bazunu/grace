@@ -2,309 +2,277 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
   ActivityIndicator,
   Modal,
-  TouchableOpacity,
 } from 'react-native';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { router } from 'expo-router';
+import {
+  ArrowLeft,
+  Upload,
+  FileText,
+  CheckCircle,
+  X,
+} from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
-import { TopNavigation } from '@/components/TopNavigation';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { addQuizResource } from '@/services/dataService';
-import { Picker } from '@react-native-picker/picker';
-import { CheckCircle, XCircle } from 'lucide-react-native';
+import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
+import { TopNavigation } from '@/components/TopNavigation';
+import * as DocumentPicker from 'expo-document-picker';
+import { apiClient } from '@/utils/api';
 
 export default function QuizResourceUploader() {
   const [title, setTitle] = useState('');
-  const [year, setYear] = useState('2024');
-  const [age, setAge] = useState('senior');
-  const [gender, setGender] = useState('brothers');
-  const [content, setContent] = useState('');
+  const [year, setYear] = useState(new Date().getFullYear().toString());
+  const [ageCategory, setAgeCategory] = useState('Senior');
+  const [genderCategory, setGenderCategory] = useState('Brothers');
+  const [pdfUrl, setPdfUrl] = useState(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [modalMessage, setModalMessage] = useState('');
-  const [modalSuccess, setModalSuccess] = useState(true);
 
-  const { translations } = useLanguage();
   const { colors } = useTheme();
+  const PDF_SIZE_LIMIT = 5; // MB
 
-  const showModal = (message, success) => {
-    setModalMessage(message);
-    setModalSuccess(success);
-    setModalVisible(true);
+  const pickPDF = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) return;
+
+      const file = result.assets[0];
+
+      // Check file size
+      if (file.size > PDF_SIZE_LIMIT * 1024 * 1024) {
+        return Alert.alert(
+          'File too large',
+          `The PDF must be smaller than ${PDF_SIZE_LIMIT}MB`,
+        );
+      }
+
+      await uploadFile(file);
+    } catch (err) {
+      Alert.alert('Error', 'Failed to pick document');
+    }
   };
 
-  const handleUpload = async () => {
-    if (!title || !year || !age || !gender || !content) {
-      showModal(
-        translations.fillAllFields || 'Please fill in all fields.',
-        false,
-      );
-      return;
-    }
-
+  const uploadFile = async (file) => {
     setIsUploading(true);
+    setUploadProgress(0);
+
     try {
-      await addQuizResource({
+      // 1. Get Signed URL from your backend
+      const configRes = await apiClient.getUploadConfig(
+        'quizResources',
+        file.name,
+        'application/pdf',
+      );
+      const { uploadUrl, fileUrl } = configRes.data;
+
+      // 2. Prepare Blob
+      const response = await fetch(file.uri);
+      const blob = await response.blob();
+
+      // 3. Upload to Firebase Storage via PUT
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', uploadUrl);
+      xhr.setRequestHeader('Content-Type', 'application/pdf');
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          setUploadProgress(Math.round((event.loaded / event.total) * 100));
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status === 200 || xhr.status === 201) {
+          setPdfUrl(fileUrl);
+          setIsUploading(false);
+        } else {
+          throw new Error('Upload failed');
+        }
+      };
+
+      xhr.onerror = () => {
+        throw new Error('Network error');
+      };
+      xhr.send(blob);
+    } catch (error) {
+      setIsUploading(false);
+      Alert.alert('Upload Failed', 'Could not upload PDF to server.');
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!title || !pdfUrl)
+      return Alert.alert(
+        'Missing Fields',
+        'Please provide a title and upload a PDF',
+      );
+
+    setIsSubmitting(true);
+    try {
+      await apiClient.post('quiz/resources', {
         title,
         year,
-        age,
-        gender,
-        content,
+        ageCategory,
+        genderCategory,
+        pdfUrl,
+        createdAt: new Date(),
       });
-      showModal(
-        translations.uploadSuccess || 'Quiz resource uploaded successfully!',
-        true,
-      );
-      // Reset form
-      setTitle('');
-      setYear('2024');
-      setAge('senior');
-      setGender('brothers');
-      setContent('');
+
+      Alert.alert('Success', 'Quiz resource published!', [
+        { text: 'Done', onPress: () => router.back() },
+      ]);
     } catch (error) {
-      console.error('Upload error:', error);
-      showModal(
-        translations.uploadError ||
-          'Failed to upload quiz resource. Please try again.',
-        false,
-      );
+      Alert.alert('Error', 'Failed to save quiz details');
     } finally {
-      setIsUploading(false);
+      setIsSubmitting(false);
     }
   };
 
-  // Generate an array of years from 2015 to 2040
-  const years = Array.from({ length: 26 }, (_, i) => 2015 + i);
+  const Selector = ({ label, options, current, onSelect }) => (
+    <View style={styles.selectorGroup}>
+      <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
+      <View style={styles.chipRow}>
+        {options.map((opt) => (
+          <TouchableOpacity
+            key={opt}
+            style={[
+              styles.chip,
+              { backgroundColor: colors.surface },
+              current === opt && { backgroundColor: colors.primary },
+            ]}
+            onPress={() => onSelect(opt)}
+          >
+            <Text
+              style={[
+                styles.chipText,
+                { color: colors.text },
+                current === opt && { color: '#FFF' },
+              ]}
+            >
+              {opt}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title={translations.uploadQuiz || 'Upload Quiz'} />
-      <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
-        contentContainerStyle={styles.contentContainer}
-      >
-        <Text style={[styles.headerText, { color: colors.text }]}>
-          {translations.uploadQuizHeader || 'Upload a New Quiz Resource'}
-        </Text>
+      <TopNavigation showBackButton title="Upload Quiz" />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Input
+          label="Quiz Title"
+          value={title}
+          onChangeText={setTitle}
+          placeholder="e.g. 2026 Senior Brothers Quiz"
+        />
 
-        <View style={[styles.form, { backgroundColor: colors.card }]}>
-          <Input
-            label={translations.title || 'Title'}
-            value={title}
-            onChangeText={setTitle}
-            placeholder="e.g., Quiz on the Book of James"
-          />
+        <Input
+          label="Year"
+          value={year}
+          onChangeText={setYear}
+          keyboardType="numeric"
+          maxLength={4}
+        />
 
-          <Text style={[styles.pickerLabel, { color: colors.text }]}>
-            {translations.year || 'Year'}
+        <Selector
+          label="Age Category"
+          options={['Senior', 'Junior']}
+          current={ageCategory}
+          onSelect={setAgeCategory}
+        />
+
+        <Selector
+          label="Gender Category"
+          options={['Brothers', 'Sisters', 'Brothers & Sisters']}
+          current={genderCategory}
+          onSelect={setGenderCategory}
+        />
+
+        <View style={styles.uploadBox}>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Study Material (PDF)
           </Text>
-          <View
-            style={[styles.pickerContainer, { borderColor: colors.border }]}
-          >
-            <Picker
-              selectedValue={year}
-              onValueChange={(itemValue) => setYear(itemValue)}
-              style={[styles.picker, { color: colors.text }]}
-              dropdownIconColor={colors.text}
-            >
-              {years.map((y) => (
-                <Picker.Item key={y} label={String(y)} value={String(y)} />
-              ))}
-            </Picker>
-          </View>
-
-          <Text style={[styles.pickerLabel, { color: colors.text }]}>
-            {translations.ageGroup || 'Age Group'}
-          </Text>
-          <View
-            style={[styles.pickerContainer, { borderColor: colors.border }]}
-          >
-            <Picker
-              selectedValue={age}
-              onValueChange={(itemValue) => setAge(itemValue)}
-              style={[styles.picker, { color: colors.text }]}
-              dropdownIconColor={colors.text}
-            >
-              <Picker.Item label="Senior" value="senior" />
-              <Picker.Item label="Junior" value="junior" />
-            </Picker>
-          </View>
-
-          <Text style={[styles.pickerLabel, { color: colors.text }]}>
-            {translations.gender || 'Gender'}
-          </Text>
-          <View
-            style={[styles.pickerContainer, { borderColor: colors.border }]}
-          >
-            <Picker
-              selectedValue={gender}
-              onValueChange={(itemValue) => setGender(itemValue)}
-              style={[styles.picker, { color: colors.text }]}
-              dropdownIconColor={colors.text}
-            >
-              <Picker.Item label="General" value="general" />
-              <Picker.Item label="Brothers" value="brothers" />
-              <Picker.Item label="Sisters" value="sisters" />
-            </Picker>
-          </View>
-
-          <Input
-            label={translations.quizContent || 'Quiz Content'}
-            value={content}
-            onChangeText={setContent}
-            multiline
-            numberOfLines={10}
-            placeholder="Type or paste the quiz details here..."
-            style={styles.contentInput}
-          />
-
-          <Button
-            title={
-              isUploading
-                ? translations.uploading || 'Uploading...'
-                : translations.upload || 'Upload'
-            }
-            onPress={handleUpload}
+          <TouchableOpacity
+            style={[
+              styles.dropZone,
+              {
+                borderColor: colors.primary,
+                backgroundColor: colors.primary + '08',
+              },
+            ]}
+            onPress={pickPDF}
             disabled={isUploading}
-            size="large"
-            style={styles.submitButton}
-          />
-        </View>
-      </ScrollView>
-
-      {/* Custom Modal for Alerts */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={modalStyles.modalOverlay}>
-          <View
-            style={[modalStyles.modalContent, { backgroundColor: colors.card }]}
           >
-            {modalSuccess ? (
-              <CheckCircle
-                size={50}
-                color={colors.primary}
-                style={modalStyles.modalIcon}
-              />
+            {isUploading ? (
+              <View style={styles.progressCircle}>
+                <ActivityIndicator color={colors.primary} />
+                <Text style={{ marginTop: 8 }}>{uploadProgress}%</Text>
+              </View>
+            ) : pdfUrl ? (
+              <View style={styles.fileSelected}>
+                <CheckCircle color="#10B981" size={32} />
+                <Text style={{ color: colors.text, marginTop: 8 }}>
+                  PDF Ready
+                </Text>
+              </View>
             ) : (
-              <XCircle
-                size={50}
-                color={colors.error}
-                style={modalStyles.modalIcon}
-              />
+              <View style={styles.idleState}>
+                <Upload color={colors.primary} size={32} />
+                <Text style={{ color: colors.primary, marginTop: 8 }}>
+                  Select PDF (Max 5MB)
+                </Text>
+              </View>
             )}
-            <Text style={[modalStyles.modalTitle, { color: colors.text }]}>
-              {modalSuccess
-                ? translations.success || 'Success'
-                : translations.error || 'Error'}
-            </Text>
-            <Text
-              style={[modalStyles.modalText, { color: colors.textSecondary }]}
-            >
-              {modalMessage}
-            </Text>
-            <TouchableOpacity
-              style={[
-                modalStyles.modalButton,
-                {
-                  backgroundColor: modalSuccess ? colors.primary : colors.error,
-                },
-              ]}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={modalStyles.modalButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         </View>
-      </Modal>
+
+        <Button
+          title={isSubmitting ? 'Saving...' : 'Publish Quiz'}
+          onPress={handleSubmit}
+          disabled={isSubmitting || isUploading || !pdfUrl}
+          style={{ marginTop: 30 }}
+        />
+      </ScrollView>
     </SafeAreaWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  form: {
-    padding: 20,
-    borderRadius: 12,
-    elevation: 5,
-  },
-  pickerLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    marginTop: 16,
-  },
-  pickerContainer: {
+  scrollContent: { padding: 20, paddingBottom: 50 },
+  label: { fontSize: 14, fontWeight: '700', marginBottom: 10 },
+  selectorGroup: { marginBottom: 20 },
+  chipRow: { flexDirection: 'row', gap: 10 },
+  chip: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 25,
     borderWidth: 1,
-    borderRadius: 8,
-    overflow: 'hidden',
+    borderColor: '#DDD',
   },
-  picker: {
-    width: '100%',
-  },
-  contentInput: {
-    textAlignVertical: 'top',
-    height: 200,
-  },
-  submitButton: {
-    marginTop: 24,
-  },
-});
-
-const modalStyles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
+  chipText: { fontSize: 14, fontWeight: '600' },
+  uploadBox: { marginTop: 10 },
+  dropZone: {
+    height: 140,
+    borderRadius: 15,
+    borderStyle: 'dashed',
+    borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  modalContent: {
-    width: '80%',
-    borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
-  },
-  modalIcon: {
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  modalText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  modalButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 20,
-  },
-  modalButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  idleState: { alignItems: 'center' },
+  fileSelected: { alignItems: 'center' },
+  progressCircle: { alignItems: 'center' },
 });

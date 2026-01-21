@@ -28,7 +28,7 @@ import { subscribeToNotices } from '../services/dataService';
 
 export function TopNavigation({ title, showBackButton = false, onPress }) {
   const { colors, isDark, toggleTheme } = useTheme();
-  const { isAdmin } = useAuth();
+  const { isAdmin } = useAuth(); // Keeping this for context, though we aren't hiding the button anymore
   const [showMenu, setShowMenu] = useState(false);
   const [notices, setNotices] = useState([]);
 
@@ -41,7 +41,6 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
   };
 
   useEffect(() => {
-    // Subscription is now purely public
     const unsubscribeNotices = subscribeToNotices((newNotices) => {
       setNotices(newNotices);
     });
@@ -51,6 +50,7 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
     };
   }, []);
 
+  // Updated menuItems to include Admin Panel by default
   const menuItems = [
     {
       icon: <Info size={20} color={colors.textSecondary} />,
@@ -80,18 +80,15 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
         toggleTheme();
       },
     },
-  ];
-
-  if (isAdmin) {
-    menuItems.unshift({
+    {
       icon: <Settings size={20} color={colors.primary} />,
       title: 'Admin Panel',
       onPress: () => {
         setShowMenu(false);
         router.push('/profile/admin');
       },
-    });
-  }
+    },
+  ];
 
   return (
     <>
@@ -134,6 +131,14 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
             onPress={() => router.push('/profile/notices')}
           >
             <Bell size={22} color={colors.text} strokeWidth={1.5} />
+            {notices.length > 0 && (
+              <View
+                style={[
+                  styles.badge,
+                  { backgroundColor: '#EF4444', borderColor: colors.surface },
+                ]}
+              />
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -232,6 +237,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    zIndex: 1,
   },
   menuTrigger: {
     width: 32,

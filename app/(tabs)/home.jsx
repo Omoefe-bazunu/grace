@@ -64,7 +64,7 @@ const cards = [
     subtitle: 'Contribute to the global mission of the GKS.',
     image:
       'https://res.cloudinary.com/db6lml0b5/image/upload/v1766007156/PAYMENTS_ccgkod.png',
-    path: '/donations',
+    path: '',
     icon: HandCoins,
     accent: '#EF4444',
   },

@@ -1,184 +1,172 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
   FlatList,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  Linking,
 } from 'react-native';
-import { router } from 'expo-router';
 import {
-  ArrowLeft,
-  Calendar,
+  MessageCircle,
   User,
-  Mail,
-  MessageCircleOff,
-  Send,
+  BookOpen,
+  Clock,
+  Trash2,
+  CheckCircle,
+  AlertCircle,
 } from 'lucide-react-native';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTheme } from '@/contexts/ThemeContext';
-import { subscribeToQuizHelpQuestions } from '@/services/dataService';
-import { LinearGradient } from 'expo-linear-gradient';
-import { TopNavigation } from '../../../../../components/TopNavigation';
-import { SafeAreaWrapper } from '../../../../../components/ui/SafeAreaWrapper';
+import {
+  getQuizHelpQuestions,
+  updateQuizHelpStatus,
+  del,
+} from '@/services/dataService';
+import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
+import { TopNavigation } from '@/components/TopNavigation';
+import { AppText } from '../../../../../components/ui/AppText';
 
-const SkeletonCard = () => {
-  const { colors } = useTheme();
-  return (
-    <View style={[styles.messageCard, { backgroundColor: colors.card }]}>
-      <LinearGradient
-        colors={[colors.skeleton, colors.skeletonHighlight]}
-        style={[styles.skeletonLine, { width: '60%', height: 20 }]}
-      />
-      <LinearGradient
-        colors={[colors.skeleton, colors.skeletonHighlight]}
-        style={[styles.skeletonLine, { width: '40%', height: 16 }]}
-      />
-      <LinearGradient
-        colors={[colors.skeleton, colors.skeletonHighlight]}
-        style={[styles.skeletonLine, { width: '100%', height: 14 }]}
-      />
-      <LinearGradient
-        colors={[colors.skeleton, colors.skeletonHighlight]}
-        style={[styles.skeletonLine, { width: '100%', height: 14 }]}
-      />
-    </View>
-  );
-};
-
-export default function QuizHelpQuestionsScreen() {
-  const [messages, setQuestions] = useState([]);
+export default function AdminQuizHelpScreen() {
+  const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const { colors } = useTheme();
 
   useEffect(() => {
-    const unsubscribe = subscribeToQuizHelpQuestions((newMessages) => {
-      setQuestions(newMessages);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    fetchQuestions();
   }, []);
 
-  const formatDate = (date) => {
-    if (!date) return 'Unknown Date';
-    const d = new Date(date.seconds * 1000);
-    return (
-      d.toLocaleDateString() +
-      ' ' +
-      d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    );
+  const fetchQuestions = async () => {
+    try {
+      setLoading(true);
+      const data = await getQuizHelpQuestions();
+      setQuestions(data);
+    } catch (error) {
+      console.error('Fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const renderMessageItem = ({ item }) => (
-    <View style={[styles.messageCard, { backgroundColor: colors.card }]}>
-      <View style={styles.messageHeader}>
-        <View style={styles.userInfo}>
-          <User size={16} color={colors.textSecondary} />
-          <Text style={[styles.userName, { color: colors.text }]}>
-            {item.name}
-          </Text>
+  const handleResolve = async (id) => {
+    try {
+      await updateQuizHelpStatus(id, 'resolved');
+      setQuestions((prev) =>
+        prev.map((q) => (q.id === id ? { ...q, status: 'resolved' } : q)),
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update status');
+    }
+  };
+
+  const handleDelete = (id) => {
+    Alert.alert('Delete', 'Remove this inquiry?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await del('quiz/help', id);
+          setQuestions((prev) => prev.filter((q) => q.id !== id));
+        },
+      },
+    ]);
+  };
+
+  const renderItem = ({ item }) => (
+    <View style={[styles.card, { backgroundColor: colors.card }]}>
+      <View style={styles.cardHeader}>
+        <View
+          style={[
+            styles.statusBadge,
+            {
+              backgroundColor:
+                item.status === 'resolved' ? '#ECFDF5' : '#FFF7ED',
+            },
+          ]}
+        >
+          {item.status === 'resolved' ? (
+            <CheckCircle size={12} color="#10B981" />
+          ) : (
+            <Clock size={12} color="#F97316" />
+          )}
+          <AppText
+            style={[
+              styles.statusText,
+              { color: item.status === 'resolved' ? '#10B981' : '#F97316' },
+            ]}
+          >
+            {item.status.toUpperCase()}
+          </AppText>
         </View>
+        <AppText style={styles.date}>
+          {new Date(item.createdAt).toLocaleDateString()}
+        </AppText>
       </View>
 
-      <View style={styles.contactInfo}>
-        <Mail size={14} color={colors.textSecondary} />
-        <Text style={[styles.whatsapp, { color: colors.textSecondary }]}>
-          {item.whatsapp}
-        </Text>
+      {/* Student Info Bar */}
+      <View style={styles.studentInfoBar}>
+        <View style={styles.studentNameContainer}>
+          <User size={16} color={colors.textSecondary} />
+          <AppText style={[styles.studentName, { color: colors.text }]}>
+            {item.name || 'Anonymous'}
+          </AppText>
+        </View>
+
+        <TouchableOpacity>
+          <AppText>{item.number}</AppText>
+        </TouchableOpacity>
       </View>
 
-      <Text style={[styles.messageText, { color: colors.text }]}>
+      <View style={styles.quizMeta}>
+        <BookOpen size={14} color={colors.primary} />
+        <AppText style={[styles.quizTitle, { color: colors.primary }]}>
+          {item.title || 'General Quiz'}
+        </AppText>
+      </View>
+
+      <AppText style={[styles.questionText, { color: colors.text }]}>
         {item.question}
-      </Text>
+      </AppText>
 
-      <View style={styles.messageFooter}>
-        <Calendar size={14} color={colors.textSecondary} />
-        <Text style={[styles.date, { color: colors.textSecondary }]}>
-          {formatDate(item.createdAt)}
-        </Text>
+      <View style={styles.cardActions}>
+        {item.status === 'pending' && (
+          <TouchableOpacity
+            style={[styles.resolveBtn, { backgroundColor: colors.primary }]}
+            onPress={() => handleResolve(item.id)}
+          >
+            <AppText style={styles.btnText}>Mark Resolved</AppText>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity
+          style={[styles.trashBtn, { borderColor: colors.error }]}
+          onPress={() => handleDelete(item.id)}
+        >
+          <Trash2 size={18} color={colors.error} />
+        </TouchableOpacity>
       </View>
     </View>
   );
-
-  const renderEmptyComponent = () => (
-    <View style={styles.emptyContainer}>
-      <MessageCircleOff
-        size={64}
-        color={colors.textSecondary}
-        style={styles.emptyIcon}
-      />
-      <Text style={[styles.emptyText, { color: colors.text }]}>
-        No Questions Found
-      </Text>
-      <Text style={[styles.emptySubText, { color: colors.textSecondary }]}>
-        Quiz Questions from users will appear here.
-      </Text>
-    </View>
-  );
-
-  const renderSkeletonCards = () => (
-    <>
-      <SkeletonCard />
-      <SkeletonCard />
-      <SkeletonCard />
-      <SkeletonCard />
-    </>
-  );
-
-  const totalQuestions = messages.length;
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title="Quiz Help Questions" />
+      <TopNavigation showBackButton title="Quiz Support" />
       {loading ? (
-        <View
-          style={[
-            styles.statsContainer,
-            { backgroundColor: colors.card, borderBottomColor: colors.border },
-          ]}
-        >
-          <LinearGradient
-            colors={[colors.skeleton, colors.skeletonHighlight]}
-            style={[styles.statItem, styles.skeletonStat]}
-          />
-          <LinearGradient
-            colors={[colors.skeleton, colors.skeletonHighlight]}
-            style={[styles.statItem, styles.skeletonStat]}
-          />
-          <LinearGradient
-            colors={[colors.skeleton, colors.skeletonHighlight]}
-            style={[styles.statItem, styles.skeletonStat]}
-          />
-        </View>
-      ) : (
-        <View
-          style={[
-            styles.statsContainer,
-            { backgroundColor: colors.card, borderBottomColor: colors.border },
-          ]}
-        >
-          <View style={styles.statItem}>
-            <Text style={[styles.statNumber, { color: colors.primary }]}>
-              {totalQuestions}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Total Questions
-            </Text>
-          </View>
-        </View>
-      )}
-      {loading ? (
-        <View style={styles.listContainer}>{renderSkeletonCards()}</View>
+        <ActivityIndicator style={{ marginTop: 50 }} color={colors.primary} />
       ) : (
         <FlatList
-          data={messages}
-          renderItem={renderMessageItem}
+          data={questions}
+          renderItem={renderItem}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={renderEmptyComponent}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <AlertCircle size={48} color={colors.textSecondary} />
+              <AppText style={{ color: colors.textSecondary, marginTop: 10 }}>
+                No student questions.
+              </AppText>
+            </View>
+          }
         />
       )}
     </SafeAreaWrapper>
@@ -186,121 +174,68 @@ export default function QuizHelpQuestionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  backButton: {
-    padding: 8,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  statLabel: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  skeletonStat: {
-    height: 40,
-    borderRadius: 8,
-    flex: 1,
-    marginHorizontal: 8,
-  },
-  listContainer: {
-    padding: 20,
-  },
-  messageCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  messageHeader: {
+  list: { padding: 16 },
+  card: { borderRadius: 16, padding: 16, marginBottom: 16, elevation: 3 },
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  userInfo: {
+  statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 6,
-  },
-  typeBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    gap: 4,
   },
-  typeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'capitalize',
+  statusText: { fontSize: 10, fontWeight: '800' },
+  date: { fontSize: 11, opacity: 0.6 },
+  studentInfoBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
   },
-  contactInfo: {
+  studentNameContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-  },
-  whatsapp: {
-    fontSize: 14,
-    marginLeft: 6,
-  },
-  messageText: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  messageFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  date: {
-    fontSize: 12,
-    marginLeft: 6,
-  },
-  skeletonLine: {
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  emptyContainer: {
+    gap: 6,
     flex: 1,
-    justifyContent: 'center',
+  },
+  studentName: { fontSize: 15, fontWeight: '700' },
+  whatsappBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    backgroundColor: '#25D366',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    gap: 6,
   },
-  emptyIcon: {
-    marginBottom: 16,
+  whatsappBtnText: { color: '#FFF', fontSize: 12, fontWeight: 'bold' },
+  quizMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
   },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
+  quizTitle: { fontSize: 13, fontWeight: '600' },
+  questionText: { fontSize: 14, lineHeight: 20, marginBottom: 16 },
+  cardActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    paddingTop: 12,
   },
-  emptySubText: {
-    fontSize: 14,
-    textAlign: 'center',
-  },
+  resolveBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+  btnText: { color: '#FFF', fontSize: 12, fontWeight: 'bold' },
+  trashBtn: { padding: 8, borderRadius: 8, borderWidth: 1 },
+  emptyState: { alignItems: 'center', marginTop: 100 },
 });

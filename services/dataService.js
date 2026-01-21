@@ -127,6 +127,20 @@ export const getQuizHelpQuestions = async () => {
 };
 
 /**
+ * Updates the status of a help question (Admin only).
+ * Hits: PUT /api/quiz/help/:id
+ */
+export const updateQuizHelpStatus = async (id, status) => {
+  try {
+    const response = await apiClient.put(`quiz/help/${id}`, { status });
+    return response.data;
+  } catch (err) {
+    console.error('Error updating status:', err);
+    throw err;
+  }
+};
+
+/**
  * Fetches a single quiz resource.
  */
 export const getQuizResource = async (id) => {
@@ -421,31 +435,189 @@ export const getVideo = async (id) => {
   }
 };
 
-// === MEDIA (GALLERY & ARCHIVES) ===
-export const getGalleryPictures = () =>
-  apiClient
-    .get('media/galleryPictures')
-    .then((res) => res.data.galleryPictures || []);
-export const getGalleryVideos = () =>
-  apiClient
-    .get('media/galleryVideos')
-    .then((res) => res.data.galleryVideos || []);
-export const getArchivePictures = () =>
-  apiClient
-    .get('media/archivePictures')
-    .then((res) => res.data.archivePictures || []);
-export const getArchiveVideos = () =>
-  apiClient
-    .get('media/archiveVideos')
-    .then((res) => res.data.archiveVideos || []);
+// === DEDICATED ARCHIVE HELPERS ===
 
-// === LIVE STREAMS ===
+/**
+ * Hits: GET /api/archive/pictures
+ */
+export const getArchivePictures = async () => {
+  try {
+    const response = await apiClient.get('archive/pictures'); // apiClient adds 'api/' prefix
+    return response.data.archivePictures || [];
+  } catch (err) {
+    console.error('Error fetching archive pictures:', err);
+    return [];
+  }
+};
+
+/**
+ * Hits: GET /api/archive/videos
+ */
+export const getArchiveVideos = async () => {
+  try {
+    const response = await apiClient.get('archive/videos');
+    return response.data.archiveVideos || [];
+  } catch (err) {
+    console.error('Error fetching archive videos:', err);
+    return [];
+  }
+};
+
+/**
+ * Hits: POST /api/archive/upload
+ * The type parameter ('picture' or 'video') tells the controller which collection to use.
+ */
+export const addArchiveMedia = async (type, data) => {
+  try {
+    const response = await apiClient.post('archive/upload', { ...data, type });
+    return response.data;
+  } catch (err) {
+    console.error(`Error uploading ${type} to archive:`, err);
+    throw err;
+  }
+};
+
+/**
+ * Hits: PUT /api/archive/:collection/:id [cite: 560]
+ */
+export const updateArchiveEntry = async (collection, id, data) => {
+  try {
+    const response = await apiClient.put(`archive/${collection}`, id, data);
+    return response.data;
+  } catch (err) {
+    console.error(`Error updating ${collection}:`, err);
+    throw err;
+  }
+};
+
+/**
+ * Hits: DELETE /api/archive/:collection/:id [cite: 561]
+ */
+export const deleteArchiveEntry = async (collection, id) => {
+  try {
+    const response = await apiClient.delete(`archive/${collection}`, id);
+    return response.data;
+  } catch (err) {
+    console.error(`Error deleting from ${collection}:`, err);
+    throw err;
+  }
+};
+
+// === DEDICATED GALLERY HELPERS ===
+
+export const getGalleryPictures = async () => {
+  const response = await apiClient.get('gallery/pictures');
+  return response.data.galleryPictures || [];
+};
+
+export const getGalleryVideos = async () => {
+  const response = await apiClient.get('gallery/videos');
+  return response.data.galleryVideos || [];
+};
+
+export const getGalleryMinisters = async () => {
+  const response = await apiClient.get('gallery/ministers');
+  return response.data.galleryMinisters || [];
+};
+
+export const getMinisters = async () => {
+  try {
+    // Note: ensure this path matches your backend mount point (e.g., 'gallery/ministers')
+    const response = await apiClient.get('gallery/ministers');
+
+    // The controller fetchGallery("galleryMinisters") returns an object
+    // with the key "galleryMinisters"
+    return response.data.galleryMinisters || [];
+  } catch (err) {
+    console.error('Error in getMinisters service:', err);
+    return [];
+  }
+};
+
+export const addGalleryMedia = async (type, data) => {
+  // Hits POST /api/gallery/upload
+  return await apiClient.post('gallery/upload', { ...data, type });
+};
+
+export const updateGalleryEntry = async (collection, id, data) => {
+  return await apiClient.put(`gallery/${collection}`, id, data);
+};
+
+export const deleteGalleryEntry = async (collection, id) => {
+  return await apiClient.delete(`gallery/${collection}`, id);
+};
+
+/**
+ * === LIVE STREAM HELPERS ===
+ * Target Backend: /api/livestreams (ensure this matches your app.js mount point)
+ */
+
+/**
+ * GET all streams for management (Admin view)
+ * Returns the array of streams directly for the component state
+ */
+export const getLiveStreams = async () => {
+  try {
+    const response = await apiClient.get('livestreams');
+    // Extracts the array from { liveStreams: [...] }
+    return response.data.liveStreams || [];
+  } catch (error) {
+    console.error('DataService getLiveStreams error:', error);
+    throw error;
+  }
+};
+
+/**
+ * GET only active streams (Public/Home view)
+ */
 export const getActiveLiveStreams = async () => {
   try {
-    const response = await apiClient.get('liveStreams/active');
+    const response = await apiClient.get('livestreams/active');
     return response.data.liveStreams || [];
-  } catch {
-    return [];
+  } catch (error) {
+    console.error('DataService getActiveLiveStreams error:', error);
+    throw error;
+  }
+};
+
+/**
+ * POST create a new stream
+ */
+export const createLiveStream = async (streamData) => {
+  try {
+    const response = await apiClient.post('livestreams', streamData);
+    return response.data;
+  } catch (error) {
+    console.error('DataService createLiveStream error:', error);
+    throw error;
+  }
+};
+
+/**
+ * PUT update an existing stream
+ */
+export const updateLiveStream = async (id, streamData) => {
+  try {
+    // Hits: PUT /api/livestreams/:id
+    const response = await apiClient.put(`livestreams/${id}`, id, streamData);
+    return response.data;
+  } catch (error) {
+    console.error('DataService updateLiveStream error:', error);
+    throw error;
+  }
+};
+
+/**
+ * DELETE a stream
+ */
+export const deleteLiveStream = async (id) => {
+  try {
+    // Hits: DELETE /api/livestreams/:id
+    const response = await apiClient.delete(`livestreams/${id}`, id);
+    return response.data;
+  } catch (error) {
+    console.error('DataService deleteLiveStream error:', error);
+    throw error;
   }
 };
 

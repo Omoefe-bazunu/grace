@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   ScrollView,
   View,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { SafeAreaWrapper } from '../../../../../../components/ui/SafeAreaWrapper';
@@ -14,13 +15,12 @@ import { TopNavigation } from '../../../../../../components/TopNavigation';
 import { apiClient } from '../../../../../../utils/api';
 import { X, Video as VideoIcon, CheckCircle } from 'lucide-react-native';
 
-// ✅ SAFE IMPORT: This prevents the crash in Expo Go
+// Optional: Import Video Compressor if available in your environment
 let VideoCompressor;
 try {
-  // We use 'require' instead of 'import' so it doesn't crash if missing
   VideoCompressor = require('react-native-compressor').Video;
 } catch (e) {
-  console.log('Video Compressor not available (running in Expo Go?)');
+  console.log('Video Compressor not available');
 }
 
 const ProgressBar = ({ progress, status }) => {
@@ -29,24 +29,15 @@ const ProgressBar = ({ progress, status }) => {
     status === 'success'
       ? '#10B981'
       : status === 'error'
-      ? '#EF4444'
-      : '#007AFF';
+        ? '#EF4444'
+        : '#007AFF';
   return (
-    <View
-      style={{
-        height: 4,
-        backgroundColor: '#E5E7EB',
-        borderRadius: 2,
-        marginTop: 8,
-        overflow: 'hidden',
-      }}
-    >
+    <View style={styles.progressBg}>
       <View
-        style={{
-          height: '100%',
-          width: `${progress}%`,
-          backgroundColor: color,
-        }}
+        style={[
+          styles.progressFill,
+          { width: `${progress}%`, backgroundColor: color },
+        ]}
       />
     </View>
   );
@@ -74,26 +65,12 @@ export default function UploadVideos() {
     }
   };
 
-  const removeFile = (index) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // ✅ UPDATED COMPRESSION HELPER
   const compressVideoFile = async (uri) => {
-    // Safety Check: If the library didn't load (Expo Go), skip compression
-    if (!VideoCompressor) {
-      console.log('Skipping compression (Library not loaded)');
-      return uri;
-    }
-
+    if (!VideoCompressor) return uri;
     try {
-      const result = await VideoCompressor.compress(uri, {
-        compressionMethod: 'auto',
-      });
-      return result;
+      return await VideoCompressor.compress(uri, { compressionMethod: 'auto' });
     } catch (err) {
-      console.log('Video compression failed, using original', err);
-      return uri; // Fallback to original
+      return uri;
     }
   };
 
@@ -105,30 +82,24 @@ export default function UploadVideos() {
         return c;
       });
 
-      // 1. Compress (or skip if in Expo Go)
       const finalUri = await compressVideoFile(file.uri);
 
-      // 2. Get Signature
-      const signRes = await apiClient.get(`sign-upload?folder=archiveVideos`);
-      const { signature, timestamp, cloudName, apiKey, folder } = signRes.data;
+      // 1. Get Firebase Signed URL from backend
+      const configRes = await apiClient.getUploadConfig(
+        'archiveVideos',
+        file.name,
+        'video/mp4',
+      );
+      const { uploadUrl, fileUrl } = configRes.data;
 
-      // 3. Upload XHR
-      const formData = new FormData();
-      formData.append('file', {
-        uri: finalUri,
-        name: file.name.replace(/\.[^/.]+$/, '') + '.mp4', // Force mp4 extension
-        type: 'video/mp4',
-      });
-      formData.append('api_key', apiKey);
-      formData.append('timestamp', timestamp.toString());
-      formData.append('signature', signature);
-      formData.append('folder', folder);
+      // 2. Upload to Firebase Storage using PUT
+      const response = await fetch(finalUri);
+      const blob = await response.blob();
 
-      const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
-
-      const secureUrl = await new Promise((resolve, reject) => {
+      await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', cloudinaryUrl);
+        xhr.open('PUT', uploadUrl);
+        xhr.setRequestHeader('Content-Type', 'video/mp4');
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
             const percent = Math.round((e.loaded / e.total) * 100);
@@ -139,25 +110,22 @@ export default function UploadVideos() {
             });
           }
         };
-        xhr.onload = () => {
-          if (xhr.status < 300)
-            resolve(JSON.parse(xhr.responseText).secure_url);
-          else reject(xhr.responseText);
-        };
-        xhr.onerror = () => reject('Network Error');
-        xhr.send(formData);
+        xhr.onload = () =>
+          xhr.status === 200 || xhr.status === 201 ? resolve() : reject();
+        xhr.onerror = () => reject();
+        xhr.send(blob);
       });
 
       setFiles((prev) => {
         const c = [...prev];
         c[index].status = 'success';
         c[index].progress = 100;
-        c[index].url = secureUrl;
+        c[index].url = fileUrl;
         return c;
       });
-      return secureUrl;
+
+      return fileUrl;
     } catch (error) {
-      console.error(error);
       setFiles((prev) => {
         const c = [...prev];
         c[index].status = 'error';
@@ -170,34 +138,32 @@ export default function UploadVideos() {
   const handleUploadAll = async () => {
     if (!title.trim() || files.length === 0)
       return Alert.alert('Required', 'Title and video needed');
-
     setIsUploading(true);
     try {
       const uploadPromises = files.map(async (file, index) => {
         if (file.status === 'success') return file.url;
         return await uploadSingleFile(file, index);
       });
-
       const uploadedUrls = await Promise.all(uploadPromises);
 
-      // Save to Backend
+      // 3. Save Metadata to Dedicated Archive Endpoint
       const savePromises = uploadedUrls.map((url) =>
-        apiClient.post('archiveVideos', {
+        apiClient.post('archive/upload', {
+          type: 'video',
           event: title.trim(),
           description: desc.trim().slice(0, 200),
           url: url,
-          category: 'General',
           date: new Date().toISOString().split('T')[0],
-        })
+        }),
       );
 
       await Promise.all(savePromises);
-      Alert.alert('Success', 'All videos uploaded!');
+      Alert.alert('Success', 'Archive updated with videos!');
       setTitle('');
       setDesc('');
       setFiles([]);
     } catch (e) {
-      Alert.alert('Error', 'Some uploads failed.');
+      Alert.alert('Error', 'Failed to register videos in database.');
     } finally {
       setIsUploading(false);
     }
@@ -205,67 +171,54 @@ export default function UploadVideos() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} />
-      <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
-        <View>
-          <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>
-            Event Title *
-          </Text>
+      <TopNavigation showBackButton={true} title="Upload Archive Video" />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Event Title *</Text>
           <TextInput
             value={title}
             onChangeText={setTitle}
-            placeholder="e.g. Sunday Service Highlights"
+            placeholder="e.g. Highlights 2025"
             style={styles.input}
             editable={!isUploading}
           />
         </View>
-
-        <View>
-          <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>
-            Description (optional)
-          </Text>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Description (optional)</Text>
           <TextInput
             value={desc}
             onChangeText={setDesc}
-            placeholder="Short description..."
+            placeholder="Description..."
             multiline
             numberOfLines={4}
-            style={[styles.input, { textAlignVertical: 'top' }]}
+            style={[styles.input, styles.textArea]}
             editable={!isUploading}
           />
         </View>
-
         <TouchableOpacity
           onPress={pickFiles}
           disabled={isUploading}
           style={styles.pickButton}
         >
-          <Text style={{ color: '#fff', fontWeight: '600' }}>
-            Pick Videos – {files.length}/5
-          </Text>
+          <Text style={styles.buttonText}>Pick Videos – {files.length}/5</Text>
         </TouchableOpacity>
-
-        <View style={{ gap: 12 }}>
+        <View style={styles.fileList}>
           {files.map((file, index) => (
             <View key={index} style={styles.fileCard}>
-              <View
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
-              >
+              <View style={styles.fileRow}>
                 <VideoIcon size={30} color="#666" />
                 <View style={{ flex: 1 }}>
-                  <Text numberOfLines={1} style={{ fontSize: 14 }}>
+                  <Text numberOfLines={1} style={styles.fileName}>
                     {file.name}
                   </Text>
-                  {/* Show status text if compressing */}
-                  {file.status === 'uploading' && file.progress === 0 && (
-                    <Text style={{ fontSize: 10, color: '#F59E0B' }}>
-                      {VideoCompressor ? 'Compressing...' : 'Preparing...'}
-                    </Text>
-                  )}
                   <ProgressBar progress={file.progress} status={file.status} />
                 </View>
                 {file.status !== 'uploading' && (
-                  <TouchableOpacity onPress={() => removeFile(index)}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      setFiles((f) => f.filter((_, i) => i !== index))
+                    }
+                  >
                     <X size={20} color="#999" />
                   </TouchableOpacity>
                 )}
@@ -276,7 +229,6 @@ export default function UploadVideos() {
             </View>
           ))}
         </View>
-
         <TouchableOpacity
           onPress={handleUploadAll}
           disabled={isUploading || !title || files.length === 0}
@@ -288,7 +240,7 @@ export default function UploadVideos() {
           {isUploading && (
             <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
           )}
-          <Text style={{ color: '#fff', fontWeight: '600' }}>
+          <Text style={styles.buttonText}>
             {isUploading ? 'Processing...' : 'Upload All Videos'}
           </Text>
         </TouchableOpacity>
@@ -297,7 +249,10 @@ export default function UploadVideos() {
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
+  scrollContent: { padding: 20, gap: 16 },
+  inputGroup: { marginBottom: 8 },
+  label: { fontWeight: 'bold', marginBottom: 8 },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -305,6 +260,7 @@ const styles = {
     padding: 12,
     backgroundColor: '#fff',
   },
+  textArea: { textAlignVertical: 'top', height: 100 },
   pickButton: {
     backgroundColor: '#007AFF',
     padding: 16,
@@ -319,6 +275,7 @@ const styles = {
     flexDirection: 'row',
     justifyContent: 'center',
   },
+  buttonText: { color: '#fff', fontWeight: '600' },
   disabled: { backgroundColor: '#aaa' },
   fileCard: {
     backgroundColor: '#fff',
@@ -327,4 +284,15 @@ const styles = {
     borderWidth: 1,
     borderColor: '#eee',
   },
-};
+  fileRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  fileName: { fontSize: 14 },
+  progressBg: {
+    height: 4,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 2,
+    marginTop: 8,
+    overflow: 'hidden',
+  },
+  progressFill: { height: '100%' },
+  fileList: { gap: 12 },
+});

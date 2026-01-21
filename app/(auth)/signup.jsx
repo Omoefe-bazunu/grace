@@ -1,4 +1,3 @@
-// app/(auth)/signup.jsx
 import React, { useState } from 'react';
 import {
   View,
@@ -8,19 +7,22 @@ import {
   TouchableOpacity,
   Alert,
   Dimensions,
+  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext'; // ✅ Added Theme support
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 export default function SignupScreen() {
   const { signup } = useAuth();
   const { translations } = useLanguage();
+  const { colors } = useTheme(); // ✅ Access dynamic theme colors
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,14 +35,14 @@ export default function SignupScreen() {
     if (!trimmedEmail || !password || !confirmPassword) {
       Alert.alert(
         'Error',
-        translations.fillAllFields || 'Please fill in all fields'
+        translations.fillAllFields || 'Please fill in all fields',
       );
       return;
     }
     if (password !== confirmPassword) {
       Alert.alert(
         'Error',
-        translations.passwordsDontMatch || 'Passwords do not match'
+        translations.passwordsDontMatch || 'Passwords do not match',
       );
       return;
     }
@@ -48,7 +50,7 @@ export default function SignupScreen() {
       Alert.alert(
         'Error',
         translations.passwordTooShort ||
-          'Password must be at least 8 characters'
+          'Password must be at least 8 characters',
       );
       return;
     }
@@ -57,7 +59,6 @@ export default function SignupScreen() {
     try {
       const success = await signup(trimmedEmail, password);
       if (success) {
-        // You might navigate to a verification screen instead of home
         router.replace('/(tabs)/home');
       } else {
         Alert.alert('Error', 'Signup failed. Try again.');
@@ -71,63 +72,64 @@ export default function SignupScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Top Left Curve Placeholder */}
-      <View style={styles.topLeftCurve} />
-
-      {/* Language Switcher - Positioned top right */}
+    // ✅ Root background now follows the theme
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <View style={styles.languageSwitcherContainer}>
         <LanguageSwitcher />
       </View>
 
-      <View style={styles.content}>
-        {/* Title */}
-        <Text style={styles.title}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ✅ Title color follows theme */}
+        <Text style={[styles.title, { color: colors.text }]}>
           {translations.createAccountTitle || 'Create Account'}
         </Text>
 
         <View style={styles.form}>
-          {/* Email Input */}
-          <Text style={styles.inputLabel}>{translations.email || 'Email'}</Text>
+          {/* ✅ Inputs adapt to theme background/text */}
           <Input
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
-            placeholder={translations.enterEmail || 'Enter your email'}
-            style={styles.inputField}
-            placeholderTextColor="#888"
+            placeholder={translations.enterEmail || 'Email Address'}
+            style={[
+              styles.inputField,
+              { backgroundColor: colors.card, color: colors.text },
+            ]}
+            placeholderTextColor={colors.textSecondary}
           />
 
-          {/* Password Input */}
-          <Text style={styles.inputLabel}>
-            {translations.password || 'Password'}
-          </Text>
           <Input
             value={password}
             onChangeText={setPassword}
             secureTextEntry
-            placeholder={translations.enterPassword || 'Enter your password'}
-            style={styles.inputField}
-            placeholderTextColor="#888"
+            placeholder={translations.enterPassword || 'Password'}
+            style={[
+              styles.inputField,
+              { backgroundColor: colors.card, color: colors.text },
+            ]}
+            placeholderTextColor={colors.textSecondary}
           />
 
-          {/* Confirm Password Input */}
-          <Text style={styles.inputLabel}>
-            {translations.confirmPassword || 'Confirm Password'}
-          </Text>
           <Input
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
             placeholder={
-              translations.confirmPasswordPlaceholder || 'Confirm your password'
+              translations.confirmPasswordPlaceholder || 'Confirm Password'
             }
-            style={styles.inputField}
-            placeholderTextColor="#888"
+            style={[
+              styles.inputField,
+              { backgroundColor: colors.card, color: colors.text },
+            ]}
+            placeholderTextColor={colors.textSecondary}
           />
 
-          {/* Sign Up Button */}
           <Button
             title={
               isLoading
@@ -141,19 +143,19 @@ export default function SignupScreen() {
           />
         </View>
 
-        {/* Login Link */}
         <TouchableOpacity
+          style={styles.loginLink}
           onPress={() => router.push('/(auth)/login')}
           disabled={isLoading}
         >
-          <Text style={styles.loginText}>
-            {translations.alreadyHaveAccount || 'Already have account?'}{' '}
-            <Text style={styles.linkText}>
+          <Text style={[styles.loginText, { color: colors.textSecondary }]}>
+            {translations.alreadyHaveAccount || 'Already have an account?'}{' '}
+            <Text style={[styles.linkText, { color: colors.primary }]}>
               {translations.login || 'Log in'}
             </Text>
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -161,98 +163,63 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0d326f', // Deep blue background
   },
-  // --- Top Left Curve ---
-  topLeftCurve: {
-    position: 'absolute',
-    top: -50,
-    left: -50,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  // --- Language Switcher ---
   languageSwitcherContainer: {
     position: 'absolute',
-    top: 30,
-    right: 30,
+    top: 50,
+    right: 20,
     zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
   },
-  // --- Main Content Area ---
   content: {
-    flex: 1,
-    paddingHorizontal: 24,
+    flexGrow: 1,
+    paddingHorizontal: 30,
     justifyContent: 'center',
-    paddingTop: height * 0.1,
+    alignItems: 'center',
   },
-  // --- Title ---
   title: {
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: 'bold',
-    color: '#FFFFFF', // White text
-    textAlign: 'center',
     marginBottom: 40,
+    textAlign: 'center',
   },
-  // --- Form Elements ---
   form: {
-    marginBottom: 24,
     width: '100%',
     alignItems: 'center',
   },
-  inputLabel: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#FFFFFF', // White text
-    marginBottom: 8,
-    textAlign: 'center',
-    width: '90%',
-  },
   inputField: {
-    backgroundColor: '#FFFFFF', // White background
-    borderRadius: 30,
+    borderRadius: 15,
     height: 55,
     paddingHorizontal: 20,
-    marginBottom: 2,
-    width: 300,
+    marginBottom: 15,
+    width: width * 0.85,
     fontSize: 16,
-    color: '#333333',
+    // Add a subtle border for dark mode visibility
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
-  // --- Sign Up Button ---
   signupButton: {
-    marginTop: 10,
-    backgroundColor: '#ffc700', // Yellow/Gold background
-    borderRadius: 30,
+    backgroundColor: '#ffc700', // Kept brand yellow
+    borderRadius: 15,
     height: 55,
-    width: 300,
+    width: width * 0.85,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 10,
   },
   signupButtonText: {
-    color: '#333333', // Dark text for contrast on yellow
+    color: '#0d326f', // Deep blue text for contrast on yellow
     fontSize: 18,
     fontWeight: 'bold',
   },
-  // --- Login Link ---
+  loginLink: {
+    marginTop: 30,
+    paddingBottom: 20,
+  },
   loginText: {
+    fontSize: 15,
     textAlign: 'center',
-    color: '#FFFFFF', // White text
-    fontSize: 16,
   },
   linkText: {
-    color: '#ffc700', // Yellow/Gold link
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
-  // Removing unused original styles
-  header: { display: 'none' }, // Replaced by absolute positioned switcher
-  logoContainer: { display: 'none' },
-  appName: { display: 'none' },
-  subtitle: { display: 'none' },
-  resendText: { display: 'none' },
 });

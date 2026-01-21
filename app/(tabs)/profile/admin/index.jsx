@@ -177,6 +177,12 @@ export default function AdminDashboardScreen() {
               >
                 <Text style={styles.modalButtonText}>Go to Login</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.HomeButton}
+                onPress={() => router.replace('/')}
+              >
+                <Text style={styles.HomeText}>Return to Home Screen</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -268,6 +274,21 @@ const styles = StyleSheet.create({
   },
   modalButtonText: {
     color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  HomeButton: {
+    borderWidth: 1,
+    borderColor: '#242426',
+    marginTop: 6,
+    width: '100%',
+    paddingVertical: 14,
+    backgroundColor: 'transparent',
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  HomeText: {
+    color: '#eb4621',
     fontSize: 16,
     fontWeight: 'bold',
   },
