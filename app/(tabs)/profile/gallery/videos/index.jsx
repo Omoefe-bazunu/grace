@@ -15,6 +15,7 @@ import { groupBy } from 'lodash';
 import { SafeAreaWrapper } from '../../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../../components/TopNavigation';
 import { LinearGradient } from 'expo-linear-gradient';
+import { AppText } from '../../../../../components/ui/AppText';
 
 function EventCard({ event, items }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -29,9 +30,9 @@ function EventCard({ event, items }) {
     <View style={styles.eventCard}>
       <View style={styles.orangeBar} />
       <View style={styles.cardContent}>
-        <Text style={styles.eventTitle}>{event || 'Untitled Event'}</Text>
+        <AppText style={styles.eventTitle}>{event || 'Untitled Event'}</AppText>
         {items[0]?.description && (
-          <Text style={styles.desc}>{items[0].description}</Text>
+          <AppText style={styles.desc}>{items[0].description}</AppText>
         )}
         <ScrollView
           horizontal
@@ -78,7 +79,7 @@ export default function GalleryVideos() {
       try {
         const data = await getGalleryVideos();
         const grouped = Object.entries(groupBy(data, 'event')).sort(
-          ([a], [b]) => b.localeCompare(a)
+          ([a], [b]) => b.localeCompare(a),
         );
         setVideos(grouped);
       } catch (err) {
@@ -90,7 +91,7 @@ export default function GalleryVideos() {
   }, []);
 
   const filteredVideos = videos.filter(([event]) =>
-    event.toLowerCase().includes(searchQuery.toLowerCase())
+    event.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (loading)
@@ -119,12 +120,12 @@ export default function GalleryVideos() {
                 style={styles.bannerGradient}
               />
               <View style={styles.bannerText}>
-                <Text style={styles.bannerTitle}>VIDEO GALLERY</Text>
-                <Text style={styles.bannerSubtitle}>
+                <AppText style={styles.bannerTitle}>VIDEO GALLERY</AppText>
+                <AppText style={styles.bannerSubtitle}>
                   This screen contains videos of major events across different
                   branches of the church. They are displayed here for the
                   viewing pleasure of all members and non-members.
-                </Text>
+                </AppText>
               </View>
             </ImageBackground>
           </View>
@@ -140,11 +141,11 @@ export default function GalleryVideos() {
         </View>
 
         {filteredVideos.length === 0 ? (
-          <Text style={styles.empty}>
+          <AppText style={styles.empty}>
             {searchQuery
               ? 'No events found matching your search'
               : 'No videos yet'}
-          </Text>
+          </AppText>
         ) : (
           filteredVideos.map(([event, items]) => (
             <EventCard key={event} event={event} items={items} />

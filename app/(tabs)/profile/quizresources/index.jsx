@@ -17,6 +17,7 @@ import { TopNavigation } from '@/components/TopNavigation';
 import { getQuizResources, searchContent } from '@/services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
 import debounce from 'lodash.debounce';
+import { AppText } from '../../../../components/ui/AppText';
 
 // Component for a single quiz card
 const QuizCard = ({ item, translations, colors }) => {
@@ -28,22 +29,22 @@ const QuizCard = ({ item, translations, colors }) => {
       style={[styles.card, { backgroundColor: colors.card }]}
       onPress={() => router.push(`/(tabs)/profile/quizresources/${item.id}`)}
     >
-      <Text
+      <AppText
         style={[styles.quizTitle, { color: colors.text }]}
         numberOfLines={1}
       >
         {title}
-      </Text>
-      <Text style={[styles.quizMeta, { color: colors.textSecondary }]}>
+      </AppText>
+      <AppText style={[styles.quizMeta, { color: colors.textSecondary }]}>
         {category}
-      </Text>
+      </AppText>
       <TouchableOpacity
         style={styles.studyButton}
         onPress={() => router.push(`/(tabs)/profile/quizresources/${item.id}`)}
       >
-        <Text style={[styles.studyButtonText, { color: '#fff' }]}>
+        <AppText style={[styles.studyButtonText, { color: '#fff' }]}>
           {translations.study || 'Start Study'}
-        </Text>
+        </AppText>
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -108,7 +109,7 @@ export default function QuizResourcesScreen() {
       }
       setSearching(false);
     }, 500),
-    []
+    [],
   );
 
   useEffect(() => {
@@ -135,9 +136,11 @@ export default function QuizResourcesScreen() {
     }
     return (
       <View style={styles.noResultsContainer}>
-        <Text style={[styles.noResultsText, { color: colors.textSecondary }]}>
+        <AppText
+          style={[styles.noResultsText, { color: colors.textSecondary }]}
+        >
           {translations.noResults || 'No quizzes found.'}
-        </Text>
+        </AppText>
       </View>
     );
   };
@@ -146,7 +149,7 @@ export default function QuizResourcesScreen() {
     <SafeAreaWrapper>
       <TopNavigation showBackButton={true} />
       <View>
-        <Text
+        <AppText
           style={[
             {
               marginHorizontal: 'auto',
@@ -157,7 +160,7 @@ export default function QuizResourcesScreen() {
           ]}
         >
           Quiz Resources
-        </Text>
+        </AppText>
       </View>
       <View
         style={[styles.searchContainer, { backgroundColor: colors.surface }]}

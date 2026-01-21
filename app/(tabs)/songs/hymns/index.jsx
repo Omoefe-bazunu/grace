@@ -20,6 +20,7 @@ import { useTheme } from '../../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { LanguageSwitcher } from '../../../../components/LanguageSwitcher';
 import { TopNavigation } from '../../../../components/TopNavigation';
+import { AppText } from '../../../../components/ui/AppText';
 
 // Import language-specific data
 const hymnData = {
@@ -106,7 +107,7 @@ export default function HymnsScreen() {
   useFocusEffect(
     useCallback(() => {
       loadItems();
-    }, [loadItems])
+    }, [loadItems]),
   );
 
   const filteredItems = useMemo(() => {
@@ -140,9 +141,9 @@ export default function HymnsScreen() {
             style={styles.hymnHeader}
             activeOpacity={0.7}
           >
-            <Text style={[styles.hymnTitle, { color: colors.primary }]}>
+            <AppText style={[styles.hymnTitle, { color: colors.primary }]}>
               {label}
-            </Text>
+            </AppText>
             <Ionicons
               name={isExpanded ? 'chevron-up' : 'chevron-down'}
               size={20}
@@ -154,39 +155,39 @@ export default function HymnsScreen() {
             <View
               style={[styles.hymnContent, { backgroundColor: colors.surface }]}
             >
-              <Text style={[styles.hymnName, { color: colors.text }]}>
+              <AppText style={[styles.hymnName, { color: colors.text }]}>
                 {item.title}
-              </Text>
+              </AppText>
               {item.subtitle && (
-                <Text
+                <AppText
                   style={[styles.hymnSubtitle, { color: colors.textSecondary }]}
                 >
                   {item.subtitle}
-                </Text>
+                </AppText>
               )}
               {item.meter && ( // Meter only exists for hymns
-                <Text
+                <AppText
                   style={[styles.hymnMeter, { color: colors.textSecondary }]}
                 >
                   {item.meter}
-                </Text>
+                </AppText>
               )}
               {item.stanzas.map((stanza, index) => (
                 <View
                   key={`${item.uniqueId}_stanza_${index}`}
                   style={styles.stanzaContainer}
                 >
-                  <Text
+                  <AppText
                     style={[styles.stanzaNumber, { color: colors.primary }]}
                   >
                     {stanza.number}
-                  </Text>
-                  <Text
+                  </AppText>
+                  <AppText
                     style={[styles.hymnBody, { color: colors.text }]}
                     selectable
                   >
                     {stanza.text}
-                  </Text>
+                  </AppText>
                 </View>
               ))}
             </View>
@@ -194,7 +195,7 @@ export default function HymnsScreen() {
         </View>
       );
     },
-    [expandedId, colors] // Removed dataType dependency
+    [expandedId, colors], // Removed dataType dependency
   );
 
   return (
@@ -209,7 +210,9 @@ export default function HymnsScreen() {
           resizeMode="cover"
         >
           <View style={styles.headerOverlay} />
-          <Text style={styles.headerTitle}>{'Theocratic Songs of Praise'}</Text>
+          <AppText style={styles.headerTitle}>
+            {'Theocratic Songs of Praise'}
+          </AppText>
         </ImageBackground>
       </View>
 
@@ -252,9 +255,9 @@ export default function HymnsScreen() {
             { backgroundColor: colors.background },
           ]}
           ListEmptyComponent={
-            <Text style={[styles.emptyText, { color: colors.text }]}>
+            <AppText style={[styles.emptyText, { color: colors.text }]}>
               No Hymns or Psalms found matching your search.
-            </Text>
+            </AppText>
           }
         />
       )}
@@ -264,7 +267,7 @@ export default function HymnsScreen() {
 
 const styles = StyleSheet.create({
   headerImageContainer: {
-    height: 180,
+    height: 120,
     justifyContent: 'flex-end',
     paddingBottom: 30,
     paddingHorizontal: 20,
@@ -283,7 +286,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   headerTitle: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',

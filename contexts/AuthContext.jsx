@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
+import { apiClient } from '../utils/api'; // [cite: 205, 211]
 
 const AuthContext = createContext(undefined);
 
@@ -9,30 +9,18 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const API = 'https://grace-backend-tp3h.onrender.com';
-
-  axios.interceptors.request.use(async (config) => {
-    const token = await AsyncStorage.getItem('jwt');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  });
-
-  axios.interceptors.response.use(
-    (res) => res,
-    async (error) => {
-      if (error.response?.status === 401) {
-        await AsyncStorage.removeItem('jwt');
-        setUser(null);
-      }
-      return Promise.reject(error);
-    }
-  );
+  // Note: API interception and token management are now handled centrally
+  // inside utils/api.js to prevent redundant code.
 
   const login = async (email, password) => {
     try {
-      const { data } = await axios.post(`${API}/login`, { email, password });
+      // Aligned with the new modular /api/auth namespace
+      const { data } = await apiClient.login(email, password);
+
       await AsyncStorage.setItem('jwt', data.token);
       const decoded = jwtDecode(data.token);
+
+      // Update local state with user data from token
       setUser({ uid: decoded.email, email: decoded.email });
       setIsLoading(false);
       return true;
@@ -45,7 +33,8 @@ export function AuthProvider({ children }) {
 
   const signup = async (email, password) => {
     try {
-      await axios.post(`${API}/register`, { email, password });
+      // Aligned with the new modular /api/auth/register endpoint
+      await apiClient.register(email, password);
       return await login(email, password);
     } catch (error) {
       console.error('Signup error:', error.response?.data || error.message);
@@ -71,6 +60,10 @@ export function AuthProvider({ children }) {
     }
   };
 
+  /**
+   * Admin check based on your specific admin email requirement.
+   * Ensure this matches the role logic in your backend middleware.
+   */
   const isAdmin = user?.email === 'raniem57@gmail.com';
 
   useEffect(() => {
@@ -86,6 +79,7 @@ export function AuthProvider({ children }) {
         const decoded = jwtDecode(token);
         const now = Date.now() / 1000;
 
+        // Session validation logic
         if (decoded.exp && decoded.exp < now) {
           await AsyncStorage.removeItem('jwt');
           setUser(null);

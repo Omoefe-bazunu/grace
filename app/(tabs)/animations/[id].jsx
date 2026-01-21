@@ -18,6 +18,7 @@ import { getVideo } from '../../../services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaWrapper } from '../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../components/TopNavigation';
+import { AppText } from '../../../components/ui/AppText';
 
 const SkeletonVideo = () => {
   const { colors } = useTheme();
@@ -125,9 +126,9 @@ export default function AnimationDetailScreen() {
       <SafeAreaView
         style={[styles.container, { backgroundColor: colors.background }]}
       >
-        <Text style={[styles.error, { color: colors.error }]}>
+        <AppText style={[styles.error, { color: colors.error }]}>
           {translations.errorVideoNotFound || 'Video not found'}
-        </Text>
+        </AppText>
       </SafeAreaView>
     );
   }
@@ -152,18 +153,18 @@ export default function AnimationDetailScreen() {
 
       {/* Video Info */}
       <View style={[styles.videoInfo, { backgroundColor: colors.card }]}>
-        <Text style={[styles.title, { color: colors.text }]}>
+        <AppText style={[styles.title, { color: colors.text }]}>
           {video.title || translations.noTitle}
-        </Text>
+        </AppText>
         <View style={styles.metaInfo}>
-          {/* <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+          {/* <AppText style={[styles.metaText, { color: colors.textSecondary }]}>
             {translations.duration}:{' '}
             {video.duration || translations.unknownDuration}
-          </Text> */}
-          {/* <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+          </AppText> */}
+          {/* <AppText style={[styles.metaText, { color: colors.textSecondary }]}>
             {translations.language}:{' '}
             {video.languageCategory || translations.unknownCategory}
-          </Text> */}
+          </AppText> */}
         </View>
       </View>
 
@@ -171,9 +172,9 @@ export default function AnimationDetailScreen() {
       <View style={[styles.controls, { backgroundColor: colors.card }]}>
         <TouchableOpacity style={styles.controlButton} onPress={handleShare}>
           <Share2 size={24} color={colors.primary} />
-          <Text style={[styles.controlText, { color: colors.primary }]}>
+          <AppText style={[styles.controlText, { color: colors.primary }]}>
             {translations.share || 'Share'}
-          </Text>
+          </AppText>
         </TouchableOpacity>
       </View>
     </SafeAreaWrapper>

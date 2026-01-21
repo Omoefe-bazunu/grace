@@ -18,6 +18,7 @@ import { useLanguage } from '../../../../contexts/LanguageContext';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { LanguageSwitcher } from '../../../../components/LanguageSwitcher';
+import { AppText } from '../../../../components/ui/AppText';
 import {
   getSongsByCategoryPaginated,
   getSongsPaginated,
@@ -58,12 +59,12 @@ export default function MusicScreen() {
           result = await getSongsByCategoryPaginated(
             category,
             15,
-            isRefresh ? null : nextCursor
+            isRefresh ? null : nextCursor,
           );
         } catch (categoryError) {
           const allSongsResult = await getSongsPaginated(
             15,
-            isRefresh ? null : nextCursor
+            isRefresh ? null : nextCursor,
           );
           result = {
             songs: allSongsResult.songs.filter((s) => s.category === category),
@@ -83,7 +84,7 @@ export default function MusicScreen() {
         setSongs((prev) => {
           const existingIds = new Set(prev.map((song) => song.id));
           const uniqueNewSongs = result.songs.filter(
-            (song) => !existingIds.has(song.id)
+            (song) => !existingIds.has(song.id),
           );
           return [...prev, ...uniqueNewSongs];
         });
@@ -128,7 +129,7 @@ export default function MusicScreen() {
 
         // Filter out any new songs whose IDs already exist
         const uniqueNewSongs = result.songs.filter(
-          (song) => !existingIds.has(song.id)
+          (song) => !existingIds.has(song.id),
         );
 
         // Combine unique lists
@@ -167,7 +168,7 @@ export default function MusicScreen() {
         setLoading(false);
       }
     }, 500),
-    [category]
+    [category],
   );
 
   useEffect(() => {
@@ -195,13 +196,13 @@ export default function MusicScreen() {
         <Mic2 size={24} color={colors.primary} />
       </View>
       <View style={styles.titleContainer}>
-        <Text style={styles.songTitle}>{item.title || 'Untitled'}</Text>
+        <AppText style={styles.songTitle}>{item.title || 'Untitled'}</AppText>
       </View>
       <TouchableOpacity
         style={styles.playButton}
         onPress={() => router.push(`/(tabs)/songs/music/${item.id}`)}
       >
-        <Text style={styles.playText}>Start Playing</Text>
+        <AppText style={styles.playText}>Start Playing</AppText>
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -218,7 +219,7 @@ export default function MusicScreen() {
         resizeMode="cover"
       >
         <View style={styles.headerOverlay} />
-        <Text style={styles.headerTitle}>{category || 'Category'}</Text>
+        <AppText style={styles.headerTitle}>{category || 'Category'}</AppText>
       </ImageBackground>
 
       <View style={styles.searchWrapper}>
@@ -255,7 +256,7 @@ export default function MusicScreen() {
           loading ? (
             <ActivityIndicator />
           ) : (
-            <Text style={styles.empty}>No songs found</Text>
+            <AppText style={styles.empty}>No songs found</AppText>
           )
         }
       />

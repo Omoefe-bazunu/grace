@@ -13,6 +13,7 @@ import { useTheme } from '../../../../contexts/ThemeContext';
 import { useLanguage } from '../../../../contexts/LanguageContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TopNavigation } from '../../../../components/TopNavigation';
+import { AppText } from '../../../../components/ui/AppText';
 
 export default function GalleryScreen() {
   const { colors } = useTheme(); // Access theme colors
@@ -52,11 +53,11 @@ export default function GalleryScreen() {
               style={styles.bannerGradient}
             />
             <View style={styles.bannerText}>
-              <Text style={styles.bannerTitle}>GALLERY</Text>
-              <Text style={styles.bannerSubtitle}>
+              <AppText style={styles.bannerTitle}>GALLERY</AppText>
+              <AppText style={styles.bannerSubtitle}>
                 Here you find the profile of ministers of the GKS, pictures and
                 videos of events acrros the branches of the church.
-              </Text>
+              </AppText>
             </View>
           </ImageBackground>
         </View>
@@ -83,10 +84,10 @@ export default function GalleryScreen() {
               {/* Hardcoded orange from design */}
               <View style={styles.cardContent}>
                 {card.icon}
-                <Text style={[styles.cardText, { color: colors.text }]}>
+                <AppText style={[styles.cardText, { color: colors.text }]}>
                   {/* Use theme text color */}
                   {card.title}
-                </Text>
+                </AppText>
               </View>
             </TouchableOpacity>
           ))}

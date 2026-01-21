@@ -15,6 +15,7 @@ import { SafeAreaWrapper } from '../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../components/TopNavigation';
 import { getSongsPaginated } from '../../../services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
+import { AppText } from '../../../components/ui/AppText';
 
 const { width } = Dimensions.get('window');
 
@@ -140,18 +141,18 @@ export default function SongsScreen() {
     >
       <View style={[styles.cardTopLine, { backgroundColor: colors.primary }]} />
       <View style={styles.cardContent}>
-        <Text style={[styles.playlistTitle, { color: colors.primary }]}>
+        <AppText style={[styles.playlistTitle, { color: colors.primary }]}>
           {item.title}
-        </Text>
-        <Text
+        </AppText>
+        <AppText
           style={[styles.playlistSubtitle, { color: colors.textSecondary }]}
         >
           {item.subtitle}
-        </Text>
+        </AppText>
         <TouchableOpacity style={styles.button}>
-          <Text style={[styles.buttonText, { color: colors.text }]}>
+          <AppText style={[styles.buttonText, { color: colors.text }]}>
             {item.button}
-          </Text>
+          </AppText>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -172,11 +173,11 @@ export default function SongsScreen() {
             style={styles.bannerGradient}
           />
           <View style={styles.bannerText}>
-            <Text style={styles.bannerTitle}>SONGS OF PRAISE</Text>
-            <Text style={styles.bannerSubtitle}>
+            <AppText style={styles.bannerTitle}>SONGS OF PRAISE</AppText>
+            <AppText style={styles.bannerSubtitle}>
               Worship through a collection of uplifting spiritual songs and
               hymns that strengthen your faith.
-            </Text>
+            </AppText>
           </View>
         </ImageBackground>
       </View>
@@ -206,8 +207,8 @@ export default function SongsScreen() {
                     subtitle: `(${categoryCounts[cat] || 0} songs)`,
                     button: 'See Playlist',
                   },
-                  i
-                )
+                  i,
+                ),
               )}
         </View>
       </ScrollView>
@@ -218,12 +219,12 @@ export default function SongsScreen() {
 const styles = StyleSheet.create({
   bannerContainer: {
     overflow: 'hidden',
-    height: 200,
+    height: 120,
     marginBottom: 10,
   },
   bannerImage: {
     width: width,
-    height: 200,
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -241,16 +242,17 @@ const styles = StyleSheet.create({
   },
   bannerTitle: {
     color: '#fff',
-    fontSize: 28,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 6,
   },
   bannerSubtitle: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 10,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 16,
+    marginBottom: 8,
   },
   playlistsContainer: {
     paddingHorizontal: 20,

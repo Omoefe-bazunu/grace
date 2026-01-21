@@ -31,6 +31,7 @@ import { usePlayer } from '../../../../contexts/PlayListContext';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
 import { getSong } from '../../../../services/dataService';
+import { AppText } from '../../../../components/ui/AppText';
 
 const HARDCODED_ALBUM_ART_URL =
   'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006527/CHOIR_o1kzpt.png';
@@ -75,7 +76,7 @@ export default function MusicDetailScreen() {
             easing: Easing.ease,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       ).start();
     } else {
       pulse.stopAnimation();
@@ -122,7 +123,7 @@ export default function MusicDetailScreen() {
     if (status !== 'granted') {
       Alert.alert(
         'Permission required',
-        'Please allow access to save songs to your device.'
+        'Please allow access to save songs to your device.',
       );
       return;
     }
@@ -132,14 +133,14 @@ export default function MusicDetailScreen() {
       // 2. Define path
       const filename = `${songToDownload.title.replace(
         /[^a-z0-9]/gi,
-        '_'
+        '_',
       )}.mp3`;
       const fileUri = FileSystem.documentDirectory + filename;
 
       // 3. Download to app cache
       const { uri } = await FileSystem.downloadAsync(
         songToDownload.audioUrl,
-        fileUri
+        fileUri,
       );
 
       // 4. Move to System Music/Gallery
@@ -202,14 +203,14 @@ export default function MusicDetailScreen() {
 
         {/* Titles */}
         <View style={{ alignItems: 'center', marginBottom: 30 }}>
-          <Text
+          <AppText
             style={{ fontSize: 24, fontWeight: 'bold', color: colors.text }}
           >
             {localSongData.title}
-          </Text>
-          <Text style={{ fontSize: 16, color: colors.textSecondary }}>
+          </AppText>
+          <AppText style={{ fontSize: 16, color: colors.textSecondary }}>
             {localSongData.category || 'Unknown'}
-          </Text>
+          </AppText>
         </View>
 
         {/* Progress Bar */}
@@ -221,12 +222,12 @@ export default function MusicDetailScreen() {
               marginBottom: 10,
             }}
           >
-            <Text style={{ color: colors.textSecondary }}>
+            <AppText style={{ color: colors.textSecondary }}>
               {formatTime(displayPosition)}
-            </Text>
-            <Text style={{ color: colors.textSecondary }}>
+            </AppText>
+            <AppText style={{ color: colors.textSecondary }}>
               {formatTime(displayDuration)}
-            </Text>
+            </AppText>
           </View>
           <View
             style={{

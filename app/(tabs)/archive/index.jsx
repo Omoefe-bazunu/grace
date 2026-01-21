@@ -13,8 +13,9 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TopNavigation } from '../../../components/TopNavigation';
+import { AppText } from '../../../components/ui/AppText';
 
-export default function GalleryScreen() {
+export default function ArchiveScreen() {
   const { colors } = useTheme(); // Access theme colors
   const { translations } = useLanguage(); // Access translations
 
@@ -47,11 +48,11 @@ export default function GalleryScreen() {
               style={styles.bannerGradient}
             />
             <View style={styles.bannerText}>
-              <Text style={styles.bannerTitle}>ARCHIVE</Text>
-              <Text style={styles.bannerSubtitle}>
+              <AppText style={styles.bannerTitle}>ARCHIVE</AppText>
+              <AppText style={styles.bannerSubtitle}>
                 Here you will find pictures and videos from old events of the
                 church, kept for reference and memories.
-              </Text>
+              </AppText>
             </View>
           </ImageBackground>
         </View>
@@ -78,10 +79,10 @@ export default function GalleryScreen() {
               {/* Hardcoded orange from design */}
               <View style={styles.cardContent}>
                 {card.icon}
-                <Text style={[styles.cardText, { color: colors.text }]}>
+                <AppText style={[styles.cardText, { color: colors.text }]}>
                   {/* Use theme text color */}
                   {card.title}
-                </Text>
+                </AppText>
               </View>
             </TouchableOpacity>
           ))}

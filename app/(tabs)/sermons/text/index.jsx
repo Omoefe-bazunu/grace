@@ -24,6 +24,7 @@ import {
 } from '../../../../services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
 import debounce from 'lodash.debounce';
+import { AppText } from '../../../../components/ui/AppText';
 
 const SERMON_CATEGORIES = [
   'Weekly Sermon Volume 1',
@@ -129,10 +130,10 @@ export default function TextSermonsScreen() {
             style={styles.bannerGradient}
           />
           <View style={styles.bannerText}>
-            <Text style={styles.bannerTitle}>TEXT SERMONS</Text>
-            <Text style={styles.bannerSubtitle}>
+            <AppText style={styles.bannerTitle}>TEXT SERMONS</AppText>
+            <AppText style={styles.bannerSubtitle}>
               Read and study God's word with full text sermons.
-            </Text>
+            </AppText>
           </View>
         </ImageBackground>
       </View>
@@ -161,9 +162,9 @@ export default function TextSermonsScreen() {
       ) : categoriesWithSermons.length === 0 ? (
         <View style={styles.empty}>
           <BookOpen size={64} color={colors.textSecondary} />
-          <Text style={[styles.emptyText, { color: colors.text }]}>
+          <AppText style={[styles.emptyText, { color: colors.text }]}>
             {searchQuery ? 'No sermons found' : 'No text sermons available'}
-          </Text>
+          </AppText>
         </View>
       ) : (
         <FlatList
@@ -194,17 +195,19 @@ export default function TextSermonsScreen() {
                 onPress={() => openCategory(category)}
               >
                 <View style={styles.categoryHeader}>
-                  <Text style={[styles.categoryTitle, { color: colors.text }]}>
+                  <AppText
+                    style={[styles.categoryTitle, { color: colors.text }]}
+                  >
                     {category}
-                  </Text>
-                  <Text
+                  </AppText>
+                  <AppText
                     style={[
                       styles.categoryCount,
                       { color: colors.textSecondary },
                     ]}
                   >
                     {filtered.length} sermon{filtered.length !== 1 ? 's' : ''}
-                  </Text>
+                  </AppText>
                 </View>
                 <ChevronRight size={24} color={colors.textSecondary} />
               </TouchableOpacity>
@@ -229,14 +232,14 @@ export default function TextSermonsScreen() {
           >
             <View style={styles.modalHeader}>
               <TouchableOpacity onPress={closeModal}>
-                <Text style={{ fontSize: 36, color: colors.textSecondary }}>
+                <AppText style={{ fontSize: 36, color: colors.textSecondary }}>
                   ×
-                </Text>
+                </AppText>
               </TouchableOpacity>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
+              <AppText style={[styles.modalTitle, { color: colors.text }]}>
                 {expandedCategory} (
                 {categorizedSermons[expandedCategory]?.length || 0})
-              </Text>
+              </AppText>
             </View>
 
             <FlatList
@@ -258,12 +261,12 @@ export default function TextSermonsScreen() {
                     }}
                   >
                     <View style={styles.sermonText}>
-                      <Text
+                      <AppText
                         style={[styles.sermonTitle, { color: colors.text }]}
                         numberOfLines={2}
                       >
                         {title}
-                      </Text>
+                      </AppText>
                     </View>
                     <ChevronRight size={20} color={colors.textSecondary} />
                   </TouchableOpacity>
@@ -281,7 +284,7 @@ const styles = StyleSheet.create({
   bannerContainer: { height: 180, overflow: 'hidden', marginBottom: 10 },
   bannerImage: {
     width: '100%',
-    height: '100%',
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -295,19 +298,20 @@ const styles = StyleSheet.create({
   bannerText: { paddingHorizontal: 40, alignItems: 'center' },
   bannerTitle: {
     color: '#fff',
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
   },
   bannerSubtitle: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 10,
     textAlign: 'center',
     marginTop: 8,
+    marginBottom: 8,
   },
   searchContainer: {
     marginHorizontal: 20,
-    marginTop: -30,
+    marginTop: -100,
     marginBottom: 20,
     borderRadius: 30,
     flexDirection: 'row',

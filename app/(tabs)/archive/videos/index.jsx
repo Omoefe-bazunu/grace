@@ -15,6 +15,7 @@ import { groupBy } from 'lodash';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
 import { LinearGradient } from 'expo-linear-gradient';
+import { AppText } from '../../../../components/ui/AppText';
 
 function EventCard({ event, items }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -29,9 +30,9 @@ function EventCard({ event, items }) {
     <View style={styles.eventCard}>
       <View style={styles.orangeBar} />
       <View style={styles.cardContent}>
-        <Text style={styles.eventTitle}>{event || 'Untitled Event'}</Text>
+        <AppText style={styles.eventTitle}>{event || 'Untitled Event'}</AppText>
         {items[0]?.description && (
-          <Text style={styles.desc}>{items[0].description}</Text>
+          <AppText style={styles.desc}>{items[0].description}</AppText>
         )}
         <ScrollView
           horizontal
@@ -78,7 +79,7 @@ export default function archiveVideos() {
       try {
         const data = await getArchiveVideos();
         const grouped = Object.entries(groupBy(data, 'event')).sort(
-          ([a], [b]) => b.localeCompare(a)
+          ([a], [b]) => b.localeCompare(a),
         );
         setVideos(grouped);
       } catch (err) {
@@ -90,7 +91,7 @@ export default function archiveVideos() {
   }, []);
 
   const filteredVideos = videos.filter(([event]) =>
-    event.toLowerCase().includes(searchQuery.toLowerCase())
+    event.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (loading)
@@ -119,11 +120,11 @@ export default function archiveVideos() {
                 style={styles.bannerGradient}
               />
               <View style={styles.bannerText}>
-                <Text style={styles.bannerTitle}>VIDEO ARCHIVE</Text>
-                <Text style={styles.bannerSubtitle}>
+                <AppText style={styles.bannerTitle}>VIDEO ARCHIVE</AppText>
+                <AppText style={styles.bannerSubtitle}>
                   This screen contains videos old events of the church, kept for
                   reference and memories.
-                </Text>
+                </AppText>
               </View>
             </ImageBackground>
           </View>
@@ -139,11 +140,11 @@ export default function archiveVideos() {
         </View>
 
         {filteredVideos.length === 0 ? (
-          <Text style={styles.empty}>
+          <AppText style={styles.empty}>
             {searchQuery
               ? 'No events found matching your search'
               : 'No videos yet'}
-          </Text>
+          </AppText>
         ) : (
           filteredVideos.map(([event, items]) => (
             <EventCard key={event} event={event} items={items} />

@@ -23,6 +23,7 @@ import {
   getActiveLiveStreams,
   getYouTubeVideoId,
 } from '../../services/dataService';
+import { AppText } from '../../components/ui/AppText';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -98,7 +99,7 @@ export default function LiveStreamScreen() {
 
   const openInBrowser = (url) => {
     Linking.openURL(url).catch((err) =>
-      Alert.alert('Error', 'Could not open link')
+      Alert.alert('Error', 'Could not open link'),
     );
   };
 
@@ -134,12 +135,12 @@ export default function LiveStreamScreen() {
         {videoLoading[stream.id] && (
           <View style={styles.videoLoadingOverlay}>
             <ActivityIndicator size="large" color="#fff" />
-            <Text style={styles.videoLoadingText}>Loading stream...</Text>
+            <AppText style={styles.videoLoadingText}>Loading stream...</AppText>
           </View>
         )}
         {videoErrors[stream.id] && (
           <View style={styles.videoErrorOverlay}>
-            <Text style={styles.videoErrorText}>Stream unavailable</Text>
+            <AppText style={styles.videoErrorText}>Stream unavailable</AppText>
             <TouchableOpacity
               style={styles.openBrowserButton}
               onPress={() =>
@@ -147,7 +148,7 @@ export default function LiveStreamScreen() {
               }
             >
               <ExternalLink size={16} color="#fff" />
-              <Text style={styles.openBrowserText}>Open in YouTube</Text>
+              <AppText style={styles.openBrowserText}>Open in YouTube</AppText>
             </TouchableOpacity>
           </View>
         )}
@@ -177,16 +178,20 @@ export default function LiveStreamScreen() {
         {videoLoading[stream.id] && (
           <View style={styles.videoLoadingOverlay}>
             <ActivityIndicator size="large" color="#fff" />
-            <Text style={styles.videoLoadingText}>Loading HLS stream...</Text>
+            <AppText style={styles.videoLoadingText}>
+              Loading HLS stream...
+            </AppText>
           </View>
         )}
 
         {videoErrors[stream.id] && (
           <View style={styles.videoErrorOverlay}>
-            <Text style={styles.videoErrorText}>HLS Stream unavailable</Text>
-            <Text style={styles.videoErrorSubtext}>
+            <AppText style={styles.videoErrorText}>
+              HLS Stream unavailable
+            </AppText>
+            <AppText style={styles.videoErrorSubtext}>
               Could not load this stream
-            </Text>
+            </AppText>
           </View>
         )}
       </View>
@@ -218,14 +223,14 @@ export default function LiveStreamScreen() {
       <View style={styles.videoContainer}>
         <View style={styles.externalStreamContainer}>
           <Play size={48} color="#fff" opacity={0.8} />
-          <Text style={styles.externalStreamText}>
+          <AppText style={styles.externalStreamText}>
             {stream.streamType?.toUpperCase() || 'EXTERNAL'} Stream
-          </Text>
-          <Text style={styles.externalStreamSubtext}>
+          </AppText>
+          <AppText style={styles.externalStreamSubtext}>
             {stream.streamType === 'youtube'
               ? 'Tap below to watch in YouTube app'
               : 'This stream type must be opened externally'}
-          </Text>
+          </AppText>
           <TouchableOpacity
             style={[
               styles.openBrowserButtonLarge,
@@ -243,11 +248,11 @@ export default function LiveStreamScreen() {
             }}
           >
             <ExternalLink size={20} color="#fff" />
-            <Text style={styles.openBrowserTextLarge}>
+            <AppText style={styles.openBrowserTextLarge}>
               {stream.streamType === 'youtube'
                 ? 'Open in YouTube'
                 : 'Watch in Browser'}
-            </Text>
+            </AppText>
           </TouchableOpacity>
         </View>
       </View>
@@ -265,9 +270,11 @@ export default function LiveStreamScreen() {
           ]}
         >
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+          <AppText
+            style={[styles.loadingText, { color: colors.textSecondary }]}
+          >
             Loading streams...
-          </Text>
+          </AppText>
         </View>
       </SafeAreaWrapper>
     );
@@ -283,18 +290,20 @@ export default function LiveStreamScreen() {
             { backgroundColor: colors.background },
           ]}
         >
-          <Text style={[styles.errorText, { color: colors.error }]}>
+          <AppText style={[styles.errorText, { color: colors.error }]}>
             {error}
-          </Text>
-          <Text style={[styles.errorSubtext, { color: colors.textSecondary }]}>
+          </AppText>
+          <AppText
+            style={[styles.errorSubtext, { color: colors.textSecondary }]}
+          >
             Please check your connection and try again.
-          </Text>
+          </AppText>
           <TouchableOpacity
             style={[styles.retryButton, { backgroundColor: colors.primary }]}
             onPress={loadStreams}
           >
             <RefreshCw size={20} color="#fff" />
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <AppText style={styles.retryButtonText}>Retry</AppText>
           </TouchableOpacity>
         </View>
       </SafeAreaWrapper>
@@ -318,9 +327,11 @@ export default function LiveStreamScreen() {
             color={colors.primary}
             style={refreshing && styles.refreshingIcon}
           />
-          <Text style={[styles.refreshButtonText, { color: colors.primary }]}>
+          <AppText
+            style={[styles.refreshButtonText, { color: colors.primary }]}
+          >
             {refreshing ? 'Refreshing...' : 'Refresh Streams'}
-          </Text>
+          </AppText>
         </TouchableOpacity>
       </View>
 
@@ -341,9 +352,9 @@ export default function LiveStreamScreen() {
             style={[styles.streamCard, { backgroundColor: colors.card }]}
           >
             <View style={styles.streamHeader}>
-              <Text style={[styles.streamTitle, { color: colors.text }]}>
+              <AppText style={[styles.streamTitle, { color: colors.text }]}>
                 {stream.title}
-              </Text>
+              </AppText>
               <View
                 style={[
                   styles.statusBadge,
@@ -362,14 +373,14 @@ export default function LiveStreamScreen() {
                     },
                   ]}
                 />
-                <Text
+                <AppText
                   style={[
                     styles.statusText,
                     { color: stream.isActive ? '#10B981' : '#6B7280' },
                   ]}
                 >
                   {stream.isActive ? 'LIVE' : 'OFFLINE'}
-                </Text>
+                </AppText>
               </View>
             </View>
 
@@ -377,52 +388,52 @@ export default function LiveStreamScreen() {
               renderStreamPlayer(stream)
             ) : (
               <View style={styles.offlineContainer}>
-                <Text style={styles.offlineText}>Stream Offline</Text>
-                <Text style={styles.offlineSubtext}>
+                <AppText style={styles.offlineText}>Stream Offline</AppText>
+                <AppText style={styles.offlineSubtext}>
                   This stream is currently not active
-                </Text>
+                </AppText>
               </View>
             )}
 
             <View style={styles.streamInfo}>
               {stream.description && (
-                <Text
+                <AppText
                   style={[
                     styles.streamDescription,
                     { color: colors.textSecondary },
                   ]}
                 >
                   {stream.description}
-                </Text>
+                </AppText>
               )}
 
               {stream.schedule && (
-                <Text
+                <AppText
                   style={[styles.streamSchedule, { color: colors.primary }]}
                 >
                   📅 {stream.schedule}
-                </Text>
+                </AppText>
               )}
 
-              <Text
+              <AppText
                 style={[styles.streamType, { color: colors.textSecondary }]}
               >
                 Type: {stream.streamType?.toUpperCase() || 'Unknown'}
-              </Text>
+              </AppText>
             </View>
           </View>
         ))}
 
         {streams.length === 0 && (
           <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            <AppText style={[styles.emptyTitle, { color: colors.text }]}>
               No Active Streams
-            </Text>
-            <Text
+            </AppText>
+            <AppText
               style={[styles.emptySubtitle, { color: colors.textSecondary }]}
             >
               Check back later for live streams
-            </Text>
+            </AppText>
             <TouchableOpacity
               style={[
                 styles.refreshButtonLarge,
@@ -431,7 +442,7 @@ export default function LiveStreamScreen() {
               onPress={onRefresh}
             >
               <RefreshCw size={20} color="#fff" />
-              <Text style={styles.refreshButtonLargeText}>Refresh</Text>
+              <AppText style={styles.refreshButtonLargeText}>Refresh</AppText>
             </TouchableOpacity>
           </View>
         )}

@@ -42,7 +42,7 @@ export default function QuizResourceUploader() {
     if (!title || !year || !age || !gender || !content) {
       showModal(
         translations.fillAllFields || 'Please fill in all fields.',
-        false
+        false,
       );
       return;
     }
@@ -55,12 +55,10 @@ export default function QuizResourceUploader() {
         age,
         gender,
         content,
-        uploadedBy: 'admin@example.com', // Replace with dynamic user email
-        createdAt: new Date(),
       });
       showModal(
         translations.uploadSuccess || 'Quiz resource uploaded successfully!',
-        true
+        true,
       );
       // Reset form
       setTitle('');
@@ -73,7 +71,7 @@ export default function QuizResourceUploader() {
       showModal(
         translations.uploadError ||
           'Failed to upload quiz resource. Please try again.',
-        false
+        false,
       );
     } finally {
       setIsUploading(false);

@@ -34,6 +34,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import debounce from 'lodash.debounce';
 import { TopNavigation } from '../../../components/TopNavigation';
 import { SafeAreaWrapper } from '../../../components/ui/SafeAreaWrapper';
+import { AppText } from '../../../components/ui/AppText';
 
 const SkeletonCard = () => {
   const { colors } = useTheme();
@@ -133,7 +134,7 @@ export default function AnimationsScreen() {
         setLoading(false);
       }
     }, 500),
-    []
+    [],
   );
 
   useEffect(() => {

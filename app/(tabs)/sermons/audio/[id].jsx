@@ -29,6 +29,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
 
 import { useLanguage } from '@/contexts/LanguageContext';
+import { AppText } from '../../../../components/ui/AppText';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
 import { getSermon } from '@/services/dataService';
@@ -109,7 +110,7 @@ export default function SermonAudioDetailScreen() {
           easing: Easing.ease,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     ).start();
   }, [pulse]);
 
@@ -153,7 +154,7 @@ export default function SermonAudioDetailScreen() {
         stopPulse();
       }
     },
-    [isPlaying, startPulse, stopPulse, sound, isLooping]
+    [isPlaying, startPulse, stopPulse, sound, isLooping],
   );
 
   const loadAudio = async (url) => {
@@ -163,7 +164,7 @@ export default function SermonAudioDetailScreen() {
       const { sound: newSound } = await Audio.Sound.createAsync(
         { uri: url },
         { shouldPlay: false, isLooping: isLooping },
-        onPlaybackStatusUpdate
+        onPlaybackStatusUpdate,
       );
 
       if (isMounted.current) setSound(newSound);
@@ -247,7 +248,7 @@ export default function SermonAudioDetailScreen() {
     if (status !== 'granted') {
       Alert.alert(
         'Permission required',
-        'Please allow access to save sermons to your device.'
+        'Please allow access to save sermons to your device.',
       );
       return;
     }
@@ -293,9 +294,9 @@ export default function SermonAudioDetailScreen() {
   if (!sermon || !sermon.audioUrl) {
     return (
       <SafeAreaWrapper>
-        <Text style={[styles.error, { color: colors.error }]}>
+        <AppText style={[styles.error, { color: colors.error }]}>
           {translations.errorSermonNotFound || 'Sermon not found or no audio.'}
-        </Text>
+        </AppText>
       </SafeAreaWrapper>
     );
   }
@@ -333,15 +334,15 @@ export default function SermonAudioDetailScreen() {
 
         {/* Titles */}
         <View style={{ alignItems: 'center', marginBottom: 20 }}>
-          <Text style={[styles.title, { color: colors.text }]}>
+          <AppText style={[styles.title, { color: colors.text }]}>
             {sermon.title || translations.noTitle}
-          </Text>
+          </AppText>
 
           <View style={styles.dateRow}>
             <Calendar size={16} color={colors.textSecondary} />
-            <Text style={[styles.date, { color: colors.textSecondary }]}>
+            <AppText style={[styles.date, { color: colors.textSecondary }]}>
               {sermon.date || translations.unknownDate}
-            </Text>
+            </AppText>
           </View>
         </View>
 
@@ -354,12 +355,12 @@ export default function SermonAudioDetailScreen() {
               marginBottom: 10,
             }}
           >
-            <Text style={{ color: colors.textSecondary }}>
+            <AppText style={{ color: colors.textSecondary }}>
               {formatTime(position)}
-            </Text>
-            <Text style={{ color: colors.textSecondary }}>
+            </AppText>
+            <AppText style={{ color: colors.textSecondary }}>
               {formatTime(duration)}
-            </Text>
+            </AppText>
           </View>
           <View
             style={{

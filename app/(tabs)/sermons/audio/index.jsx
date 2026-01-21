@@ -26,6 +26,7 @@ import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
 import { TopNavigation } from '@/components/TopNavigation';
 import { getSermonsPaginated } from '@/services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
+import { AppText } from '../../../../components/ui/AppText';
 
 export default function AudioSermonsScreen() {
   const [allSermons, setAllSermons] = useState([]);
@@ -55,7 +56,7 @@ export default function AudioSermonsScreen() {
 
       // Sort years descending
       const sortedYears = Object.keys(grouped).sort((a, b) =>
-        b.localeCompare(a)
+        b.localeCompare(a),
       );
       const ordered = {};
       sortedYears.forEach((y) => (ordered[y] = grouped[y]));
@@ -103,10 +104,10 @@ export default function AudioSermonsScreen() {
             style={styles.bannerGradient}
           />
           <View style={styles.bannerText}>
-            <Text style={styles.bannerTitle}>AUDIO SERMONS</Text>
-            <Text style={styles.bannerSubtitle}>
+            <AppText style={styles.bannerTitle}>AUDIO SERMONS</AppText>
+            <AppText style={styles.bannerSubtitle}>
               Learn the word of God with audio sermons, organized by year.
-            </Text>
+            </AppText>
           </View>
         </ImageBackground>
       </View>
@@ -138,9 +139,9 @@ export default function AudioSermonsScreen() {
       ) : years.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Mic size={64} color={colors.textSecondary} />
-          <Text style={[styles.emptyText, { color: colors.text }]}>
+          <AppText style={[styles.emptyText, { color: colors.text }]}>
             No audio sermons available
-          </Text>
+          </AppText>
         </View>
       ) : (
         <FlatList
@@ -158,7 +159,7 @@ export default function AudioSermonsScreen() {
             const sermons = groupedByYear[year];
             const filtered = searchQuery
               ? sermons.filter((s) =>
-                  s.title?.toLowerCase().includes(searchQuery.toLowerCase())
+                  s.title?.toLowerCase().includes(searchQuery.toLowerCase()),
                 )
               : sermons;
 
@@ -172,17 +173,17 @@ export default function AudioSermonsScreen() {
                 >
                   <View style={styles.yearInfo}>
                     <Calendar size={20} color={colors.primary} />
-                    <Text style={[styles.yearText, { color: colors.text }]}>
+                    <AppText style={[styles.yearText, { color: colors.text }]}>
                       {year}
-                    </Text>
-                    <Text
+                    </AppText>
+                    <AppText
                       style={[
                         styles.countText,
                         { color: colors.textSecondary },
                       ]}
                     >
                       {filtered.length} sermon{filtered.length !== 1 ? 's' : ''}
-                    </Text>
+                    </AppText>
                   </View>
                   {expandedYear === year ? (
                     <ChevronUp size={24} color={colors.textSecondary} />
@@ -200,11 +201,11 @@ export default function AudioSermonsScreen() {
                   <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                       <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>
+                        <AppText style={styles.modalTitle}>
                           {year} Sermons ({filtered.length})
-                        </Text>
+                        </AppText>
                         <TouchableOpacity onPress={() => setExpandedYear(null)}>
-                          <Text
+                          <AppText
                             style={{
                               fontSize: 36,
                               color: colors.textSecondary,
@@ -212,7 +213,7 @@ export default function AudioSermonsScreen() {
                             }}
                           >
                             ×
-                          </Text>
+                          </AppText>
                         </TouchableOpacity>
                       </View>
 
@@ -226,15 +227,15 @@ export default function AudioSermonsScreen() {
                           >
                             <Mic size={22} color={colors.primary} />
                             <View style={styles.sermonText}>
-                              <Text
+                              <AppText
                                 style={styles.sermonTitle}
                                 numberOfLines={2}
                               >
                                 {sermon.title || 'Untitled Sermon'}
-                              </Text>
-                              <Text style={styles.sermonDate}>
+                              </AppText>
+                              <AppText style={styles.sermonDate}>
                                 {sermon.date || 'No date'}
-                              </Text>
+                              </AppText>
                             </View>
                           </TouchableOpacity>
                         )}
@@ -257,7 +258,7 @@ const styles = StyleSheet.create({
   bannerContainer: { overflow: 'hidden', height: 180, marginBottom: 10 },
   bannerImage: {
     width: '100%',
-    height: 180,
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -271,20 +272,21 @@ const styles = StyleSheet.create({
   bannerText: { paddingHorizontal: 40, alignItems: 'center', zIndex: 1 },
   bannerTitle: {
     color: '#fff',
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 6,
   },
   bannerSubtitle: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 10,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 10,
+    marginBottom: 8,
   },
   searchContainer: {
     marginHorizontal: 20,
-    marginTop: -30,
+    marginTop: -100,
     marginBottom: 12,
     backgroundColor: '#fff',
     borderRadius: 30,

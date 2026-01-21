@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { addContactMessage } from '@/services/dataService';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
+import { AppText } from '../../../../components/ui/AppText';
 
 const CATEGORIES = [
   { id: 'complaint', label: 'Complaint' },
@@ -63,7 +64,7 @@ export default function ContactScreen() {
     <SafeAreaWrapper>
       <TopNavigation showBackButton={true} />
       <View>
-        <Text
+        <AppText
           style={[
             {
               marginHorizontal: 'auto',
@@ -74,7 +75,7 @@ export default function ContactScreen() {
           ]}
         >
           Contact
-        </Text>
+        </AppText>
       </View>
 
       {/* Wrap the content in a ScrollView */}
@@ -83,10 +84,12 @@ export default function ContactScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
-          <Text style={[styles.description, { color: colors.textSecondary }]}>
+          <AppText
+            style={[styles.description, { color: colors.textSecondary }]}
+          >
             {translations.contactDesc ||
               "We'd love to hear from you. Send us a message and we'll respond as soon as possible."}
-          </Text>
+          </AppText>
 
           <View
             style={[
@@ -111,9 +114,9 @@ export default function ContactScreen() {
             />
 
             <View style={styles.categoryContainer}>
-              <Text style={[styles.categoryLabel, { color: colors.text }]}>
+              <AppText style={[styles.categoryLabel, { color: colors.text }]}>
                 {translations.selectCategory || 'Category'}
-              </Text>
+              </AppText>
               <View style={styles.categoryOptions}>
                 {CATEGORIES.map((cat) => (
                   <TouchableOpacity
@@ -128,7 +131,7 @@ export default function ContactScreen() {
                     ]}
                     onPress={() => setCategory(cat.id)}
                   >
-                    <Text
+                    <AppText
                       style={[
                         styles.categoryText,
                         { color: colors.primary },
@@ -136,7 +139,7 @@ export default function ContactScreen() {
                       ]}
                     >
                       {translations[cat.id] || cat.label}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -176,18 +179,20 @@ export default function ContactScreen() {
               color={colors.primary}
               style={styles.modalIcon}
             />
-            <Text style={[styles.modalTitle, { color: colors.text }]}>
+            <AppText style={[styles.modalTitle, { color: colors.text }]}>
               Message Sent!
-            </Text>
-            <Text style={[styles.modalText, { color: colors.textSecondary }]}>
+            </AppText>
+            <AppText
+              style={[styles.modalText, { color: colors.textSecondary }]}
+            >
               Thank you for your feedback. We will get back to you as soon as
               possible.
-            </Text>
+            </AppText>
             <TouchableOpacity
               style={[styles.modalButton, { backgroundColor: colors.primary }]}
               onPress={() => setShowSuccessModal(false)}
             >
-              <Text style={styles.modalButtonText}>Close</Text>
+              <AppText style={styles.modalButtonText}>Close</AppText>
             </TouchableOpacity>
           </View>
         </View>

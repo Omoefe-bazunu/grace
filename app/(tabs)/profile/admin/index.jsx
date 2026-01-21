@@ -1,13 +1,12 @@
-// AdminDashboardScreen.tsx (updated)
 import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
-  Alert,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import {
@@ -22,38 +21,19 @@ import {
   PlayCircle,
   BookOpen,
   Podcast,
-  Image,
+  Image as ImageIcon,
+  LogOut,
+  Send,
 } from 'lucide-react-native';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { LanguageSwitcher } from '../../../../components/LanguageSwitcher';
 import { TopNavigation } from '../../../../components/TopNavigation';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SendIcon } from 'lucide-react';
 
 export default function AdminDashboardScreen() {
-  const { user } = useAuth();
-
-  const handleResetOnboarding = async () => {
-    try {
-      await AsyncStorage.removeItem('hasSeenOnboarding');
-      Alert.alert(
-        'Success',
-        'Onboarding state has been reset. Please restart the app to see it again.'
-      );
-    } catch (error) {
-      console.error('Failed to reset onboarding state:', error);
-      Alert.alert('Error', 'Failed to reset onboarding state.');
-    }
-  };
+  const { user, isLoading, logout } = useAuth();
 
   const adminActions = [
-    {
-      id: 'upload-notice',
-      title: 'Send Notice',
-      description: 'Send Notification to all users',
-      icon: <Bell size={32} color="#1E3A8A" />,
-      onPress: () => router.push('/(tabs)/profile/admin/upload/notice'),
-    },
     {
       id: 'upload-sermon',
       title: 'Add Sermon',
@@ -119,6 +99,13 @@ export default function AdminDashboardScreen() {
       onPress: () => router.push('/(tabs)/profile/admin/quizhelpquestions'),
     },
     {
+      id: 'upload-notices',
+      title: 'Upload Notices',
+      description: 'Send a Notice to all users',
+      icon: <Send size={32} color="#7C3AED" />,
+      onPress: () => router.push('/(tabs)/profile/admin/noticeupload'),
+    },
+    {
       id: 'read-notices',
       title: 'Read Notices',
       description: 'View, edit, and delete all notices',
@@ -143,24 +130,59 @@ export default function AdminDashboardScreen() {
       id: 'gallery-management',
       title: 'Gallery Management',
       description: 'Upload pictures, videos & ministers data',
-      icon: <Image size={32} color="#1E3A8A" />,
+      icon: <ImageIcon size={32} color="#1E3A8A" />,
       onPress: () => router.push('(tabs)/profile/admin/gallery'),
     },
     {
       id: 'archive-management',
       title: 'Archive Management',
       description: 'Upload pictures & videos data',
-      icon: <Image size={32} color="#1E3A8A" />,
+      icon: <ImageIcon size={32} color="#1E3A8A" />,
       onPress: () => router.push('(tabs)/profile/admin/archive'),
     },
     {
-      id: 'reset-onboarding',
-      title: 'Reset Onboarding',
-      description: 'Clear onboarding state for testing',
-      icon: <Bell size={32} color="#EF4444" />,
-      onPress: handleResetOnboarding,
+      id: 'logout',
+      title: 'Logout',
+      description: 'Sign out of your account',
+      icon: <LogOut size={32} color="#EF4444" />,
+      onPress: logout,
     },
   ];
+
+  if (isLoading) {
+    return (
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator size="large" color="#1E3A8A" />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <SafeAreaWrapper>
+        <Modal visible={true} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalIconContainer}>
+                <Mic size={48} color="#1E3A8A" />
+              </View>
+              <Text style={styles.modalTitle}>Login Required</Text>
+              <Text style={styles.modalDescription}>
+                You must be logged in as an administrator to access the
+                dashboard and manage application content.
+              </Text>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => router.replace('/login')}
+              >
+                <Text style={styles.modalButtonText}>Go to Login</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </SafeAreaWrapper>
+    );
+  }
 
   return (
     <SafeAreaWrapper>
@@ -193,6 +215,62 @@ export default function AdminDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 32,
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  modalIconContainer: {
+    marginBottom: 20,
+    backgroundColor: '#EBF4FF',
+    padding: 16,
+    borderRadius: 50,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 12,
+  },
+  modalDescription: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 28,
+  },
+  modalButton: {
+    backgroundColor: '#1E3A8A',
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   content: {
     flex: 1,
     paddingHorizontal: 20,

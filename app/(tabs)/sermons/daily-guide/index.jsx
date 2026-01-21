@@ -18,6 +18,7 @@ import {
   getDailyDevotionalsPaginated,
   getDailyDevotionalByDate,
 } from '../../../../services/dataService';
+import { AppText } from '../../../../components/ui/AppText';
 import {
   Calendar,
   BookOpen,
@@ -102,7 +103,7 @@ export default function DailyGuideScreen() {
 
   const navigateDate = (direction) => {
     setSelectedDate((current) =>
-      direction === 'prev' ? subDays(current, 1) : addDays(current, 1)
+      direction === 'prev' ? subDays(current, 1) : addDays(current, 1),
     );
   };
 
@@ -154,13 +155,10 @@ export default function DailyGuideScreen() {
             style={styles.headerGradient}
           />
           <View style={styles.headerContent}>
-            <View style={styles.calendarIcon}>
-              <Calendar size={32} color="#fff" />
-            </View>
-            <Text style={styles.headerTitle}>Daily Devotional</Text>
-            <Text style={styles.headerSubtitle}>
+            <AppText style={styles.headerTitle}>Daily Devotional</AppText>
+            <AppText style={styles.headerSubtitle}>
               Nourish your spirit with daily guidance.
-            </Text>
+            </AppText>
           </View>
         </ImageBackground>
       </View>
@@ -175,12 +173,14 @@ export default function DailyGuideScreen() {
         </TouchableOpacity>
 
         <View style={styles.dateDisplay}>
-          <Text style={[styles.dateText, { color: colors.text }]}>
+          <AppText style={[styles.dateText, { color: colors.text }]}>
             {formatDisplayDate(selectedDate)}
-          </Text>
-          <Text style={[styles.dateSubtext, { color: colors.textSecondary }]}>
+          </AppText>
+          <AppText
+            style={[styles.dateSubtext, { color: colors.textSecondary }]}
+          >
             {format(selectedDate, 'EEEE')}
-          </Text>
+          </AppText>
         </View>
 
         <TouchableOpacity
@@ -202,9 +202,11 @@ export default function DailyGuideScreen() {
         {loadingDevotional ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+            <AppText
+              style={[styles.loadingText, { color: colors.textSecondary }]}
+            >
               Loading devotional...
-            </Text>
+            </AppText>
           </View>
         ) : currentDevotional ? (
           <View
@@ -219,15 +221,15 @@ export default function DailyGuideScreen() {
             />
 
             {/* <View style={styles.devotionalHeader}>
-              <Text style={[styles.devotionalTitle, { color: colors.text }]}>
+              <AppText style={[styles.devotionalTitle, { color: colors.text }]}>
                 {currentDevotional.title}
-              </Text>
+              </AppText>
             </View> */}
 
             <View style={styles.mainTextContainer}>
-              <Text style={[styles.mainText, { color: colors.text }]}>
+              <AppText style={[styles.mainText, { color: colors.text }]}>
                 {currentDevotional.mainText}
-              </Text>
+              </AppText>
             </View>
 
             <View style={styles.devotionalFooter}>
@@ -237,9 +239,11 @@ export default function DailyGuideScreen() {
                   { backgroundColor: colors.primary + '15' },
                 ]}
               >
-                <Text style={[styles.dateBadgeText, { color: colors.primary }]}>
+                <AppText
+                  style={[styles.dateBadgeText, { color: colors.primary }]}
+                >
                   {format(parseISO(currentDevotional.date), 'MMM d, yyyy')}
-                </Text>
+                </AppText>
               </View>
             </View>
           </View>
@@ -253,25 +257,25 @@ export default function DailyGuideScreen() {
             >
               <BookOpen size={48} color={colors.primary} />
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            <AppText style={[styles.emptyTitle, { color: colors.text }]}>
               No Devotional Available
-            </Text>
-            <Text
+            </AppText>
+            <AppText
               style={[styles.emptySubtitle, { color: colors.textSecondary }]}
             >
               {getDateStatus(selectedDate).type === 'future'
                 ? 'Check back on this date for a new devotional'
                 : 'No devotional was published for this date'}
-            </Text>
+            </AppText>
           </View>
         )}
 
         {/* Recent Devotionals */}
         {devotionals.length > 0 && (
           <View style={[styles.recentSection, { display: 'none' }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            <AppText style={[styles.sectionTitle, { color: colors.text }]}>
               Recent Devotionals
-            </Text>
+            </AppText>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -289,15 +293,17 @@ export default function DailyGuideScreen() {
                     },
                   ]}
                 >
-                  <Text style={[styles.recentDate, { color: colors.primary }]}>
+                  <AppText
+                    style={[styles.recentDate, { color: colors.primary }]}
+                  >
                     {formatDateForCalendar(parseISO(devotional.date))}
-                  </Text>
-                  <Text
+                  </AppText>
+                  <AppText
                     style={[styles.recentTitle, { color: colors.text }]}
                     numberOfLines={2}
                   >
                     {devotional.title}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -322,7 +328,7 @@ const styles = StyleSheet.create({
   },
   headerBackground: {
     width: '100%',
-    height: '100%',
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -337,15 +343,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 40,
   },
-  calendarIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
+
   headerTitle: {
     color: '#fff',
     fontSize: 24,
@@ -364,7 +362,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 20,
     marginHorizontal: 20,
-    marginTop: -20,
+    marginTop: -50,
     borderRadius: 16,
     zIndex: 20,
     shadowColor: '#000',

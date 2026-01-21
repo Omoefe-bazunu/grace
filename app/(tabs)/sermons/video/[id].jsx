@@ -76,44 +76,36 @@ export default function AnimationDetailScreen() {
   const player = useVideoPlayer();
 
   useEffect(() => {
-    const fetchVideo = async () => {
-      try {
-        // Try to fetch as regular video first
-        let videoData = await getVideo(id);
+    const fetchVideoData = async () => {
+      if (!id) return;
 
-        if (videoData) {
-          setVideo(videoData);
-          setVideoType('video');
+      setLoading(true);
+      try {
+        // Strictly fetch from the sermon collection
+        const data = await getSermonVideo(id);
+
+        if (data && data.videoUrl) {
+          setVideo(data);
+          setVideoType('sermonVideo');
         } else {
-          // If not found, try as sermon video
-          videoData = await getSermonVideo(id);
-          if (videoData) {
-            setVideo(videoData);
-            setVideoType('sermonVideo');
+          // If not found in sermons, then and ONLY then check animations
+          const animationData = await getVideo(id);
+          if (animationData) {
+            setVideo(animationData);
+            setVideoType('video');
           } else {
             setVideo(null);
           }
         }
       } catch (error) {
-        console.error('Error fetching video:', error);
-        // Try alternative approach - check if it's a sermon video
-        try {
-          const sermonVideoData = await getSermonVideo(id);
-          if (sermonVideoData) {
-            setVideo(sermonVideoData);
-            setVideoType('sermonVideo');
-          } else {
-            setVideo(null);
-          }
-        } catch (secondError) {
-          console.error('Error fetching sermon video:', secondError);
-          setVideo(null);
-        }
+        console.error('Fetch error:', error);
+        setVideo(null);
       } finally {
         setLoading(false);
       }
     };
-    fetchVideo();
+
+    fetchVideoData();
   }, [id]);
 
   useEffect(() => {

@@ -13,6 +13,7 @@ import { getMinisters } from '../../../../../services/dataService';
 import { SafeAreaWrapper } from '../../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../../components/TopNavigation';
 import { LinearGradient } from 'expo-linear-gradient';
+import { AppText } from '../../../../../components/ui/AppText';
 
 export default function MinistersGallery() {
   const [ministers, setMinisters] = useState([]);
@@ -33,7 +34,7 @@ export default function MinistersGallery() {
   }, []);
 
   const filteredMinisters = ministers.filter((minister) =>
-    minister.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    minister.name?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (loading) {
@@ -64,12 +65,12 @@ export default function MinistersGallery() {
                 style={styles.bannerGradient}
               />
               <View style={styles.bannerText}>
-                <Text style={styles.bannerTitle}>MINISTERS PROFILE</Text>
-                <Text style={styles.bannerSubtitle}>
+                <AppText style={styles.bannerTitle}>MINISTERS PROFILE</AppText>
+                <AppText style={styles.bannerSubtitle}>
                   This screen contains profiles of ministers of the church. This
                   information is meant to help members identify the ministers
                   and address them accordingly.
-                </Text>
+                </AppText>
               </View>
             </ImageBackground>
           </View>
@@ -85,11 +86,11 @@ export default function MinistersGallery() {
         </View>
 
         {filteredMinisters.length === 0 ? (
-          <Text style={styles.empty}>
+          <AppText style={styles.empty}>
             {searchQuery
               ? 'No ministers found matching your search'
               : 'No ministers listed yet'}
-          </Text>
+          </AppText>
         ) : (
           filteredMinisters.map((m) => (
             <View key={m.id} style={styles.card}>
@@ -103,31 +104,31 @@ export default function MinistersGallery() {
                   resizeMode="cover"
                 />
                 <View style={styles.info}>
-                  <Text style={styles.name}>
+                  <AppText style={styles.name}>
                     {m.name || 'Unnamed Minister'}
-                  </Text>
+                  </AppText>
                   {m.category && (
                     <View style={styles.detailRow}>
-                      <Text style={styles.label}>Category:</Text>
-                      <Text style={styles.value}>{m.category}</Text>
+                      <AppText style={styles.label}>Category:</AppText>
+                      <AppText style={styles.value}>{m.category}</AppText>
                     </View>
                   )}
                   {m.station && (
                     <View style={styles.detailRow}>
-                      <Text style={styles.label}>Station:</Text>
-                      <Text style={styles.value}>{m.station}</Text>
+                      <AppText style={styles.label}>Station:</AppText>
+                      <AppText style={styles.value}>{m.station}</AppText>
                     </View>
                   )}
                   {m.maritalStatus && (
                     <View style={styles.detailRow}>
-                      <Text style={styles.label}>Marital Status:</Text>
-                      <Text style={styles.value}>{m.maritalStatus}</Text>
+                      <AppText style={styles.label}>Marital Status:</AppText>
+                      <AppText style={styles.value}>{m.maritalStatus}</AppText>
                     </View>
                   )}
                   {m.contact && (
                     <View style={styles.detailRow}>
-                      <Text style={styles.label}>Contact</Text>
-                      <Text style={styles.value}>{m.contact}</Text>
+                      <AppText style={styles.label}>Contact</AppText>
+                      <AppText style={styles.value}>{m.contact}</AppText>
                     </View>
                   )}
                 </View>

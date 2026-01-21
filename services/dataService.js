@@ -1,30 +1,36 @@
 import apiClient from '../utils/api';
 
 // === SERMONS ===
-export const getSermons = async () => {
-  try {
-    const response = await apiClient.get('sermons');
-    return response.data.sermons || [];
-  } catch {
-    return [];
-  }
-};
-
+/**
+ * Fetches sermons for the public list.
+ * Includes sort parameters to ensure newest sermons appear first.
+ */
 export const getSermonsPaginated = async (limit = 15, after = null) => {
   try {
     const params = { limit, sort: 'createdAt', order: 'desc' };
     if (after) params.after = after;
     const response = await apiClient.get('sermons', params);
+
+    // Safety check: handle both { sermons: [] } and raw [ ] responses
+    const sermons =
+      response.data.sermons ||
+      (Array.isArray(response.data) ? response.data : []);
+
     return {
-      sermons: response.data.sermons || [],
+      sermons,
       hasMore: response.data.pagination?.hasMore || false,
       nextCursor: response.data.pagination?.nextCursor || null,
     };
-  } catch {
+  } catch (err) {
+    console.error('Sermon fetch error:', err);
     return { sermons: [], hasMore: false };
   }
 };
 
+/**
+ * Fetches sermons filtered by category.
+ * Used by the TextSermonsScreen to populate the categorized lists.
+ */
 export const getSermonsByCategoryPaginated = async (
   category,
   limit = 10,
@@ -34,12 +40,18 @@ export const getSermonsByCategoryPaginated = async (
     const params = { category, limit, sort: 'createdAt', order: 'desc' };
     if (after) params.after = after;
     const response = await apiClient.get('sermons', params);
+
+    const sermons =
+      response.data.sermons ||
+      (Array.isArray(response.data) ? response.data : []);
+
     return {
-      sermons: response.data.sermons || [],
+      sermons,
       hasMore: response.data.pagination?.hasMore || false,
       nextCursor: response.data.pagination?.nextCursor || null,
     };
-  } catch {
+  } catch (err) {
+    console.error(`Error fetching category ${category}:`, err);
     return { sermons: [], hasMore: false };
   }
 };
@@ -53,31 +65,182 @@ export const getSermon = async (id) => {
   }
 };
 
+// === QUIZ RESOURCES ===
+
+/**
+ * Fetches all study resources.
+ * Hits: GET /api/quiz/resources
+ */
+export const getQuizResources = async () => {
+  try {
+    const response = await apiClient.get('quiz/resources');
+    return response.data.quizResources || [];
+  } catch (err) {
+    console.error('Error fetching quiz resources:', err);
+    return [];
+  }
+};
+
+/**
+ * Adds a new study resource (Admin only).
+ * Hits: POST /api/quiz/resources
+ */
+export const addQuizResource = async (resourceData) => {
+  try {
+    // Note: The backend controller automatically sets uploadedBy and createdAt
+    const response = await apiClient.post('quiz/resources', resourceData);
+    return response.data;
+  } catch (err) {
+    console.error('Error adding quiz resource:', err);
+    throw err;
+  }
+};
+
+// === QUIZ HELP QUESTIONS ===
+
+/**
+ * Students submit a help question.
+ * Hits: POST /api/quiz/help
+ */
+export const addQuizHelpQuestion = async (questionData) => {
+  try {
+    const response = await apiClient.post('quiz/help', questionData);
+    return response.data;
+  } catch (err) {
+    console.error('Error submitting help question:', err);
+    throw err;
+  }
+};
+
+/**
+ * Admins fetch all student inquiries.
+ * Hits: GET /api/quiz/help
+ */
+export const getQuizHelpQuestions = async () => {
+  try {
+    const response = await apiClient.get('quiz/help');
+    return response.data.quizHelpQuestions || [];
+  } catch (err) {
+    console.error('Error fetching help questions:', err);
+    return [];
+  }
+};
+
+/**
+ * Fetches a single quiz resource.
+ */
+export const getQuizResource = async (id) => {
+  try {
+    const response = await apiClient.get(`quiz/resources/${id}`);
+    return response.data;
+  } catch (err) {
+    console.error('Error fetching quiz detail:', err);
+    return null;
+  }
+};
+
+/**
+ * Generic search function for specific collections.
+ * Handles the call: searchContent(query, 'quizResources')
+ */
+export const searchContent = async (term, collection) => {
+  try {
+    // We hit the list endpoint and filter locally for a responsive feel,
+    // or you can update the backend to handle a ?search= query param.
+    const response = await apiClient.get(`quiz/resources`);
+    const allResources = response.data.quizResources || [];
+
+    const lowerTerm = term.toLowerCase();
+    const filtered = allResources.filter(
+      (item) =>
+        item.title?.toLowerCase().includes(lowerTerm) ||
+        item.content?.toLowerCase().includes(lowerTerm) ||
+        item.year?.toString().includes(lowerTerm),
+    );
+
+    return { [collection]: filtered };
+  } catch (err) {
+    console.error('Search error:', err);
+    return { [collection]: [] };
+  }
+};
+
+// === SEARCH ===
+/**
+ * Consolidated search that queries multiple collections simultaneously.
+ */
+export const searchContentPaginated = async (term) => {
+  try {
+    const [sermonRes, songRes, devotionalRes] = await Promise.all([
+      getSermonsPaginated(50),
+      getSongsPaginated(50),
+      getDailyDevotionalsPaginated(50),
+    ]);
+
+    const lowerTerm = term.toLowerCase();
+    const filter = (list) =>
+      list.filter(
+        (item) =>
+          (item.title && item.title.toLowerCase().includes(lowerTerm)) ||
+          (item.content && item.content.toLowerCase().includes(lowerTerm)),
+      );
+
+    return {
+      sermons: filter(sermonRes.sermons),
+      songs: filter(songRes.songs || []),
+      dailyDevotionals: filter(devotionalRes.dailyDevotionals || []),
+      pagination: { hasMore: false },
+    };
+  } catch (err) {
+    console.error('Search failure:', err);
+    return { sermons: [], songs: [], dailyDevotionals: [] };
+  }
+};
+
 // === SERMON VIDEOS ===
 export const getSermonVideos = async () => {
   try {
-    const response = await apiClient.get('sermonVideos');
+    const response = await apiClient.get('sermon');
     return response.data.sermonVideos || [];
   } catch {
     return [];
   }
 };
 
+// === SERMON VIDEOS (Stored in 'sermons' collection) ===
+
+/**
+ * Fetches all sermons and filters for those containing a videoUrl.
+ * Hits: /api/sermons
+ */
 export const getSermonVideosPaginated = async (limit = 12, after = null) => {
   try {
     const params = { limit, sort: 'createdAt', order: 'desc' };
     if (after) params.after = after;
-    const response = await apiClient.get('sermonVideos', params);
+
+    const response = await apiClient.get('sermons', params);
+
+    // Filter items that actually have a videoUrl property
+    const allItems =
+      response.data.sermons ||
+      (Array.isArray(response.data) ? response.data : []);
+    const filteredVideos = allItems.filter((item) => item.videoUrl);
+
     return {
-      sermonVideos: response.data.sermonVideos || [],
+      sermonVideos: filteredVideos,
       hasMore: response.data.pagination?.hasMore || false,
       nextCursor: response.data.pagination?.nextCursor || null,
     };
-  } catch {
+  } catch (err) {
+    console.error('Sermon Video Pagination Error:', err);
     return { sermonVideos: [], hasMore: false };
   }
 };
 
+/**
+ * Fetches sermon videos by a specific category.
+ * Hits: /api/sermons?category=...
+ */
 export const getSermonVideosByCategoryPaginated = async (
   category,
   limit = 10,
@@ -86,22 +249,47 @@ export const getSermonVideosByCategoryPaginated = async (
   try {
     const params = { category, limit, sort: 'createdAt', order: 'desc' };
     if (after) params.after = after;
-    const response = await apiClient.get('sermonVideos', params);
+
+    const response = await apiClient.get('sermons', params);
+
+    const allItems =
+      response.data.sermons ||
+      (Array.isArray(response.data) ? response.data : []);
+    const filteredVideos = allItems.filter((item) => item.videoUrl);
+
     return {
-      sermonVideos: response.data.sermonVideos || [],
+      sermonVideos: filteredVideos,
       hasMore: response.data.pagination?.hasMore || false,
       nextCursor: response.data.pagination?.nextCursor || null,
     };
-  } catch {
+  } catch (err) {
+    console.error(`Error fetching sermon video category ${category}:`, err);
     return { sermonVideos: [], hasMore: false };
   }
 };
 
+/**
+ * Fetches a single sermon video by ID.
+ * Hits: /api/sermons/:id
+ */
 export const getSermonVideo = async (id) => {
   try {
-    const response = await apiClient.get(`sermonVideos/${id}`);
-    return response.data;
-  } catch {
+    // We target the 'sermons' endpoint because sermonVideos are mapped there in UploadScreen
+    const response = await apiClient.get(`sermons/${id}`);
+
+    // Safety check: Ensure the returned item actually has a video
+    if (response.data && response.data.videoUrl) {
+      return response.data;
+    }
+
+    console.warn(`Sermon ${id} found but contains no videoUrl`);
+    return null;
+  } catch (err) {
+    if (err.response?.status === 404) {
+      console.warn(`Sermon video ID ${id} not found on server.`);
+    } else {
+      console.error('Error fetching sermon video:', err);
+    }
     return null;
   }
 };
@@ -131,25 +319,6 @@ export const getSongsPaginated = async (limit = 15, after = null) => {
   }
 };
 
-export const getSongsByCategoryPaginated = async (
-  category,
-  limit = 10,
-  after = null,
-) => {
-  try {
-    const params = { category, limit };
-    if (after) params.after = after;
-    const response = await apiClient.get('songs', params);
-    return {
-      songs: response.data.songs || [],
-      hasMore: response.data.pagination?.hasMore || false,
-      nextCursor: response.data.pagination?.nextCursor || null,
-    };
-  } catch {
-    return { songs: [], hasMore: false };
-  }
-};
-
 export const getSong = async (id) => {
   try {
     const response = await apiClient.get(`songs/${id}`);
@@ -159,64 +328,11 @@ export const getSong = async (id) => {
   }
 };
 
-export const getFavorites = async (email) => {
-  try {
-    if (!email) return [];
-    const response = await apiClient.get(`users/${email}/favorites`);
-    return response.data.favorites || [];
-  } catch {
-    return [];
-  }
-};
-
-export const toggleFavorite = async (songId, action) => {
-  return apiClient.post(`songs/${songId}/favorite`, { action });
-};
-
-// === VIDEOS ===
-export const getVideos = async () => {
-  try {
-    const response = await apiClient.get('videos');
-    return response.data.videos || [];
-  } catch {
-    return [];
-  }
-};
-
-export const getVideosPaginated = async (limit = 12, after = null) => {
-  try {
-    const params = { limit, sort: 'createdAt', order: 'desc' };
-    if (after) params.after = after;
-    const response = await apiClient.get('videos', params);
-    return {
-      videos: response.data.videos || [],
-      hasMore: response.data.pagination?.hasMore || false,
-      nextCursor: response.data.pagination?.nextCursor || null,
-    };
-  } catch {
-    return { videos: [], hasMore: false };
-  }
-};
-
-export const getVideo = async (id) => {
-  try {
-    const response = await apiClient.get(`videos/${id}`);
-    return response.data;
-  } catch {
-    return null;
-  }
-};
-
 // === DAILY DEVOTIONALS ===
-export const getDailyDevotionals = async () => {
-  try {
-    const response = await apiClient.get('dailyDevotionals');
-    return response.data.dailyDevotionals || [];
-  } catch {
-    return [];
-  }
-};
-
+/**
+ * Fetches devotionals with descending date sorting.
+ * Endpoint changed from 'dailyDevotionals' to 'devotionals' to match backend.
+ */
 export const getDailyDevotionalsPaginated = async (
   limit = 10,
   after = null,
@@ -224,23 +340,112 @@ export const getDailyDevotionalsPaginated = async (
   try {
     const params = { limit, sort: 'date', order: 'desc' };
     if (after) params.after = after;
-    const response = await apiClient.get('dailyDevotionals', params);
+    const response = await apiClient.get('devotionals', params);
+
     return {
-      dailyDevotionals: response.data.dailyDevotionals || [],
+      dailyDevotionals: response.data.dailyDevotionals || response.data || [],
       hasMore: response.data.pagination?.hasMore || false,
       nextCursor: response.data.pagination?.nextCursor || null,
     };
-  } catch {
+  } catch (err) {
+    console.error('Devotional fetch error:', err);
     return { dailyDevotionals: [], hasMore: false };
   }
 };
 
+/**
+ * Optimized: Uses the dedicated backend route /api/devotionals/date/:date
+ */
 export const getDailyDevotionalByDate = async (date) => {
   try {
-    const all = await getDailyDevotionals();
-    return all.find((d) => d.date === date) || null;
+    const response = await apiClient.get(`devotionals/date/${date}`);
+    return response.data;
+  } catch (err) {
+    console.error(`Error fetching devotional for ${date}:`, err);
+    return null;
+  }
+};
+
+/**
+ * Fetches a single devotional by its Firestore ID.
+ */
+export const getDevotional = async (id) => {
+  try {
+    const response = await apiClient.get(`devotionals/${id}`);
+    return response.data;
   } catch {
     return null;
+  }
+};
+
+// ANIMATION VIDEOS
+
+/**
+ * Fetches animation videos from the backend.
+ * Aligned with the 'animations' endpoint in the modular backend.
+ */
+export const getVideosPaginated = async (limit = 12, after = null) => {
+  try {
+    const params = { limit, sort: 'createdAt', order: 'desc' };
+    if (after) params.after = after;
+
+    // Using 'animations' endpoint as defined in backend mapping
+    const response = await apiClient.get('animations', params);
+
+    // Handle both wrapped object and raw array responses
+    const videos =
+      response.data.animations ||
+      (Array.isArray(response.data) ? response.data : []);
+
+    return {
+      videos,
+      hasMore: response.data.pagination?.hasMore || false,
+      nextCursor: response.data.pagination?.nextCursor || null,
+    };
+  } catch (err) {
+    console.error('Animation fetch error:', err);
+    return { videos: [], hasMore: false };
+  }
+};
+
+/**
+ * Fetches a single animation video by its ID.
+ */
+export const getVideo = async (id) => {
+  try {
+    const response = await apiClient.get(`animations/${id}`);
+    return response.data;
+  } catch (err) {
+    console.error('Error fetching single video:', err);
+    return null;
+  }
+};
+
+// === MEDIA (GALLERY & ARCHIVES) ===
+export const getGalleryPictures = () =>
+  apiClient
+    .get('media/galleryPictures')
+    .then((res) => res.data.galleryPictures || []);
+export const getGalleryVideos = () =>
+  apiClient
+    .get('media/galleryVideos')
+    .then((res) => res.data.galleryVideos || []);
+export const getArchivePictures = () =>
+  apiClient
+    .get('media/archivePictures')
+    .then((res) => res.data.archivePictures || []);
+export const getArchiveVideos = () =>
+  apiClient
+    .get('media/archiveVideos')
+    .then((res) => res.data.archiveVideos || []);
+
+// === LIVE STREAMS ===
+export const getActiveLiveStreams = async () => {
+  try {
+    const response = await apiClient.get('liveStreams/active');
+    return response.data.liveStreams || [];
+  } catch {
+    return [];
   }
 };
 
@@ -263,178 +468,63 @@ export const subscribeToNotices = (callback) => {
       callback([]);
     }
   };
-
   fetch();
-  // Poll every 30 seconds to keep it "live" without over-taxing the server
   const interval = setInterval(fetch, 30000);
   return () => clearInterval(interval);
 };
 
-// === GALLERY & MINISTERS ===
-export const getGalleryPictures = async () => {
+/**
+ * Submits a contact message to the backend.
+ * Backend route: /api/contact
+ */
+export const addContactMessage = async (messageData) => {
   try {
-    const response = await apiClient.get('galleryPictures');
-    return response.data.galleryPictures || [];
-  } catch {
-    return [];
-  }
-};
-
-export const getGalleryVideos = async () => {
-  try {
-    const response = await apiClient.get('galleryVideos');
-    return response.data.galleryVideos || [];
-  } catch {
-    return [];
-  }
-};
-
-export const getMinisters = async () => {
-  try {
-    const response = await apiClient.get('ministers');
-    return response.data.ministers || [];
-  } catch {
-    return [];
-  }
-};
-
-export const getArchivePictures = async () => {
-  try {
-    const response = await apiClient.get('archivePictures');
-    return response.data.archivePictures || [];
-  } catch {
-    return [];
-  }
-};
-
-export const getArchiveVideos = async () => {
-  try {
-    const response = await apiClient.get('archiveVideos');
-    return response.data.archiveVideos || [];
-  } catch {
-    return [];
-  }
-};
-
-// === LIVE STREAMS ===
-export const getActiveLiveStreams = async () => {
-  try {
-    const response = await apiClient.get('liveStreams/active');
-    return response.data.liveStreams || [];
-  } catch {
-    return [];
-  }
-};
-
-export const getLiveStreams = async () => {
-  try {
-    const response = await apiClient.get('liveStreams');
-    return response.data.liveStreams || [];
-  } catch {
-    return [];
-  }
-};
-
-export const createLiveStream = (data) => apiClient.post('liveStreams', data);
-export const updateLiveStream = (id, data) =>
-  apiClient.put('liveStreams', id, data);
-export const deleteLiveStream = (id) => apiClient.delete('liveStreams', id);
-
-// === QUIZ ===
-export const getQuizResources = async () => {
-  try {
-    const response = await apiClient.get('quizResources');
-    return response.data.quizResources || [];
-  } catch {
-    return [];
-  }
-};
-
-export const getQuiz = async (id) => {
-  try {
-    const response = await apiClient.get(`quizResources/${id}`);
+    // Note: We use 'contact' to match app.use("/api/contact", ...) in app.js
+    const response = await apiClient.post('contact', messageData);
     return response.data;
-  } catch {
-    return null;
+  } catch (err) {
+    console.error('Error submitting contact form:', err);
+    throw err;
   }
 };
-
-export const addQuizResource = (data) => apiClient.post('quizResources', data);
-export const addQuizHelpQuestion = (data) =>
-  apiClient.post('quizHelpQuestions', data);
-
-export const subscribeToQuizHelpQuestions = (callback) => {
-  const fetch = async () => {
-    try {
-      const response = await apiClient.get('quizHelpQuestions');
-      callback(response.data.quizHelpQuestions || []);
-    } catch {
-      callback([]);
-    }
-  };
-  fetch();
-  const interval = setInterval(fetch, 10000);
-  return () => clearInterval(interval);
-};
-
-// === CONTACT ===
-export const addContactMessage = (data) =>
-  apiClient.post('contactMessages', data);
-
-export const subscribeToContactMessages = (callback) => {
-  const fetch = async () => {
-    try {
-      const response = await apiClient.get('contactMessages');
-      callback(response.data.contactMessages || []);
-    } catch {
-      callback([]);
-    }
-  };
-  fetch();
-  const interval = setInterval(fetch, 10000);
-  return () => clearInterval(interval);
-};
-
-// === SEARCH ===
-export const searchContent = async (term, category = null) => {
-  return searchContentPaginated(term, category, 20);
-};
-
-export const searchContentPaginated = async (
-  term,
-  category = null,
-  limit = 20,
-  after = null,
-) => {
+/**
+ * Fetches all contact messages for the Admin panel.
+ * Backend route: GET /api/contact
+ */
+export const getContactMessages = async (limit = 20, after = null) => {
   try {
-    const [sermons, songs, videos, sermonVideos, devotionals] =
-      await Promise.all([
-        getSermonsPaginated(100),
-        getSongsPaginated(100),
-        getVideosPaginated(100),
-        getSermonVideosPaginated(100),
-        getDailyDevotionalsPaginated(100),
-      ]);
+    const params = { limit };
+    if (after) params.after = after;
 
-    const lowerTerm = term.toLowerCase();
-    const filter = (list) =>
-      list.filter(
-        (item) =>
-          (item.title && item.title.toLowerCase().includes(lowerTerm)) ||
-          (item.content && item.content.toLowerCase().includes(lowerTerm)),
-      );
+    const response = await apiClient.get('contact', params);
 
     return {
-      sermons: filter(sermons.sermons),
-      songs: filter(songs.songs),
-      videos: filter(videos.videos),
-      sermonVideos: filter(sermonVideos.sermonVideos),
-      dailyDevotionals: filter(devotionals.dailyDevotionals),
-      pagination: { hasMore: false },
+      contactMessages: response.data.contactMessages || [],
+      hasMore: response.data.pagination?.hasMore || false,
+      nextCursor: response.data.pagination?.nextCursor || null,
     };
-  } catch {
-    return {};
+  } catch (err) {
+    console.error('Error fetching contact messages:', err);
+    return { contactMessages: [], hasMore: false };
   }
+};
+
+/**
+ * Periodically polls for new contact messages.
+ */
+export const subscribeToContactMessages = (callback) => {
+  const fetchMessages = async () => {
+    try {
+      const result = await getContactMessages(50);
+      callback(result.contactMessages);
+    } catch (err) {
+      callback([]);
+    }
+  };
+
+  fetchMessages(); // Initial fetch
+  const interval = setInterval(fetchMessages, 15000); // Poll every 15 seconds
+  return () => clearInterval(interval);
 };
 
 // === UTILS ===
@@ -445,27 +535,7 @@ export const getYouTubeVideoId = (url) => {
   return match && match[2].length === 11 ? match[2] : null;
 };
 
-// === METADATA WRITES ===
-export const uploadMinister = (data) => apiClient.post('ministers', data);
-export const uploadGalleryPicture = (data) =>
-  apiClient.post('galleryPictures', data);
-export const uploadGalleryVideo = (data) =>
-  apiClient.post('galleryVideos', data);
-export const uploadArchivePicture = (data) =>
-  apiClient.post('archivePictures', data);
-export const uploadArchiveVideo = (data) =>
-  apiClient.post('archiveVideos', data);
-
-// === DELETES ===
-export const deleteGalleryPicture = (id) =>
-  apiClient.delete('galleryPictures', id);
-export const deleteGalleryVideo = (id) => apiClient.delete('galleryVideos', id);
-export const deleteArchivePicture = (id) =>
-  apiClient.delete('archivePictures', id);
-export const deleteArchiveVideo = (id) => apiClient.delete('archiveVideos', id);
-export const deleteMinister = (id) => apiClient.delete('ministers', id);
-
-// Generic Exports for Admin Content Manager
+// Regular Helpers
 export const post = (path, data) => apiClient.post(path, data);
 export const put = (path, id, data) => apiClient.put(path, id, data);
 export const del = (path, id) => apiClient.delete(path, id);

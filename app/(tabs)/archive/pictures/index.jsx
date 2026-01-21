@@ -18,6 +18,7 @@ import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
 import { LinearGradient } from 'expo-linear-gradient';
 import { X } from 'lucide-react-native';
+import { AppText } from '../../../../components/ui/AppText';
 
 const { width, height } = Dimensions.get('window');
 
@@ -34,9 +35,9 @@ function EventCard({ event, items, onImagePress }) {
     <View style={styles.eventCard}>
       <View style={styles.orangeBar} />
       <View style={styles.cardContent}>
-        <Text style={styles.eventTitle}>{event || 'Untitled Event'}</Text>
+        <AppText style={styles.eventTitle}>{event || 'Untitled Event'}</AppText>
         {items[0]?.description && (
-          <Text style={styles.desc}>{items[0].description}</Text>
+          <AppText style={styles.desc}>{items[0].description}</AppText>
         )}
         <ScrollView
           horizontal
@@ -86,7 +87,7 @@ export default function ArchivePictures() {
       try {
         const data = await getArchivePictures();
         const grouped = Object.entries(groupBy(data, 'event')).sort(
-          ([a], [b]) => b.localeCompare(a)
+          ([a], [b]) => b.localeCompare(a),
         );
         setPictures(grouped);
       } catch (err) {
@@ -98,7 +99,7 @@ export default function ArchivePictures() {
   }, []);
 
   const filteredPictures = pictures.filter(([event]) =>
-    event.toLowerCase().includes(searchQuery.toLowerCase())
+    event.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (loading)
@@ -127,11 +128,11 @@ export default function ArchivePictures() {
                 style={styles.bannerGradient}
               />
               <View style={styles.bannerText}>
-                <Text style={styles.bannerTitle}>PICTURE ARCHIVE</Text>
-                <Text style={styles.bannerSubtitle}>
+                <AppText style={styles.bannerTitle}>PICTURE ARCHIVE</AppText>
+                <AppText style={styles.bannerSubtitle}>
                   This screen contains pictures of old events of the church,
                   kept for reference and memories.
-                </Text>
+                </AppText>
               </View>
             </ImageBackground>
           </View>
@@ -147,11 +148,11 @@ export default function ArchivePictures() {
         </View>
 
         {filteredPictures.length === 0 ? (
-          <Text style={styles.empty}>
+          <AppText style={styles.empty}>
             {searchQuery
               ? 'No events found matching your search'
               : 'No pictures yet'}
-          </Text>
+          </AppText>
         ) : (
           filteredPictures.map(([event, items]) => (
             <EventCard

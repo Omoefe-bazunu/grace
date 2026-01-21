@@ -1,15 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, Dimensions } from 'react-native';
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  Dimensions,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  Linking,
+  LayoutAnimation,
+  Platform,
+  UIManager,
+  Modal,
+} from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
 import { TopNavigation } from '@/components/TopNavigation';
 import { subscribeToNotices } from '@/services/dataService';
-import { Bell } from 'lucide-react-native';
+import {
+  Bell,
+  FileText,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  X,
+} from 'lucide-react-native';
+import { AppText } from '../../../../components/ui/AppText';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-// Helper to format time (e.g., 10:30 AM)
+if (
+  Platform.OS === 'android' &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 const formatTime = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
@@ -21,7 +48,6 @@ const formatTime = (dateString) => {
   });
 };
 
-// Helper to format date (e.g., Mon, 12 Oct)
 const formatDate = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
@@ -33,39 +59,139 @@ const formatDate = (dateString) => {
   });
 };
 
-const SkeletonCard = () => {
-  const { colors } = useTheme();
+const CollapsibleNoticeItem = ({
+  item,
+  colors,
+  translations,
+  onImagePress,
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const timestamp = item.createdAt || item.date;
+  const hasImages = item.images && item.images.length > 0;
+
+  const toggleExpand = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsExpanded(!isExpanded);
+  };
+
+  const openPdf = (url) => {
+    if (url) Linking.openURL(url);
+  };
+
   return (
-    <View style={[styles.noticeCard, { backgroundColor: colors.card }]}>
-      <View style={styles.skeletonHeader}>
-        <View
-          style={[styles.skeletonCircle, { backgroundColor: colors.skeleton }]}
-        />
-        <View
-          style={[styles.skeletonTime, { backgroundColor: colors.skeleton }]}
-        />
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={toggleExpand}
+      style={[
+        styles.noticeCard,
+        {
+          backgroundColor: colors.card,
+          borderLeftColor: colors.primary,
+          borderWidth: isExpanded ? 1 : 0,
+          borderColor: colors.primary + '20',
+        },
+      ]}
+    >
+      <View style={styles.cardHeader}>
+        <View style={styles.headerLeft}>
+          <Bell size={18} color={colors.primary} style={styles.icon} />
+          <AppText
+            style={[styles.title, { color: colors.text }]}
+            numberOfLines={isExpanded ? undefined : 1}
+          >
+            {item.title || translations.noTitle}
+          </AppText>
+        </View>
+        <View style={styles.headerRight}>
+          <AppText style={[styles.timeText, { color: colors.textSecondary }]}>
+            {formatTime(timestamp)}
+          </AppText>
+          {isExpanded ? (
+            <ChevronUp size={18} color={colors.textSecondary} />
+          ) : (
+            <ChevronDown size={18} color={colors.textSecondary} />
+          )}
+        </View>
       </View>
-      <View
-        style={[styles.skeletonTitle, { backgroundColor: colors.skeleton }]}
-      />
-      <View
-        style={[styles.skeletonText, { backgroundColor: colors.skeleton }]}
-      />
-      <View
-        style={[styles.skeletonTextShort, { backgroundColor: colors.skeleton }]}
-      />
-    </View>
+
+      {isExpanded && (
+        <View style={styles.expandedContent}>
+          <AppText style={[styles.message, { color: colors.text }]}>
+            {item.message || translations.noMessage}
+          </AppText>
+
+          {hasImages && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.imageScroll}
+              contentContainerStyle={styles.imageScrollContent}
+            >
+              {item.images.map((img, idx) => (
+                <TouchableOpacity key={idx} onPress={() => onImagePress(img)}>
+                  <Image
+                    source={{ uri: img }}
+                    style={styles.noticeImage}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
+          {item.pdfUrl && (
+            <TouchableOpacity
+              style={[
+                styles.pdfButton,
+                {
+                  backgroundColor: colors.primary + '10',
+                  borderColor: colors.primary + '30',
+                },
+              ]}
+              onPress={() => openPdf(item.pdfUrl)}
+            >
+              <View style={styles.pdfIconContainer}>
+                <FileText size={20} color={colors.primary} />
+              </View>
+              <View style={styles.pdfInfo}>
+                <AppText style={[styles.pdfTitle, { color: colors.text }]}>
+                  View Attached Document
+                </AppText>
+                <AppText
+                  style={[styles.pdfSub, { color: colors.textSecondary }]}
+                >
+                  PDF File
+                </AppText>
+              </View>
+              <ExternalLink size={18} color={colors.primary} />
+            </TouchableOpacity>
+          )}
+
+          <View style={styles.cardFooter}>
+            <AppText style={[styles.dateText, { color: colors.textSecondary }]}>
+              {formatDate(timestamp)}
+            </AppText>
+          </View>
+        </View>
+      )}
+
+      {!isExpanded && (
+        <AppText style={[styles.compactDate, { color: colors.textSecondary }]}>
+          {formatDate(timestamp)}
+        </AppText>
+      )}
+    </TouchableOpacity>
   );
 };
 
 export default function NoticesScreen() {
   const [allNotices, setAllNotices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(null);
   const { translations } = useLanguage();
   const { colors } = useTheme();
 
   useEffect(() => {
-    // PUBLIC: Always fetch notices
     const unsubscribeNotices = subscribeToNotices((newNotices) => {
       const sorted = [...newNotices].sort(
         (a, b) =>
@@ -74,89 +200,55 @@ export default function NoticesScreen() {
       setAllNotices(sorted);
       setLoading(false);
     });
-
     return () => unsubscribeNotices();
   }, []);
-
-  const renderNoticeItem = ({ item }) => {
-    const timestamp = item.createdAt || item.date;
-
-    return (
-      <View
-        style={[
-          styles.noticeCard,
-          {
-            backgroundColor: colors.card,
-            borderLeftColor: colors.primary,
-            borderLeftWidth: 4,
-          },
-        ]}
-      >
-        <View style={styles.cardHeader}>
-          <View style={styles.headerLeft}>
-            <Bell size={20} color={colors.primary} style={styles.icon} />
-            <Text
-              style={[styles.title, { color: colors.text, fontWeight: '700' }]}
-              numberOfLines={1}
-            >
-              {item.title || translations.noTitle}
-            </Text>
-          </View>
-
-          <View style={styles.timeContainer}>
-            <Text style={[styles.timeText, { color: colors.textSecondary }]}>
-              {formatTime(timestamp)}
-            </Text>
-          </View>
-        </View>
-
-        <Text style={[styles.message, { color: colors.text }]}>
-          {item.message || translations.noMessage}
-        </Text>
-
-        <View style={styles.cardFooter}>
-          <Text style={[styles.dateText, { color: colors.textSecondary }]}>
-            {formatDate(timestamp)}
-          </Text>
-        </View>
-      </View>
-    );
-  };
-
-  const renderEmptyComponent = () => (
-    <View style={styles.emptyContainer}>
-      <View style={[styles.emptyIconCircle, { backgroundColor: colors.card }]}>
-        <Bell size={48} color={colors.textSecondary} />
-      </View>
-      <Text style={[styles.emptyText, { color: colors.text }]}>
-        {translations.noNotices}
-      </Text>
-      <Text style={[styles.emptySubText, { color: colors.textSecondary }]}>
-        {translations.checkLater}
-      </Text>
-    </View>
-  );
 
   return (
     <SafeAreaWrapper>
       <TopNavigation showBackButton={true} title="Notices" />
+
+      {/* Fullscreen Image Viewer Modal */}
+      <Modal visible={!!selectedImage} transparent={true} animationType="fade">
+        <View style={styles.fullscreenOverlay}>
+          <TouchableOpacity
+            style={styles.closeFullscreen}
+            onPress={() => setSelectedImage(null)}
+          >
+            <X size={30} color="#FFF" />
+          </TouchableOpacity>
+          {selectedImage && (
+            <Image
+              source={{ uri: selectedImage }}
+              style={styles.fullscreenImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
+
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        {loading ? (
-          <View style={styles.listContent}>
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </View>
-        ) : (
-          <FlatList
-            data={allNotices}
-            renderItem={renderNoticeItem}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={renderEmptyComponent}
-          />
-        )}
+        <FlatList
+          data={allNotices}
+          renderItem={({ item }) => (
+            <CollapsibleNoticeItem
+              item={item}
+              colors={colors}
+              translations={translations}
+              onImagePress={(img) => setSelectedImage(img)}
+            />
+          )}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            !loading && (
+              <View style={styles.emptyContainer}>
+                <Bell size={48} color={colors.textSecondary} />
+                <AppText style={styles.emptyText}>No Notices Yet</AppText>
+              </View>
+            )
+          }
+        />
       </View>
     </SafeAreaWrapper>
   );
@@ -166,71 +258,81 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   listContent: { padding: 16, paddingBottom: 40 },
   noticeCard: {
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    marginBottom: 16,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    marginBottom: 12,
+    elevation: 2,
+    borderLeftWidth: 4,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: 8,
-  },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   icon: { marginRight: 8 },
-  title: { fontSize: 16, flex: 1 },
-  timeContainer: { justifyContent: 'center' },
-  timeText: { fontSize: 12, fontWeight: '500' },
-  message: { fontSize: 14, lineHeight: 22, marginBottom: 12 },
-  cardFooter: {
+  title: { fontSize: 15, fontWeight: '700', flex: 1 },
+  timeText: { fontSize: 11, fontWeight: '600' },
+  expandedContent: { marginTop: 12 },
+  message: { fontSize: 14, lineHeight: 22, marginBottom: 16 },
+  imageScroll: { marginBottom: 16, marginHorizontal: -16 },
+  imageScrollContent: { paddingHorizontal: 16, gap: 10 },
+  noticeImage: {
+    width: width * 0.7,
+    height: 180,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+  },
+  pdfButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  pdfIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  pdfInfo: { flex: 1 },
+  pdfTitle: { fontSize: 14, fontWeight: '600' },
+  pdfSub: { fontSize: 12 },
+  cardFooter: {
     marginTop: 4,
-    paddingTop: 8,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.05)',
   },
-  dateText: { fontSize: 12, fontWeight: '500' },
-  emptyContainer: {
+  dateText: { fontSize: 12, fontWeight: '600' },
+  compactDate: {
+    fontSize: 10,
+    marginTop: 4,
+    marginLeft: 26,
+    fontWeight: '500',
+  },
+  emptyContainer: { flex: 1, alignItems: 'center', marginTop: 100 },
+  emptyText: { fontSize: 18, fontWeight: 'bold', marginTop: 16 },
+
+  // Fullscreen Styles
+  fullscreenOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 100,
   },
-  emptyIconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+  fullscreenImage: { width: width, height: height * 0.8 },
+  closeFullscreen: {
+    position: 'absolute',
+    top: 50,
+    right: 25,
+    zIndex: 10,
+    padding: 10,
   },
-  emptyText: { fontSize: 20, fontWeight: '700', marginBottom: 8 },
-  emptySubText: { fontSize: 15, textAlign: 'center', maxWidth: '70%' },
-  // Skeleton Styles
-  skeletonHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  skeletonCircle: { width: 24, height: 24, borderRadius: 12 },
-  skeletonTime: { width: 60, height: 16, borderRadius: 4 },
-  skeletonTitle: { width: '70%', height: 20, borderRadius: 4, marginBottom: 8 },
-  skeletonText: { width: '100%', height: 14, borderRadius: 4, marginBottom: 4 },
-  skeletonTextShort: { width: '90%', height: 14, borderRadius: 4 },
 });

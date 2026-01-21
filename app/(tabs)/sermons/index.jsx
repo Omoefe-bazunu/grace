@@ -16,6 +16,7 @@ import {
   Mic2, // Lucide icon for Audio (Mic2 or Music2)
   Video, // Lucide icon for Video
 } from 'lucide-react-native';
+import { AppText } from '../../../components/ui/AppText';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../components/ui/SafeAreaWrapper';
@@ -49,13 +50,15 @@ const FeatureTile = ({ title, subtitle, icon: Icon, onPress, colors }) => (
         <Icon size={32} color={colors.primary} />
       </View>
       <View style={styles.textContainer}>
-        <Text style={[styles.tileTitle, { color: colors.text }]}>{title}</Text>
-        <Text
+        <AppText style={[styles.tileTitle, { color: colors.text }]}>
+          {title}
+        </AppText>
+        <AppText
           style={[styles.tileSubtitle, { color: colors.textSecondary }]}
           numberOfLines={1}
         >
           {subtitle}
-        </Text>
+        </AppText>
       </View>
     </View>
   </TouchableOpacity>
@@ -99,11 +102,11 @@ export default function SermonsScreen() {
             style={styles.bannerGradient}
           />
           <View style={styles.bannerText}>
-            <Text style={styles.bannerTitle}>EDIFYING SERMONS</Text>
-            <Text style={styles.bannerSubtitle}>
+            <AppText style={styles.bannerTitle}>EDIFYING SERMONS</AppText>
+            <AppText style={styles.bannerSubtitle}>
               Access inspiring sermons in different languages, sharing God’s
               Word in every tongue.
-            </Text>
+            </AppText>
           </View>
         </ImageBackground>
       </View>
@@ -195,7 +198,7 @@ const styles = StyleSheet.create({
   },
   bannerImage: {
     width: '100%',
-    height: 200,
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -213,20 +216,21 @@ const styles = StyleSheet.create({
   },
   bannerTitle: {
     color: '#fff',
-    fontSize: 28,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 6,
   },
   bannerSubtitle: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 10,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 16,
+    marginBottom: 18,
   },
   searchContainer: {
     marginHorizontal: 20,
-    marginTop: -30,
+    marginTop: -120,
     marginBottom: 12,
     backgroundColor: '#fff',
     borderRadius: 30,

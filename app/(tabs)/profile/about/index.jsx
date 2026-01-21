@@ -24,6 +24,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { TopNavigation } from '@/components/TopNavigation';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
+import { AppText } from '../../../../components/ui/AppText';
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental &&
@@ -65,15 +66,15 @@ export default function AboutScreen() {
         style={styles.sectionHeader}
       >
         <Icon size={24} color={colors.primary} />
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        <AppText style={[styles.sectionTitle, { color: colors.text }]}>
           {title}
-        </Text>
+        </AppText>
       </TouchableOpacity>
       {expandedSections[key] && (
         <View style={styles.sectionContentContainer}>
-          <Text style={[styles.sectionContent, { color: colors.text }]}>
+          <AppText style={[styles.sectionContent, { color: colors.text }]}>
             {content}
-          </Text>
+          </AppText>
         </View>
       )}
     </View>
@@ -87,12 +88,12 @@ export default function AboutScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.logoContainer}>
-          <Text style={[styles.appName, { color: colors.primary }]}>
+          <AppText style={[styles.appName, { color: colors.primary }]}>
             God's Kingdom Society
-          </Text>
-          <Text style={[styles.version, { color: colors.textSecondary }]}>
+          </AppText>
+          <AppText style={[styles.version, { color: colors.textSecondary }]}>
             Version {aboutUsInfo.version}
-          </Text>
+          </AppText>
         </View>
 
         {/* Collapsible Sections */}
@@ -100,13 +101,13 @@ export default function AboutScreen() {
           'mission',
           Heart,
           translations.ourMission || 'Our Mission',
-          aboutUsInfo.mission
+          aboutUsInfo.mission,
         )}
         {renderSection(
           'aboutGKS',
           Globe,
           "About God's Kingdom Society",
-          aboutUsInfo.content
+          aboutUsInfo.content,
         )}
 
         {/* Core Beliefs */}
@@ -118,20 +119,22 @@ export default function AboutScreen() {
               style={styles.sectionHeader}
             >
               <Heart size={24} color={colors.primary} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              <AppText style={[styles.sectionTitle, { color: colors.text }]}>
                 Our Core Beliefs
-              </Text>
+              </AppText>
             </TouchableOpacity>
             {expandedSections.beliefs && (
               <View style={styles.sectionContentContainer}>
                 {aboutUsInfo.keyBeliefs.map((belief, index) => (
                   <View key={index} style={styles.beliefItem}>
-                    <Text style={[styles.bullet, { color: colors.primary }]}>
+                    <AppText style={[styles.bullet, { color: colors.primary }]}>
                       •
-                    </Text>
-                    <Text style={[styles.beliefText, { color: colors.text }]}>
+                    </AppText>
+                    <AppText
+                      style={[styles.beliefText, { color: colors.text }]}
+                    >
                       {belief}
-                    </Text>
+                    </AppText>
                   </View>
                 ))}
               </View>
@@ -147,21 +150,21 @@ export default function AboutScreen() {
             style={styles.sectionHeader}
           >
             <Mail size={24} color={colors.primary} />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            <AppText style={[styles.sectionTitle, { color: colors.text }]}>
               Contact Information
-            </Text>
+            </AppText>
           </TouchableOpacity>
           {expandedSections.contact && (
             <View style={styles.sectionContentContainer}>
               {/* Headquarters */}
               <View style={styles.contactItem}>
                 <MapPin size={18} color={colors.textSecondary} />
-                <Text
+                <AppText
                   style={[styles.contactLabel, { color: colors.text }]}
-                ></Text>
-                <Text style={[styles.contactValue, { color: colors.text }]}>
+                ></AppText>
+                <AppText style={[styles.contactValue, { color: colors.text }]}>
                   {aboutUsInfo.contactInfo?.headquarters}
-                </Text>
+                </AppText>
               </View>
 
               {/* Phones */}
@@ -172,11 +175,11 @@ export default function AboutScreen() {
                   onPress={() => handleContactPress('phone', phone)}
                 >
                   <Phone size={18} color={colors.textSecondary} />
-                  <Text
+                  <AppText
                     style={[styles.contactValue, { color: colors.primary }]}
                   >
                     {phone}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
               ))}
 
@@ -189,11 +192,11 @@ export default function AboutScreen() {
                 >
                   <Mail size={18} color={colors.textSecondary} />
 
-                  <Text
+                  <AppText
                     style={[styles.contactValue, { color: colors.primary }]}
                   >
                     {email}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -202,23 +205,27 @@ export default function AboutScreen() {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={[{ color: colors.textSecondary }]}>
+          <AppText style={[{ color: colors.textSecondary }]}>
             Designed & Developed By HIGH-ER ENTERPRISES
-          </Text>
-          <Text style={[styles.footerSubtext, { color: colors.textSecondary }]}>
+          </AppText>
+          <AppText
+            style={[styles.footerSubtext, { color: colors.textSecondary }]}
+          >
             (+2349043970401; info@higher.com.ng)
-          </Text>
-          <Text
+          </AppText>
+          <AppText
             style={[
               styles.footerText,
               { color: colors.textSecondary, marginTop: 8 },
             ]}
           >
             © 2025 God's Kingdom Society. All rights reserved.
-          </Text>
-          <Text style={[styles.footerSubtext, { color: colors.textSecondary }]}>
+          </AppText>
+          <AppText
+            style={[styles.footerSubtext, { color: colors.textSecondary }]}
+          >
             Towards God's perfect government
-          </Text>
+          </AppText>
         </View>
       </ScrollView>
     </SafeAreaWrapper>

@@ -37,6 +37,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import debounce from 'lodash.debounce';
 import { TopNavigation } from '../../../../components/TopNavigation';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
+import { AppText } from '../../../../components/ui/AppText';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -75,15 +76,15 @@ const CategoryCard = ({ category, count, onPress, colors }) => (
       <VideoIcon size={24} color="#fff" />
     </LinearGradient>
     <View style={styles.categoryInfo}>
-      <Text
+      <AppText
         style={[styles.categoryTitle, { color: colors.text }]}
         numberOfLines={2}
       >
         {category}
-      </Text>
-      <Text style={[styles.categoryCount, { color: colors.textSecondary }]}>
+      </AppText>
+      <AppText style={[styles.categoryCount, { color: colors.textSecondary }]}>
         {count} {count === 1 ? 'video' : 'videos'}
-      </Text>
+      </AppText>
     </View>
     <View style={[styles.chevron, { backgroundColor: colors.primary + '15' }]}>
       <Play size={16} color={colors.primary} />
@@ -124,20 +125,20 @@ const VideoModalItem = ({ item, colors, onPress }) => (
       {item.duration && (
         <View style={styles.modalDurationBadge}>
           <Clock size={10} color="#fff" />
-          <Text style={styles.modalDurationText}>
+          <AppText style={styles.modalDurationText}>
             {formatDuration(item.duration)}
-          </Text>
+          </AppText>
         </View>
       )}
     </View>
 
     <View style={styles.modalVideoInfo}>
-      <Text
+      <AppText
         style={[styles.modalVideoTitle, { color: colors.text }]}
         numberOfLines={2}
       >
         {item.title}
-      </Text>
+      </AppText>
       <View style={styles.modalVideoMeta}>
         <View
           style={[
@@ -146,9 +147,9 @@ const VideoModalItem = ({ item, colors, onPress }) => (
           ]}
         >
           <PlayIcon size={10} color={colors.primary} />
-          <Text style={[styles.modalBadgeText, { color: colors.primary }]}>
+          <AppText style={[styles.modalBadgeText, { color: colors.primary }]}>
             Watch
-          </Text>
+          </AppText>
         </View>
         {item.category && (
           <View
@@ -157,9 +158,11 @@ const VideoModalItem = ({ item, colors, onPress }) => (
               { backgroundColor: colors.primary + '10' },
             ]}
           >
-            <Text style={[styles.modalCategoryText, { color: colors.primary }]}>
+            <AppText
+              style={[styles.modalCategoryText, { color: colors.primary }]}
+            >
               {item.category}
-            </Text>
+            </AppText>
           </View>
         )}
       </View>
@@ -233,7 +236,7 @@ export default function SermonVideosScreen() {
       const result = await getSermonVideosByCategoryPaginated(
         category,
         50,
-        null
+        null,
       );
       setCategoryVideos(result.sermonVideos);
     } catch (error) {
@@ -300,7 +303,7 @@ export default function SermonVideosScreen() {
         setLoading(false);
       }
     }, 500),
-    []
+    [],
   );
 
   useEffect(() => {
@@ -352,20 +355,20 @@ export default function SermonVideosScreen() {
         {item.duration && (
           <View style={styles.durationBadge}>
             <Clock size={12} color="#fff" />
-            <Text style={styles.durationText}>
+            <AppText style={styles.durationText}>
               {formatDuration(item.duration)}
-            </Text>
+            </AppText>
           </View>
         )}
       </View>
 
       <View style={styles.videoInfo}>
-        <Text
+        <AppText
           style={[styles.videoTitle, { color: colors.text }]}
           numberOfLines={2}
         >
           {item.title}
-        </Text>
+        </AppText>
 
         <View style={styles.videoMeta}>
           <View
@@ -375,9 +378,9 @@ export default function SermonVideosScreen() {
             ]}
           >
             <PlayIcon size={12} color={colors.primary} />
-            <Text style={[styles.badgeText, { color: colors.primary }]}>
+            <AppText style={[styles.badgeText, { color: colors.primary }]}>
               Watch Now
-            </Text>
+            </AppText>
           </View>
 
           {item.category && (
@@ -387,9 +390,9 @@ export default function SermonVideosScreen() {
                 { backgroundColor: colors.primary + '10' },
               ]}
             >
-              <Text style={[styles.categoryText, { color: colors.primary }]}>
+              <AppText style={[styles.categoryText, { color: colors.primary }]}>
                 {item.category}
-              </Text>
+              </AppText>
             </View>
           )}
         </View>
@@ -402,12 +405,14 @@ export default function SermonVideosScreen() {
 
     return (
       <View style={styles.categoriesSection}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        <AppText style={[styles.sectionTitle, { color: colors.text }]}>
           Sermon Video Categories
-        </Text>
-        <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+        </AppText>
+        <AppText
+          style={[styles.sectionSubtitle, { color: colors.textSecondary }]}
+        >
           Browse sermons by category
-        </Text>
+        </AppText>
 
         <View style={styles.categoriesGrid}>
           {sermonVideoCategories.map((cat, index) => (
@@ -430,9 +435,9 @@ export default function SermonVideosScreen() {
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+        <AppText style={[styles.loadingText, { color: colors.textSecondary }]}>
           Loading more videos...
-        </Text>
+        </AppText>
       </View>
     );
   };
@@ -456,14 +461,14 @@ export default function SermonVideosScreen() {
       >
         <VideoIcon size={48} color={colors.primary} />
       </View>
-      <Text style={[styles.emptyTitle, { color: colors.text }]}>
+      <AppText style={[styles.emptyTitle, { color: colors.text }]}>
         {searchQuery ? 'No sermon videos found' : 'No sermon videos available'}
-      </Text>
-      <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+      </AppText>
+      <AppText style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
         {searchQuery
           ? 'Try adjusting your search terms'
           : 'Check back later for new sermon videos'}
-      </Text>
+      </AppText>
     </View>
   );
 
@@ -491,14 +496,14 @@ export default function SermonVideosScreen() {
           ]}
         >
           <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>
+            <AppText style={[styles.modalTitle, { color: colors.text }]}>
               {selectedCategory?.category}
-            </Text>
-            <Text
+            </AppText>
+            <AppText
               style={[styles.modalSubtitle, { color: colors.textSecondary }]}
             >
               {categoryVideos.length} videos
-            </Text>
+            </AppText>
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setCategoryModalVisible(false)}
@@ -510,14 +515,14 @@ export default function SermonVideosScreen() {
           {loadingCategory ? (
             <View style={styles.modalLoading}>
               <ActivityIndicator size="large" color={colors.primary} />
-              <Text
+              <AppText
                 style={[
                   styles.modalLoadingText,
                   { color: colors.textSecondary },
                 ]}
               >
                 Loading videos...
-              </Text>
+              </AppText>
             </View>
           ) : (
             <FlatList
@@ -534,14 +539,14 @@ export default function SermonVideosScreen() {
               showsVerticalScrollIndicator={false}
               ListEmptyComponent={
                 <View style={styles.modalEmpty}>
-                  <Text
+                  <AppText
                     style={[
                       styles.modalEmptyText,
                       { color: colors.textSecondary },
                     ]}
                   >
                     No videos found in this category
-                  </Text>
+                  </AppText>
                 </View>
               }
             />
@@ -561,10 +566,10 @@ export default function SermonVideosScreen() {
             style={styles.bannerGradient}
           />
           <View style={styles.bannerText}>
-            <Text style={styles.bannerTitle}>SERMON VIDEOS</Text>
-            <Text style={styles.bannerSubtitle}>
+            <AppText style={styles.bannerTitle}>SERMON VIDEOS</AppText>
+            <AppText style={styles.bannerSubtitle}>
               Watch the video versions of sermons organized by categories.
-            </Text>
+            </AppText>
           </View>
         </ImageBackground>
       </View>
@@ -589,16 +594,16 @@ export default function SermonVideosScreen() {
               onPress={() => setSearchQuery('')}
               style={styles.clearButton}
             >
-              <Text style={[styles.clearText, { color: colors.primary }]}>
+              <AppText style={[styles.clearText, { color: colors.primary }]}>
                 Clear
-              </Text>
+              </AppText>
             </TouchableOpacity>
           )}
         </View>
       </View>
 
       <FlatList
-        data={loading ? [] : sermonVideos}
+        data={searchQuery ? sermonVideos : []}
         renderItem={renderVideoItem}
         keyExtractor={(item) => item.id}
         numColumns={1}
@@ -608,20 +613,27 @@ export default function SermonVideosScreen() {
           <>
             <View style={styles.headerSpacer} />
             {renderCategorySection()}
-            {sermonVideos.length > 0 && !searchQuery && (
-              <Text
+            {searchQuery !== '' && (
+              <AppText
                 style={[
                   styles.sectionTitle,
                   { color: colors.text, marginTop: 20 },
                 ]}
               >
-                All Sermon Videos
-              </Text>
+                Search Results
+              </AppText>
             )}
           </>
         }
         ListEmptyComponent={
-          loading ? renderSkeletonCards() : renderEmptyState()
+          // 1. If we are still loading, show skeletons
+          loading
+            ? renderSkeletonCards()
+            : // 2. ONLY show empty state if user is searching and results are 0
+              searchQuery && sermonVideos.length === 0
+              ? renderEmptyState()
+              : // 3. Otherwise, show nothing (null) so the category cards stay clean
+                null
         }
         ListFooterComponent={renderFooter}
         refreshControl={
@@ -647,7 +659,7 @@ const styles = StyleSheet.create({
   bannerContainer: { height: 180, overflow: 'hidden', marginBottom: 10 },
   bannerImage: {
     width: '100%',
-    height: '100%',
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -661,19 +673,19 @@ const styles = StyleSheet.create({
   bannerText: { paddingHorizontal: 40, alignItems: 'center' },
   bannerTitle: {
     color: '#fff',
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
   },
   bannerSubtitle: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 10,
     textAlign: 'center',
-    marginTop: 8,
+    marginVertical: 8,
   },
   searchWrapper: {
     marginHorizontal: 20,
-    marginTop: -30,
+    marginTop: -100,
     marginBottom: 20,
   },
   searchContainer: {

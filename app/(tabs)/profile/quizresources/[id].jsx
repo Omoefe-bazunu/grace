@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { TopNavigation } from '@/components/TopNavigation';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
+import { AppText } from '../../../../components/ui/AppText';
 
 // Component for the skeleton loading state
 const SkeletonQuizDetail = ({ colors }) => (
@@ -117,9 +118,9 @@ export default function QuizDetailScreen() {
       <SafeAreaView
         style={[styles.container, { backgroundColor: colors.background }]}
       >
-        <Text style={[styles.error, { color: colors.error }]}>
+        <AppText style={[styles.error, { color: colors.error }]}>
           {translations.errorQuizNotFound || 'Quiz not found'}
-        </Text>
+        </AppText>
       </SafeAreaView>
     );
   }
@@ -131,16 +132,16 @@ export default function QuizDetailScreen() {
       <TopNavigation showBackButton={true} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.title, { color: colors.text }]}>
+        <AppText style={[styles.title, { color: colors.text }]}>
           {quiz.title || translations.noTitle}
-        </Text>
+        </AppText>
 
         <View style={styles.metaContainer}>
           <View style={styles.metaItem}>
             <Book size={16} color={colors.textSecondary} />
-            <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+            <AppText style={[styles.metaText, { color: colors.textSecondary }]}>
               {quiz.year} - {quiz.age} - {quiz.gender}
-            </Text>
+            </AppText>
           </View>
         </View>
 
@@ -148,19 +149,19 @@ export default function QuizDetailScreen() {
           style={[styles.resourceContainer, { backgroundColor: colors.card }]}
         >
           {quiz.content && (
-            <Text
+            <AppText
               style={[styles.resourceText, { color: colors.textSecondary }]}
             >
               {quiz.content}
-            </Text>
+            </AppText>
           )}
         </View>
 
         {/* --- Question Submission Form --- */}
         <View style={[styles.formContainer, { backgroundColor: colors.card }]}>
-          <Text style={[styles.formTitle, { color: colors.text }]}>
+          <AppText style={[styles.formTitle, { color: colors.text }]}>
             {translations.askQuestion || 'Ask a Question'}
-          </Text>
+          </AppText>
           <Input
             label={translations.name || 'Name'}
             value={name}
@@ -210,18 +211,20 @@ export default function QuizDetailScreen() {
               color={colors.primary}
               style={styles.modalIcon}
             />
-            <Text style={[styles.modalTitle, { color: colors.text }]}>
+            <AppText style={[styles.modalTitle, { color: colors.text }]}>
               {translations.questionSubmitted || 'Question Submitted!'}
-            </Text>
-            <Text style={[styles.modalText, { color: colors.textSecondary }]}>
+            </AppText>
+            <AppText
+              style={[styles.modalText, { color: colors.textSecondary }]}
+            >
               {translations.questionSubmittedDesc ||
                 'Thank you! Your question has been sent and will be answered shortly.'}
-            </Text>
+            </AppText>
             <TouchableOpacity
               style={[styles.modalButton, { backgroundColor: colors.primary }]}
               onPress={() => setShowSuccessModal(false)}
             >
-              <Text style={styles.modalButtonText}>Close</Text>
+              <AppText style={styles.modalButtonText}>Close</AppText>
             </TouchableOpacity>
           </View>
         </View>

@@ -37,7 +37,7 @@ export default function AdminNoticesScreen() {
     try {
       const data = await getNotices();
       setNotices(
-        data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
       );
     } catch (error) {
       Alert.alert('Error', 'Failed to load notices');
@@ -57,14 +57,15 @@ export default function AdminNoticesScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await del('/api/notices', id); // Correct path
+              // Standardized call: path is 'notices', helper adds the ID
+              await del('notices', id);
               setNotices((prev) => prev.filter((n) => n.id !== id));
             } catch (error) {
-              Alert.alert('Error', error.message || 'Failed to delete notice');
+              Alert.alert('Error', 'Failed to delete notice');
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -74,25 +75,27 @@ export default function AdminNoticesScreen() {
       return;
     }
     try {
-      await put(`/api/notices/${id}`, {
+      // Standardized call: path, id, then data
+      await put('notices', id, {
         title: editTitle,
         message: editMessage,
-      }); // Correct
+      });
+
       setNotices((prev) =>
         prev.map((n) =>
-          n.id === id ? { ...n, title: editTitle, message: editMessage } : n
-        )
+          n.id === id ? { ...n, title: editTitle, message: editMessage } : n,
+        ),
       );
       setEditingId(null);
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to update notice');
+      Alert.alert('Error', 'Failed to update notice');
     }
   };
 
   const filteredNotices = notices.filter(
     (n) =>
       n.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      n.message?.toLowerCase().includes(searchQuery.toLowerCase())
+      n.message?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const renderItem = ({ item }) => {

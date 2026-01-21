@@ -77,8 +77,8 @@ export default function AdminArchiveManager() {
 
       setItems(
         formatted.sort((a, b) =>
-          (b.createdAt || '').localeCompare(a.createdAt || '')
-        )
+          (b.createdAt || '').localeCompare(a.createdAt || ''),
+        ),
       );
     } catch (err) {
       console.error(err);
@@ -127,7 +127,7 @@ export default function AdminArchiveManager() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -164,8 +164,8 @@ export default function AdminArchiveManager() {
                 title: form.event,
                 ...payload,
               }
-            : i
-        )
+            : i,
+        ),
       );
       setModalVisible(false);
       Alert.alert('Success', 'Updated successfully');
