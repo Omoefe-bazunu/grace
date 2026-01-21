@@ -21,6 +21,7 @@ import {
   Volume2,
 } from 'lucide-react-native';
 import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useLanguage } from '../../../../contexts/LanguageContext';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { getSermon } from '../../../../services/dataService';
@@ -51,6 +52,24 @@ export default function SermonDetailScreen() {
   const [audioChunks, setAudioChunks] = useState([]);
   const [totalChunks, setTotalChunks] = useState(0);
 
+  // Configure audio mode on mount
+  useEffect(() => {
+    const configureAudio = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          allowsRecordingIOS: false,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+        });
+      } catch (error) {
+        console.error('Audio mode setup error:', error);
+      }
+    };
+    configureAudio();
+  }, []);
+
   // Split text helper
   const splitTextIntoChunks = (text) => {
     if (!text) return [];
@@ -72,7 +91,7 @@ export default function SermonDetailScreen() {
   };
 
   useEffect(() => {
-    if (!id) return; // Wait until router provides the ID
+    if (!id) return;
 
     const fetchSermon = async () => {
       setLoading(true);
@@ -103,7 +122,9 @@ export default function SermonDetailScreen() {
     fetchSermon();
 
     return () => {
-      if (sound) sound.unloadAsync();
+      if (sound) {
+        sound.unloadAsync().catch(console.error);
+      }
     };
   }, [id, currentLanguage]);
 
@@ -112,6 +133,9 @@ export default function SermonDetailScreen() {
       handleStop();
       return;
     }
+
+    let fileUri = null;
+
     try {
       setCurrentChunk(chunkIndex);
       setGenerating(true);
@@ -120,67 +144,177 @@ export default function SermonDetailScreen() {
         currentLanguage === 'es'
           ? { languageCode: 'es-ES', name: 'es-ES-Neural2-B' }
           : currentLanguage === 'fr'
-          ? { languageCode: 'fr-FR', name: 'fr-FR-Neural2-B' }
-          : { languageCode: 'en-US', name: 'en-US-Neural2-F' };
+            ? { languageCode: 'fr-FR', name: 'fr-FR-Neural2-B' }
+            : { languageCode: 'en-US', name: 'en-US-Neural2-F' };
 
       const response = await apiClient.post('tts/synthesize', {
         text: audioChunks[chunkIndex],
-        ...config,
+        languageCode: config.languageCode,
+        name: config.name,
       });
 
-      if (!response.data?.audioContent) throw new Error('Speech failed');
+      if (!response.data?.audioContent) {
+        throw new Error('No audio content received from server');
+      }
 
-      const audioUri = `data:audio/mp3;base64,${response.data.audioContent}`;
-      if (sound) await sound.unloadAsync();
+      // Unload previous sound completely before creating new one
+      if (sound) {
+        try {
+          const status = await sound.getStatusAsync();
+          if (status.isLoaded) {
+            await sound.stopAsync();
+            await sound.unloadAsync();
+          }
+        } catch (e) {
+          console.log('Error unloading previous sound:', e);
+        }
+        setSound(null);
+      }
 
+      // Write base64 audio to a temporary file
+      fileUri = `${FileSystem.cacheDirectory}tts_${Date.now()}.mp3`;
+
+      await FileSystem.writeAsStringAsync(fileUri, response.data.audioContent, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      // Create and load the sound
       const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: audioUri },
-        { shouldPlay: true }
+        { uri: fileUri },
+        { shouldPlay: true },
+        (status) => onPlaybackStatusUpdate(status, fileUri, chunkIndex),
       );
+
       setSound(newSound);
       setGenerating(false);
-
-      newSound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded) {
-          setPlaybackPosition(status.positionMillis);
-          setPlaybackDuration(status.durationMillis || 0);
-          if (status.didJustFinish) playChunk(chunkIndex + 1);
-        }
-      });
     } catch (error) {
+      console.error('Audio playback error:', error);
       setGenerating(false);
-      Alert.alert('Audio Error', 'Unable to play audio.');
+
+      // Clean up file if it was created
+      if (fileUri) {
+        FileSystem.deleteAsync(fileUri, { idempotent: true }).catch(
+          console.error,
+        );
+      }
+
+      Alert.alert('Audio Error', 'Unable to play audio. Please try again.');
       handleStop();
     }
   };
 
+  const onPlaybackStatusUpdate = (status, fileUri, chunkIndex) => {
+    if (status.isLoaded) {
+      setPlaybackPosition(status.positionMillis || 0);
+      setPlaybackDuration(status.durationMillis || 0);
+
+      if (status.didJustFinish) {
+        // Clean up the temporary file
+        if (fileUri) {
+          FileSystem.deleteAsync(fileUri, { idempotent: true }).catch(
+            console.error,
+          );
+        }
+        // Play next chunk
+        playChunk(chunkIndex + 1);
+      }
+    } else if (status.error) {
+      console.error('Playback status error:', status.error);
+    }
+  };
+
   const handleSpeak = async () => {
-    if (isSpeaking && !isPaused) {
-      if (sound) await sound.pauseAsync();
-      setIsPaused(true);
-      return;
-    }
-    if (isSpeaking && isPaused) {
-      if (sound) await sound.playAsync();
+    try {
+      if (isSpeaking && !isPaused) {
+        // Pause
+        if (sound) {
+          const status = await sound.getStatusAsync();
+          if (status.isLoaded) {
+            await sound.pauseAsync();
+            setIsPaused(true);
+          }
+        }
+        return;
+      }
+
+      if (isSpeaking && isPaused) {
+        // Resume
+        if (sound) {
+          const status = await sound.getStatusAsync();
+          if (status.isLoaded) {
+            await sound.playAsync();
+            setIsPaused(false);
+          }
+        }
+        return;
+      }
+
+      // Start new playback
+      setIsSpeaking(true);
       setIsPaused(false);
-      return;
+      await playChunk(0);
+    } catch (error) {
+      console.error('Error in handleSpeak:', error);
+      Alert.alert('Error', 'Failed to control audio playback');
     }
-    setIsSpeaking(true);
-    await playChunk(0);
   };
 
   const handleStop = async () => {
-    if (sound) {
-      await sound.stopAsync();
-      await sound.unloadAsync();
-      setSound(null);
+    try {
+      if (sound) {
+        const status = await sound.getStatusAsync();
+        if (status.isLoaded) {
+          await sound.stopAsync();
+          await sound.unloadAsync();
+        }
+        setSound(null);
+      }
+    } catch (error) {
+      console.error('Error stopping sound:', error);
     }
+
     setIsSpeaking(false);
     setIsPaused(false);
     setCurrentChunk(0);
     setPlaybackPosition(0);
     setPlaybackDuration(0);
     setGenerating(false);
+  };
+
+  const handleSkipBack = async () => {
+    if (currentChunk > 0 && !generating) {
+      if (sound) {
+        try {
+          const status = await sound.getStatusAsync();
+          if (status.isLoaded) {
+            await sound.stopAsync();
+            await sound.unloadAsync();
+          }
+        } catch (e) {
+          console.log('Error during skip back:', e);
+        }
+        setSound(null);
+      }
+      await playChunk(currentChunk - 1);
+    }
+  };
+
+  const handleSkipForward = async () => {
+    if (currentChunk < totalChunks - 1 && !generating) {
+      if (sound) {
+        try {
+          const status = await sound.getStatusAsync();
+          if (status.isLoaded) {
+            await sound.stopAsync();
+            await sound.unloadAsync();
+          }
+        } catch (e) {
+          console.log('Error during skip forward:', e);
+        }
+        setSound(null);
+      }
+      await playChunk(currentChunk + 1);
+    }
   };
 
   const handleCopyToClipboard = async () => {
@@ -308,9 +442,9 @@ export default function SermonDetailScreen() {
 
           <View style={styles.controls}>
             <TouchableOpacity
-              onPress={() => currentChunk > 0 && playChunk(currentChunk - 1)}
+              onPress={handleSkipBack}
               disabled={currentChunk <= 0 || generating}
-              style={{ opacity: currentChunk > 0 ? 1 : 0.3 }}
+              style={{ opacity: currentChunk > 0 && !generating ? 1 : 0.3 }}
             >
               <SkipBack size={24} color={colors.text} />
             </TouchableOpacity>
@@ -335,11 +469,12 @@ export default function SermonDetailScreen() {
               )}
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() =>
-                currentChunk < totalChunks - 1 && playChunk(currentChunk + 1)
-              }
+              onPress={handleSkipForward}
               disabled={currentChunk >= totalChunks - 1 || generating}
-              style={{ opacity: currentChunk < totalChunks - 1 ? 1 : 0.3 }}
+              style={{
+                opacity:
+                  currentChunk < totalChunks - 1 && !generating ? 1 : 0.3,
+              }}
             >
               <SkipForward size={24} color={colors.text} />
             </TouchableOpacity>

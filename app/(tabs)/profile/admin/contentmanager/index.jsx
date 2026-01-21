@@ -18,14 +18,14 @@ import { TopNavigation } from '../../../../../components/TopNavigation';
 import { useTheme } from '../../../../../contexts/ThemeContext';
 import { useLanguage } from '../../../../../contexts/LanguageContext';
 import {
-  getSermons,
-  getSongs,
-  getVideos,
-  getSermonVideos,
-  getDailyDevotionals,
+  getSermonsPaginated,
+  getSongsPaginated,
+  getVideosPaginated,
+  getSermonVideosPaginated,
+  getDailyDevotionalsPaginated,
 } from '@/services/dataService';
 import apiClient from '../../../../../utils/api';
-import { Edit2, Trash2, X, Video, BookOpen } from 'lucide-react-native';
+import { Edit2, Trash2, X } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ContentManager() {
@@ -42,65 +42,74 @@ export default function ContentManager() {
     category: '',
     mainText: '',
     date: '',
+    videoUrl: '',
   });
   const [saving, setSaving] = useState(false);
 
   const fetchAllContent = async () => {
     try {
-      const [sermons, songs, videos, sermonVideos, devotionals] =
+      const [sermonsRes, songsRes, videosRes, sermonVideosRes, devotionalsRes] =
         await Promise.all([
-          getSermons(),
-          getSongs(),
-          getVideos(),
-          getSermonVideos(),
-          getDailyDevotionals(),
+          getSermonsPaginated(50),
+          getSongsPaginated(50),
+          getVideosPaginated(50),
+          getSermonVideosPaginated(50),
+          getDailyDevotionalsPaginated(50),
         ]);
 
+      // Separate sermons into text sermons (no video) and sermon videos (with video)
+      const textSermons = (sermonsRes.sermons || []).filter((s) => !s.videoUrl);
+      const sermonVideos = sermonVideosRes.sermonVideos || [];
+
       const formatted = [
-        ...sermons.map((s) => ({
+        // Only include text sermons (those without videoUrl)
+        ...textSermons.map((s) => ({
           id: s.id,
           title: s.title,
           type: 'sermon',
           category: s.category,
           content: s.content,
-          date: s.date || s.createdAt.split('T')[0],
+          date: s.date || s.createdAt?.split('T')[0] || '',
           icon: '📖',
         })),
-        ...songs.map((s) => ({
+        ...(songsRes.songs || []).map((s) => ({
           id: s.id,
           title: s.title,
           type: 'song',
           category: s.category,
-          date: s.createdAt.split('T')[0],
+          date: s.createdAt?.split('T')[0] || '',
           icon: '🎵',
         })),
-        ...videos.map((v) => ({
+        ...(videosRes.videos || []).map((v) => ({
           id: v.id,
           title: v.title,
           type: 'video',
-          date: v.createdAt.split('T')[0],
+          date: v.createdAt?.split('T')[0] || '',
           icon: '🎬',
         })),
+        // Sermon videos come from the same sermons collection but have videoUrl
         ...sermonVideos.map((v) => ({
           id: v.id,
           title: v.title,
           type: 'sermonVideo',
           category: v.category,
-          date: v.date || v.createdAt.split('T')[0],
+          videoUrl: v.videoUrl,
+          date: v.date || v.createdAt?.split('T')[0] || '',
           icon: '🎥',
         })),
-        ...devotionals.map((d) => ({
+        ...(devotionalsRes.dailyDevotionals || []).map((d) => ({
           id: d.id,
           title: d.title,
           type: 'dailyDevotional',
           mainText: d.mainText,
-          date: d.date || d.createdAt.split('T')[0],
+          date: d.date || d.createdAt?.split('T')[0] || '',
           icon: '📅',
         })),
       ];
 
       setContent(formatted.sort((a, b) => b.date.localeCompare(a.date)));
-    } catch {
+    } catch (err) {
+      console.error('Content fetch error:', err);
       Alert.alert('Error', 'Failed to load content');
     } finally {
       setLoading(false);
@@ -121,9 +130,9 @@ export default function ContentManager() {
     const collections = {
       sermon: 'sermons',
       song: 'songs',
-      video: 'videos',
-      sermonVideo: 'sermonVideos',
-      dailyDevotional: 'dailyDevotionals',
+      video: 'animations',
+      sermonVideo: 'sermons',
+      dailyDevotional: 'devotionals',
     };
     return collections[type] || 'sermons';
   };
@@ -137,9 +146,12 @@ export default function ContentManager() {
         onPress: async () => {
           try {
             const collection = getCollectionName(item.type);
+            // Pass collection and id separately - apiClient will build the URL
             await apiClient.delete(collection, item.id);
             setContent((prev) => prev.filter((c) => c.id !== item.id));
-          } catch {
+            Alert.alert('Success', 'Deleted successfully');
+          } catch (err) {
+            console.error('Delete error:', err);
             Alert.alert('Error', 'Failed to delete');
           }
         },
@@ -155,6 +167,7 @@ export default function ContentManager() {
       category: item.category || '',
       mainText: item.mainText || '',
       date: item.date || '',
+      videoUrl: item.videoUrl || '',
     });
     setModalVisible(true);
   };
@@ -162,7 +175,14 @@ export default function ContentManager() {
   const closeModal = () => {
     setModalVisible(false);
     setEditingItem(null);
-    setForm({ title: '', content: '', category: '', mainText: '', date: '' });
+    setForm({
+      title: '',
+      content: '',
+      category: '',
+      mainText: '',
+      date: '',
+      videoUrl: '',
+    });
   };
 
   const handleSave = async () => {
@@ -174,22 +194,26 @@ export default function ContentManager() {
     setSaving(true);
     try {
       const collection = getCollectionName(editingItem.type);
-
       const payload = { title: form.title };
 
       // Add type-specific fields
       if (editingItem.type === 'sermon') {
         payload.content = form.content;
-      } else if (
-        editingItem.type === 'song' ||
-        editingItem.type === 'sermonVideo'
-      ) {
-        payload.category = form.category;
+        if (form.category) payload.category = form.category;
+      } else if (editingItem.type === 'song') {
+        if (form.category) payload.category = form.category;
+      } else if (editingItem.type === 'sermonVideo') {
+        if (form.category) payload.category = form.category;
+        if (form.videoUrl) payload.videoUrl = form.videoUrl;
       } else if (editingItem.type === 'dailyDevotional') {
         payload.mainText = form.mainText;
         payload.date = form.date;
+      } else if (editingItem.type === 'video') {
+        // Animation videos
+        if (form.videoUrl) payload.videoUrl = form.videoUrl;
       }
 
+      // Pass collection, id, and data separately - apiClient will build the URL
       await apiClient.put(collection, editingItem.id, payload);
 
       setContent((prev) =>
@@ -202,14 +226,16 @@ export default function ContentManager() {
                 category: form.category,
                 mainText: form.mainText,
                 date: form.date,
+                videoUrl: form.videoUrl,
               }
-            : c
-        )
+            : c,
+        ),
       );
 
       closeModal();
       Alert.alert('Success', 'Updated successfully');
-    } catch {
+    } catch (err) {
+      console.error('Save error:', err);
       Alert.alert('Error', 'Failed to save');
     } finally {
       setSaving(false);
@@ -229,11 +255,11 @@ export default function ContentManager() {
 
   const getTypeColor = (type) => {
     const colorsMap = {
-      sermon: '#3B82F6', // Blue
-      song: '#8B5CF6', // Purple
-      video: '#EF4444', // Red
-      sermonVideo: '#10B981', // Green
-      dailyDevotional: '#F59E0B', // Amber
+      sermon: '#3B82F6',
+      song: '#8B5CF6',
+      video: '#EF4444',
+      sermonVideo: '#10B981',
+      dailyDevotional: '#F59E0B',
     };
     return colorsMap[type] || colors.primary;
   };
@@ -370,6 +396,7 @@ export default function ContentManager() {
                 value={form.title}
                 onChangeText={(t) => setForm({ ...form, title: t })}
                 placeholder="Title"
+                placeholderTextColor={colors.textSecondary}
                 style={[
                   styles.input,
                   { backgroundColor: colors.card, color: colors.text },
@@ -377,24 +404,75 @@ export default function ContentManager() {
               />
 
               {editingItem?.type === 'sermon' && (
+                <>
+                  <TextInput
+                    value={form.category}
+                    onChangeText={(t) => setForm({ ...form, category: t })}
+                    placeholder="Category (Optional)"
+                    placeholderTextColor={colors.textSecondary}
+                    style={[
+                      styles.input,
+                      { backgroundColor: colors.card, color: colors.text },
+                    ]}
+                  />
+                  <TextInput
+                    value={form.content}
+                    onChangeText={(t) => setForm({ ...form, content: t })}
+                    placeholder="Content"
+                    placeholderTextColor={colors.textSecondary}
+                    multiline
+                    style={[
+                      styles.textarea,
+                      { backgroundColor: colors.card, color: colors.text },
+                    ]}
+                  />
+                </>
+              )}
+
+              {editingItem?.type === 'song' && (
                 <TextInput
-                  value={form.content}
-                  onChangeText={(t) => setForm({ ...form, content: t })}
-                  placeholder="Content"
-                  multiline
+                  value={form.category}
+                  onChangeText={(t) => setForm({ ...form, category: t })}
+                  placeholder="Category"
+                  placeholderTextColor={colors.textSecondary}
                   style={[
-                    styles.textarea,
+                    styles.input,
                     { backgroundColor: colors.card, color: colors.text },
                   ]}
                 />
               )}
 
-              {(editingItem?.type === 'song' ||
-                editingItem?.type === 'sermonVideo') && (
+              {editingItem?.type === 'sermonVideo' && (
+                <>
+                  <TextInput
+                    value={form.category}
+                    onChangeText={(t) => setForm({ ...form, category: t })}
+                    placeholder="Category"
+                    placeholderTextColor={colors.textSecondary}
+                    style={[
+                      styles.input,
+                      { backgroundColor: colors.card, color: colors.text },
+                    ]}
+                  />
+                  <TextInput
+                    value={form.videoUrl}
+                    onChangeText={(t) => setForm({ ...form, videoUrl: t })}
+                    placeholder="Video URL"
+                    placeholderTextColor={colors.textSecondary}
+                    style={[
+                      styles.input,
+                      { backgroundColor: colors.card, color: colors.text },
+                    ]}
+                  />
+                </>
+              )}
+
+              {editingItem?.type === 'video' && (
                 <TextInput
-                  value={form.category}
-                  onChangeText={(t) => setForm({ ...form, category: t })}
-                  placeholder="Category"
+                  value={form.videoUrl}
+                  onChangeText={(t) => setForm({ ...form, videoUrl: t })}
+                  placeholder="Video URL"
+                  placeholderTextColor={colors.textSecondary}
                   style={[
                     styles.input,
                     { backgroundColor: colors.card, color: colors.text },
@@ -408,6 +486,7 @@ export default function ContentManager() {
                     value={form.date}
                     onChangeText={(t) => setForm({ ...form, date: t })}
                     placeholder="Date (YYYY-MM-DD)"
+                    placeholderTextColor={colors.textSecondary}
                     style={[
                       styles.input,
                       { backgroundColor: colors.card, color: colors.text },
@@ -417,6 +496,7 @@ export default function ContentManager() {
                     value={form.mainText}
                     onChangeText={(t) => setForm({ ...form, mainText: t })}
                     placeholder="Main Text"
+                    placeholderTextColor={colors.textSecondary}
                     multiline
                     style={[
                       styles.textarea,
@@ -530,8 +610,6 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   bottomSpacer: { height: 40 },
-
-  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -570,6 +648,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
+    fontSize: 16,
   },
   modalFooter: {
     flexDirection: 'row',

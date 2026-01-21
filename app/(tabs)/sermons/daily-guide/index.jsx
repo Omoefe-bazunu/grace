@@ -14,10 +14,7 @@ import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { useLanguage } from '../../../../contexts/LanguageContext';
-import {
-  getDailyDevotionalsPaginated,
-  getDailyDevotionalByDate,
-} from '../../../../services/dataService';
+import { getDailyDevotionalsPaginated } from '../../../../services/dataService';
 import { AppText } from '../../../../components/ui/AppText';
 import {
   Calendar,
@@ -51,39 +48,37 @@ export default function DailyGuideScreen() {
   const fetchDevotionals = async () => {
     try {
       const result = await getDailyDevotionalsPaginated(30, null);
-      setDevotionals(result.dailyDevotionals);
+      setDevotionals(result.dailyDevotionals || []);
 
       // Load devotional for selected date
-      await loadDevotionalForDate(selectedDate);
+      loadDevotionalForDate(selectedDate, result.dailyDevotionals || []);
     } catch (error) {
       console.error('Error fetching devotionals:', error);
+      setDevotionals([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  const loadDevotionalForDate = async (date) => {
-    try {
-      setLoadingDevotional(true);
-      const dateString = format(date, 'yyyy-MM-dd');
+  const loadDevotionalForDate = (date, devotionalsList = null) => {
+    setLoadingDevotional(true);
+    const dateString = format(date, 'yyyy-MM-dd');
 
-      // Try to find devotional for the selected date
-      const devotionalForDate = devotionals.find((d) => d.date === dateString);
+    // Use provided list or current state
+    const listToSearch = devotionalsList || devotionals;
 
-      if (devotionalForDate) {
-        setCurrentDevotional(devotionalForDate);
-      } else {
-        // If not in cached list, try to fetch specifically for this date
-        const devotional = await getDailyDevotionalByDate(dateString);
-        setCurrentDevotional(devotional);
-      }
-    } catch (error) {
-      console.error('Error loading devotional:', error);
+    // Find devotional for the selected date in the list
+    const devotionalForDate = listToSearch.find((d) => d.date === dateString);
+
+    if (devotionalForDate) {
+      setCurrentDevotional(devotionalForDate);
+    } else {
+      // No devotional found for this date - this is normal, not an error
       setCurrentDevotional(null);
-    } finally {
-      setLoadingDevotional(false);
     }
+
+    setLoadingDevotional(false);
   };
 
   useEffect(() => {
@@ -91,10 +86,10 @@ export default function DailyGuideScreen() {
   }, []);
 
   useEffect(() => {
-    if (devotionals.length > 0) {
+    if (devotionals.length > 0 || !loading) {
       loadDevotionalForDate(selectedDate);
     }
-  }, [selectedDate, devotionals]);
+  }, [selectedDate]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -220,12 +215,6 @@ export default function DailyGuideScreen() {
               style={styles.devotionalGradient}
             />
 
-            {/* <View style={styles.devotionalHeader}>
-              <AppText style={[styles.devotionalTitle, { color: colors.text }]}>
-                {currentDevotional.title}
-              </AppText>
-            </View> */}
-
             <View style={styles.mainTextContainer}>
               <AppText style={[styles.mainText, { color: colors.text }]}>
                 {currentDevotional.mainText}
@@ -272,7 +261,7 @@ export default function DailyGuideScreen() {
 
         {/* Recent Devotionals */}
         {devotionals.length > 0 && (
-          <View style={[styles.recentSection, { display: 'none' }]}>
+          <View style={styles.recentSection}>
             <AppText style={[styles.sectionTitle, { color: colors.text }]}>
               Recent Devotionals
             </AppText>
@@ -302,7 +291,7 @@ export default function DailyGuideScreen() {
                     style={[styles.recentTitle, { color: colors.text }]}
                     numberOfLines={2}
                   >
-                    {devotional.title}
+                    {devotional.title || 'Daily Devotional'}
                   </AppText>
                 </TouchableOpacity>
               ))}
@@ -343,7 +332,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 40,
   },
-
   headerTitle: {
     color: '#fff',
     fontSize: 24,

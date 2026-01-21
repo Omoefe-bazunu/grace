@@ -9,9 +9,8 @@ export const getSermonsPaginated = async (limit = 15, after = null) => {
   try {
     const params = { limit, sort: 'createdAt', order: 'desc' };
     if (after) params.after = after;
-    const response = await apiClient.get('sermons', params);
+    const response = await apiClient.get('sermons', params); // Safety check: handle both { sermons: [] } and raw [ ] responses
 
-    // Safety check: handle both { sermons: [] } and raw [ ] responses
     const sermons =
       response.data.sermons ||
       (Array.isArray(response.data) ? response.data : []);
@@ -232,9 +231,8 @@ export const getSermonVideosPaginated = async (limit = 12, after = null) => {
     const params = { limit, sort: 'createdAt', order: 'desc' };
     if (after) params.after = after;
 
-    const response = await apiClient.get('sermons', params);
+    const response = await apiClient.get('sermons', params); // Filter items that actually have a videoUrl property
 
-    // Filter items that actually have a videoUrl property
     const allItems =
       response.data.sermons ||
       (Array.isArray(response.data) ? response.data : []);
@@ -289,9 +287,8 @@ export const getSermonVideosByCategoryPaginated = async (
 export const getSermonVideo = async (id) => {
   try {
     // We target the 'sermons' endpoint because sermonVideos are mapped there in UploadScreen
-    const response = await apiClient.get(`sermons/${id}`);
+    const response = await apiClient.get(`sermons/${id}`); // Safety check: Ensure the returned item actually has a video
 
-    // Safety check: Ensure the returned item actually has a video
     if (response.data && response.data.videoUrl) {
       return response.data;
     }
@@ -401,12 +398,10 @@ export const getDevotional = async (id) => {
 export const getVideosPaginated = async (limit = 12, after = null) => {
   try {
     const params = { limit, sort: 'createdAt', order: 'desc' };
-    if (after) params.after = after;
+    if (after) params.after = after; // Using 'animations' endpoint as defined in backend mapping
 
-    // Using 'animations' endpoint as defined in backend mapping
-    const response = await apiClient.get('animations', params);
+    const response = await apiClient.get('animations', params); // Handle both wrapped object and raw array responses
 
-    // Handle both wrapped object and raw array responses
     const videos =
       response.data.animations ||
       (Array.isArray(response.data) ? response.data : []);
@@ -523,10 +518,9 @@ export const getGalleryMinisters = async () => {
 export const getMinisters = async () => {
   try {
     // Note: ensure this path matches your backend mount point (e.g., 'gallery/ministers')
-    const response = await apiClient.get('gallery/ministers');
-
-    // The controller fetchGallery("galleryMinisters") returns an object
+    const response = await apiClient.get('gallery/ministers'); // The controller fetchGallery("galleryMinisters") returns an object
     // with the key "galleryMinisters"
+
     return response.data.galleryMinisters || [];
   } catch (err) {
     console.error('Error in getMinisters service:', err);
@@ -558,8 +552,7 @@ export const deleteGalleryEntry = async (collection, id) => {
  */
 export const getLiveStreams = async () => {
   try {
-    const response = await apiClient.get('livestreams');
-    // Extracts the array from { liveStreams: [...] }
+    const response = await apiClient.get('livestreams'); // Extracts the array from { liveStreams: [...] }
     return response.data.liveStreams || [];
   } catch (error) {
     console.error('DataService getLiveStreams error:', error);
@@ -643,6 +636,17 @@ export const subscribeToNotices = (callback) => {
   fetch();
   const interval = setInterval(fetch, 30000);
   return () => clearInterval(interval);
+};
+
+// === CONTENT MANAGER HELPERS ===
+
+export const updateContentEntry = async (collection, id, data) => {
+  // collection will be 'sermons', 'songs', 'videos', etc.
+  return await apiClient.put(`${collection}/${id}`, id, data);
+};
+
+export const deleteContentEntry = async (collection, id) => {
+  return await apiClient.delete(`${collection}/${id}`, id);
 };
 
 /**
