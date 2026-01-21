@@ -109,6 +109,16 @@ export default function OnboardingScreen() {
     }
   };
 
+  const handleSkip = async () => {
+    try {
+      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+      router.replace('/(tabs)/home'); // 🏠 Direct to Home
+    } catch (error) {
+      console.error('Failed to skip onboarding:', error);
+      router.replace('/(tabs)/home');
+    }
+  };
+
   const renderSlide = ({ item, index }) => {
     const inputRange = [
       (index - 1) * width,
@@ -182,7 +192,7 @@ export default function OnboardingScreen() {
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        onPress={navigateToNextScreen}
+        onPress={handleSkip}
         style={styles.skipButton}
         activeOpacity={0.7}
       >
