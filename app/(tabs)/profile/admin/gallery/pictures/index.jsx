@@ -167,7 +167,7 @@ export default function UploadGalleryPictures() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} title="Upload Gallery" />
+      <TopNavigation showBackButton={true} title="Upload Pictures" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Event Title *</Text>

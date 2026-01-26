@@ -39,19 +39,22 @@ export default function GalleryScreen() {
   ];
 
   return (
-    // Root View with dynamic background color
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaWrapper
+      style={[
+        styles.cardsWrapper,
+        { flex: 1, backgroundColor: colors.background },
+      ]}
+    >
       <TopNavigation showBackButton={true} />
-
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
-        style={{ backgroundColor: colors.background }}
+        style={{ flex: 1, backgroundColor: colors.background }}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.bannerContainer}>
           <ImageBackground
             source={{
-              uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766007961/GALLERY_c5xle3.png',
+              uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FGALLERY.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
             }}
             style={styles.bannerImage}
           >
@@ -104,14 +107,14 @@ export default function GalleryScreen() {
           ))}
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   bannerContainer: {
     overflow: 'hidden',
-    height: 150,
+    height: 120,
   },
   bannerImage: {
     width: '100%',

@@ -11,15 +11,11 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "UIBackgroundModes": [
-          "audio"
-        ]
+        "UIBackgroundModes": ["audio"]
       }
     },
     "android": {
-      "permissions": [
-        "android.permission.WAKE_LOCK"
-      ],
+      "permissions": ["android.permission.WAKE_LOCK"],
       "package": "com.omoefe01.grace"
     },
     "web": {

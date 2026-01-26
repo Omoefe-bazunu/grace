@@ -33,6 +33,7 @@ const SERMON_CATEGORIES = [
   "God's Kingdom Advocate Volume 2",
   "God's Kingdom Advocate Volume 3",
   'Abridged Bible Subjects',
+  'The Ten Fundamental Truths',
   "GKS President's Feast Message",
   "GKS President's Freedom Day Message",
   "GKS President's Youth Assembly Message",
@@ -121,7 +122,7 @@ export default function TextSermonsScreen() {
       <View style={styles.bannerContainer}>
         <ImageBackground
           source={{
-            uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006515/SERMON_xeajaz.png',
+            uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSERMON.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
           }}
           style={styles.bannerImage}
         >

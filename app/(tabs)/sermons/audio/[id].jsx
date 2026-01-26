@@ -20,13 +20,14 @@ import {
   Rewind,
   Calendar,
   Mic,
-  Repeat, // Added
-  Download, // Added
+  Repeat,
+  Download,
 } from 'lucide-react-native';
 
 // FileSystem & MediaLibrary for Real Saving
 import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
+import { Audio } from 'expo-av';
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AppText } from '../../../../components/ui/AppText';
@@ -34,7 +35,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
 import { getSermon } from '@/services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Audio } from 'expo-av';
 import { TopNavigation } from '../../../../components/TopNavigation';
 
 // --- Placeholder/Skeleton Component ---
@@ -83,13 +83,31 @@ export default function SermonAudioDetailScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isLooping, setIsLooping] = useState(false); // Added Loop State
-  const [isDownloading, setIsDownloading] = useState(false); // Added Download State
+  const [isLooping, setIsLooping] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // --- ANIMATION STATE ---
   const pulse = useRef(new Animated.Value(1)).current;
   const animationRef = useRef(null);
   const isMounted = useRef(true);
+
+  // === CONFIGURE BACKGROUND AUDIO ===
+  useEffect(() => {
+    const configureAudio = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          staysActiveInBackground: true,
+          playsInSilentModeIOS: true,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+        });
+      } catch (error) {
+        console.error('Failed to configure audio session:', error);
+      }
+    };
+
+    configureAudio();
+  }, []);
 
   // --- PULSE ANIMATION LOGIC ---
   const startPulse = useCallback(() => {
@@ -317,7 +335,7 @@ export default function SermonAudioDetailScreen() {
                 transform: [{ scale: pulse }],
                 backgroundColor: colors.card,
                 borderColor: colors.border,
-                elevation: 10, // Shadow matching music player
+                elevation: 10,
               },
             ]}
           >

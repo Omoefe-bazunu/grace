@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ScrollView,
   View,
-  Text,
-  Image,
   StyleSheet,
   ActivityIndicator,
   ImageBackground,
@@ -11,6 +9,8 @@ import {
   TouchableOpacity,
   Modal,
   Dimensions,
+  Image,
+  RefreshControl, // ✅ Added for drag to refresh
 } from 'react-native';
 import { getGalleryPictures } from '../../../../../services/dataService';
 import { groupBy } from 'lodash';
@@ -18,13 +18,13 @@ import { SafeAreaWrapper } from '../../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../../components/TopNavigation';
 import { AppText } from '../../../../../components/ui/AppText';
 import { LinearGradient } from 'expo-linear-gradient';
-import { X } from 'lucide-react-native';
-import { useTheme } from '../../../../../contexts/ThemeContext'; // Added Theme hook
+import { X, Maximize2 } from 'lucide-react-native'; // ✅ Added Maximize2 for indicator
+import { useTheme } from '../../../../../contexts/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
 function EventCard({ event, items, onImagePress }) {
-  const { colors } = useTheme(); // Use theme in child component
+  const { colors } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleScroll = (e) => {
@@ -34,50 +34,70 @@ function EventCard({ event, items, onImagePress }) {
   };
 
   return (
-    <View
-      style={[
-        styles.eventCard,
-        { backgroundColor: colors.surface || colors.card },
-      ]}
-    >
-      <View style={styles.orangeBar} />
+    <View style={[styles.eventCard, { backgroundColor: colors.card }]}>
+      {/* ✅ Modern Top Accent Border */}
+      <View style={[styles.topBorder, { backgroundColor: colors.primary }]} />
+
       <View style={styles.cardContent}>
-        <AppText style={[styles.eventTitle, { color: colors.text }]}>
-          {event || 'Untitled Event'}
-        </AppText>
+        <View style={styles.cardHeader}>
+          <AppText style={[styles.eventTitle, { color: colors.text }]}>
+            {event || 'Untitled Event'}
+          </AppText>
+          {/* ✅ Picture Count Badge */}
+          <View
+            style={[
+              styles.countBadge,
+              { backgroundColor: colors.primary + '15' },
+            ]}
+          >
+            <AppText style={[styles.countText, { color: colors.primary }]}>
+              {items.length} {items.length === 1 ? 'Photo' : 'Photos'}
+            </AppText>
+          </View>
+        </View>
+
         {items[0]?.description && (
           <AppText style={[styles.desc, { color: colors.textSecondary }]}>
             {items[0].description}
           </AppText>
         )}
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.imageRow}
           onScroll={handleScroll}
           scrollEventThrottle={16}
+          snapToInterval={292}
+          decelerationRate="fast"
         >
           {items.map((pic) => (
             <TouchableOpacity
               key={pic.id}
               onPress={() => onImagePress(pic.url)}
               activeOpacity={0.9}
+              style={styles.imageWrapper}
             >
               <Image
                 source={{ uri: pic.url }}
                 style={styles.image}
                 resizeMode="cover"
               />
+              {/* ✅ Fullscreen Hint Indicator */}
+              <View style={styles.fullscreenHint}>
+                <Maximize2 size={16} color="white" />
+              </View>
             </TouchableOpacity>
           ))}
         </ScrollView>
+
         <View style={styles.indicatorContainer}>
           {items.map((_, index) => (
             <View
               key={index}
               style={[
                 styles.indicator,
-                { backgroundColor: colors.border || '#D1D5DB' },
+                { backgroundColor: colors.border },
                 index === currentIndex && [
                   styles.indicatorActive,
                   { backgroundColor: colors.primary },
@@ -92,26 +112,35 @@ function EventCard({ event, items, onImagePress }) {
 }
 
 export default function GalleryPictures() {
-  const { colors } = useTheme(); // Access theme colors
+  const { colors } = useTheme();
   const [pictures, setPictures] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); // ✅ Refresh state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
 
+  const fetchPictures = async () => {
+    try {
+      const data = await getGalleryPictures();
+      const grouped = Object.entries(groupBy(data, 'event')).sort(([a], [b]) =>
+        b.localeCompare(a),
+      );
+      setPictures(grouped);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    (async () => {
-      try {
-        const data = await getGalleryPictures();
-        const grouped = Object.entries(groupBy(data, 'event')).sort(
-          ([a], [b]) => b.localeCompare(a),
-        );
-        setPictures(grouped);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    fetchPictures();
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchPictures();
   }, []);
 
   const filteredPictures = pictures.filter(([event]) =>
@@ -132,12 +161,20 @@ export default function GalleryPictures() {
         <ScrollView
           style={[styles.container, { backgroundColor: colors.background }]}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
         >
           <View style={styles.headerSection}>
             <View style={styles.bannerContainer}>
               <ImageBackground
                 source={{
-                  uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766007961/GALLERY_c5xle3.png',
+                  uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FGALLERY.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
                 }}
                 style={styles.bannerImage}
               >
@@ -148,18 +185,14 @@ export default function GalleryPictures() {
                 <View style={styles.bannerText}>
                   <AppText style={styles.bannerTitle}>PICTURE GALLERY</AppText>
                   <AppText style={styles.bannerSubtitle}>
-                    This screen contains pictures of major events across
-                    different branches of the church. They are displayed here
-                    for the viewing pleasure of all members and non-members.
+                    Memories of major events across different branches, kept for
+                    your viewing.
                   </AppText>
                 </View>
               </ImageBackground>
             </View>
             <View
-              style={[
-                styles.searchContainer,
-                { backgroundColor: colors.surface || colors.card },
-              ]}
+              style={[styles.searchContainer, { backgroundColor: colors.card }]}
             >
               <TextInput
                 style={[styles.searchInput, { color: colors.text }]}
@@ -171,22 +204,22 @@ export default function GalleryPictures() {
             </View>
           </View>
 
-          {filteredPictures.length === 0 ? (
-            <AppText style={[styles.empty, { color: colors.textSecondary }]}>
-              {searchQuery
-                ? 'No events found matching your search'
-                : 'No pictures yet'}
-            </AppText>
-          ) : (
-            filteredPictures.map(([event, items]) => (
-              <EventCard
-                key={event}
-                event={event}
-                items={items}
-                onImagePress={(url) => setSelectedImage(url)}
-              />
-            ))
-          )}
+          <View style={styles.listContainer}>
+            {filteredPictures.length === 0 ? (
+              <AppText style={[styles.empty, { color: colors.textSecondary }]}>
+                {searchQuery ? 'No events found' : 'No pictures yet'}
+              </AppText>
+            ) : (
+              filteredPictures.map(([event, items]) => (
+                <EventCard
+                  key={event}
+                  event={event}
+                  items={items}
+                  onImagePress={(url) => setSelectedImage(url)}
+                />
+              ))
+            )}
+          </View>
         </ScrollView>
 
         <Modal
@@ -228,22 +261,12 @@ export default function GalleryPictures() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bannerContainer: {
-    overflow: 'hidden',
-    height: 200,
-    marginBottom: 10,
-  },
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  bannerContainer: { overflow: 'hidden', height: 120, marginBottom: 10 },
   bannerImage: {
     width: '100%',
-    height: 200,
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -254,27 +277,19 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: 300,
   },
-  bannerText: {
-    paddingHorizontal: 28,
-    position: 'absolute',
-    top: 40,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 1,
-  },
+  bannerText: { paddingHorizontal: 28, alignItems: 'center', zIndex: 1 },
   bannerTitle: {
     color: '#fff',
-    fontSize: 25,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 6,
   },
   bannerSubtitle: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 10,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 12,
   },
   searchContainer: {
     marginHorizontal: 20,
@@ -284,75 +299,96 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
+    elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
-    elevation: 8,
   },
-  searchInput: {
-    flex: 1,
-    paddingVertical: 16,
-    fontSize: 16,
-  },
-  empty: {
-    textAlign: 'center',
-    fontSize: 16,
-    marginTop: 40,
-  },
+  searchInput: { flex: 1, paddingVertical: 16, fontSize: 16 },
+  listContainer: { paddingBottom: 30 },
+  empty: { textAlign: 'center', fontSize: 16, marginTop: 40 },
+
+  // ✅ Modern Card Styling
   eventCard: {
-    flexDirection: 'row',
     marginHorizontal: 16,
     marginBottom: 20,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
   },
-  orangeBar: {
-    width: 6,
-    backgroundColor: '#ca5e0cff',
+  topBorder: {
+    height: 4,
+    width: '100%',
   },
   cardContent: {
-    flex: 1,
-    padding: 20,
+    padding: 16,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   eventTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
+    flex: 1,
+    marginRight: 10,
+  },
+  countBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  countText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   desc: {
     fontSize: 13,
     marginBottom: 16,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   imageRow: {
     flexDirection: 'row',
   },
+  imageWrapper: {
+    marginRight: 12,
+    position: 'relative',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
   image: {
     width: 280,
-    height: 300,
-    borderRadius: 8,
-    marginRight: 12,
+    height: 200, // ✅ Reduced height for a more modern look
+  },
+  fullscreenHint: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 6,
+    borderRadius: 20,
   },
   indicatorContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 14,
     gap: 6,
   },
   indicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   indicatorActive: {
-    width: 24,
+    width: 20,
   },
   modalContainer: {
     flex: 1,

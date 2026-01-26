@@ -359,7 +359,7 @@ export default function SermonDetailScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} title="Sermon Reader" />
+      <TopNavigation showBackButton={true} title="Sermon" />
       <ScrollView
         style={[styles.container, { backgroundColor: colors.background }]}
         showsVerticalScrollIndicator={false}
@@ -375,14 +375,6 @@ export default function SermonDetailScreen() {
                 style={[styles.metaText, { color: colors.textSecondary }]}
               >
                 {sermon.date || 'GKS Sermon'}
-              </AppText>
-            </View>
-            <View style={styles.metaItem}>
-              <User size={14} color={colors.textSecondary} />
-              <AppText
-                style={[styles.metaText, { color: colors.textSecondary }]}
-              >
-                {sermon.minister || 'Minister'}
               </AppText>
             </View>
           </View>

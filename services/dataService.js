@@ -552,7 +552,7 @@ export const deleteGalleryEntry = async (collection, id) => {
  */
 export const getLiveStreams = async () => {
   try {
-    const response = await apiClient.get('livestreams'); // Extracts the array from { liveStreams: [...] }
+    const response = await apiClient.get('livestreams');
     return response.data.liveStreams || [];
   } catch (error) {
     console.error('DataService getLiveStreams error:', error);
@@ -588,11 +588,13 @@ export const createLiveStream = async (streamData) => {
 
 /**
  * PUT update an existing stream
+ * FIXED: Removed duplicate id parameter
  */
 export const updateLiveStream = async (id, streamData) => {
   try {
-    // Hits: PUT /api/livestreams/:id
-    const response = await apiClient.put(`livestreams/${id}`, id, streamData);
+    // The apiClient.put handles the path construction internally
+    // Just pass the full path as first parameter, and data as second
+    const response = await apiClient.put(`livestreams/${id}`, streamData);
     return response.data;
   } catch (error) {
     console.error('DataService updateLiveStream error:', error);
@@ -602,11 +604,13 @@ export const updateLiveStream = async (id, streamData) => {
 
 /**
  * DELETE a stream
+ * FIXED: Removed duplicate id parameter
  */
 export const deleteLiveStream = async (id) => {
   try {
-    // Hits: DELETE /api/livestreams/:id
-    const response = await apiClient.delete(`livestreams/${id}`, id);
+    // The apiClient.delete handles the path construction internally
+    // Just pass the full path as first parameter
+    const response = await apiClient.delete(`livestreams/${id}`);
     return response.data;
   } catch (error) {
     console.error('DataService deleteLiveStream error:', error);

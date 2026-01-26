@@ -34,75 +34,74 @@ export default function ArchiveScreen() {
   ];
 
   return (
-    // Root View with dynamic background color to prevent white flashes in dark mode
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaWrapper
+      style={[
+        styles.cardsWrapper,
+        { flex: 1, backgroundColor: colors.background },
+      ]}
+    >
       <TopNavigation showBackButton={true} />
-
-      <SafeAreaWrapper
-        style={[styles.cardsWrapper, { backgroundColor: colors.background }]}
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
-          showsVerticalScrollIndicator={false}
+        <View style={styles.bannerContainer}>
+          <ImageBackground
+            source={{
+              uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FARCHIVE.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+            }}
+            style={styles.bannerImage}
+          >
+            <LinearGradient
+              colors={['transparent', 'black']}
+              style={styles.bannerGradient}
+            />
+            <View style={styles.bannerText}>
+              <AppText style={styles.bannerTitle}>ARCHIVE</AppText>
+              <AppText style={styles.bannerSubtitle}>
+                Here you will find pictures and videos from old events of the
+                church, kept for reference and memories.
+              </AppText>
+            </View>
+          </ImageBackground>
+        </View>
+
+        <View
+          style={[
+            styles.cardsContainer,
+            { backgroundColor: colors.background },
+          ]}
         >
-          <View style={styles.bannerContainer}>
-            <ImageBackground
-              source={{
-                uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766007961/GALLERY_c5xle3.png',
-              }}
-              style={styles.bannerImage}
+          {cards.map((card, index) => (
+            <TouchableOpacity
+              key={card.route}
+              activeOpacity={0.8}
+              style={[
+                styles.card,
+                {
+                  backgroundColor: colors.card,
+                  shadowColor: colors.text, // Using text color for shadow helps visibility in both modes
+                },
+                index === cards.length - 1 ? styles.lastCardMargin : null,
+              ]}
+              onPress={() => router.push(`/(tabs)/archive/${card.route}/`)}
             >
-              <LinearGradient
-                colors={['transparent', 'black']}
-                style={styles.bannerGradient}
+              {/* Orange accent bar */}
+              <View
+                style={[styles.cardAccent, { backgroundColor: '#ca5e0cff' }]}
               />
-              <View style={styles.bannerText}>
-                <AppText style={styles.bannerTitle}>ARCHIVE</AppText>
-                <AppText style={styles.bannerSubtitle}>
-                  Here you will find pictures and videos from old events of the
-                  church, kept for reference and memories.
+
+              <View style={styles.cardContent}>
+                {card.icon}
+                <AppText style={[styles.cardText, { color: colors.text }]}>
+                  {card.title}
                 </AppText>
               </View>
-            </ImageBackground>
-          </View>
-
-          <View
-            style={[
-              styles.cardsContainer,
-              { backgroundColor: colors.background },
-            ]}
-          >
-            {cards.map((card, index) => (
-              <TouchableOpacity
-                key={card.route}
-                activeOpacity={0.8}
-                style={[
-                  styles.card,
-                  {
-                    backgroundColor: colors.card,
-                    shadowColor: colors.text, // Using text color for shadow helps visibility in both modes
-                  },
-                  index === cards.length - 1 ? styles.lastCardMargin : null,
-                ]}
-                onPress={() => router.push(`/(tabs)/archive/${card.route}/`)}
-              >
-                {/* Orange accent bar */}
-                <View
-                  style={[styles.cardAccent, { backgroundColor: '#ca5e0cff' }]}
-                />
-
-                <View style={styles.cardContent}>
-                  {card.icon}
-                  <AppText style={[styles.cardText, { color: colors.text }]}>
-                    {card.title}
-                  </AppText>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-      </SafeAreaWrapper>
-    </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaWrapper>
   );
 }
 

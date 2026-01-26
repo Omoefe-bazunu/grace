@@ -1,31 +1,36 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   LayoutAnimation,
+  Image,
   Platform,
   UIManager,
   Linking,
+  Dimensions,
 } from 'react-native';
 import {
-  ArrowLeft,
   Mail,
   Heart,
-  Globe,
   Phone,
   MapPin,
-  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  ShieldCheck,
+  Info,
 } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TopNavigation } from '@/components/TopNavigation';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { AppText } from '../../../../components/ui/AppText';
 
+const { width } = Dimensions.get('window');
+
+// Enable layout animations for Android
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental &&
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -35,7 +40,10 @@ export default function AboutScreen() {
   const { translations, aboutUsInfo } = useLanguage();
   const { colors } = useTheme();
 
-  const [expandedSections, setExpandedSections] = useState({});
+  // Initialize with 'mission' expanded for a welcoming start
+  const [expandedSections, setExpandedSections] = useState({
+    mission: true,
+  });
 
   const toggleSection = (key) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -43,189 +51,209 @@ export default function AboutScreen() {
   };
 
   const handleContactPress = (type, value) => {
-    switch (type) {
-      case 'email':
-        Linking.openURL(`mailto:${value}`);
-        break;
-      case 'phone':
-        Linking.openURL(`tel:${value}`);
-        break;
-      case 'social':
-        Linking.openURL(`https://${value}`);
-        break;
-      default:
-        break;
-    }
+    const urls = {
+      email: `mailto:${value}`,
+      phone: `tel:${value}`,
+      social: `https://${value}`,
+    };
+    if (urls[type]) Linking.openURL(urls[type]);
   };
 
-  const renderSection = (key, Icon, title, content) => (
-    <View style={[styles.section, { backgroundColor: colors.card }]}>
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={() => toggleSection(key)}
-        style={styles.sectionHeader}
+  const renderSection = (key, Icon, title, content, isList = false) => {
+    const isExpanded = expandedSections[key];
+    return (
+      <View
+        style={[
+          styles.section,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
       >
-        <Icon size={24} color={colors.primary} />
-        <AppText style={[styles.sectionTitle, { color: colors.text }]}>
-          {title}
-        </AppText>
-      </TouchableOpacity>
-      {expandedSections[key] && (
-        <View style={styles.sectionContentContainer}>
-          <AppText style={[styles.sectionContent, { color: colors.text }]}>
-            {content}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => toggleSection(key)}
+          style={styles.sectionHeader}
+        >
+          <View
+            style={[styles.iconBox, { backgroundColor: colors.primary + '15' }]}
+          >
+            <Icon size={20} color={colors.primary} />
+          </View>
+          <AppText style={[styles.sectionTitle, { color: colors.text }]}>
+            {title}
           </AppText>
-        </View>
-      )}
-    </View>
-  );
+          {isExpanded ? (
+            <ChevronUp size={20} color={colors.textSecondary} />
+          ) : (
+            <ChevronDown size={20} color={colors.textSecondary} />
+          )}
+        </TouchableOpacity>
 
-  return (
-    <SafeAreaWrapper
-      style={[styles.container, { backgroundColor: colors.background }]}
-    >
-      <TopNavigation showBackButton={true} />
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.logoContainer}>
-          <AppText style={[styles.appName, { color: colors.primary }]}>
-            God's Kingdom Society
-          </AppText>
-          <AppText style={[styles.version, { color: colors.textSecondary }]}>
-            Version {aboutUsInfo.version}
-          </AppText>
-        </View>
-
-        {/* Collapsible Sections */}
-        {renderSection(
-          'mission',
-          Heart,
-          translations.ourMission || 'Our Mission',
-          aboutUsInfo.mission,
-        )}
-        {renderSection(
-          'aboutGKS',
-          Globe,
-          "About God's Kingdom Society",
-          aboutUsInfo.content,
-        )}
-
-        {/* Core Beliefs */}
-        {aboutUsInfo.keyBeliefs && (
-          <View style={[styles.section, { backgroundColor: colors.card }]}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => toggleSection('beliefs')}
-              style={styles.sectionHeader}
-            >
-              <Heart size={24} color={colors.primary} />
-              <AppText style={[styles.sectionTitle, { color: colors.text }]}>
-                Our Core Beliefs
+        {isExpanded && (
+          <View style={styles.sectionContentContainer}>
+            {isList && Array.isArray(content) ? (
+              content.map((item, index) => (
+                <View key={index} style={styles.beliefItem}>
+                  <ShieldCheck
+                    size={16}
+                    color={colors.primary}
+                    style={styles.beliefIcon}
+                  />
+                  <AppText style={[styles.beliefText, { color: colors.text }]}>
+                    {item}
+                  </AppText>
+                </View>
+              ))
+            ) : (
+              <AppText style={[styles.sectionContent, { color: colors.text }]}>
+                {content}
               </AppText>
-            </TouchableOpacity>
-            {expandedSections.beliefs && (
-              <View style={styles.sectionContentContainer}>
-                {aboutUsInfo.keyBeliefs.map((belief, index) => (
-                  <View key={index} style={styles.beliefItem}>
-                    <AppText style={[styles.bullet, { color: colors.primary }]}>
-                      •
-                    </AppText>
-                    <AppText
-                      style={[styles.beliefText, { color: colors.text }]}
-                    >
-                      {belief}
-                    </AppText>
-                  </View>
-                ))}
-              </View>
             )}
           </View>
         )}
+      </View>
+    );
+  };
 
-        {/* Contact Info */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => toggleSection('contact')}
-            style={styles.sectionHeader}
+  return (
+    <SafeAreaWrapper style={{ backgroundColor: colors.background }}>
+      <TopNavigation showBackButton={true} />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <LinearGradient
+          colors={[colors.primary, colors.primary + 'CC']}
+          style={styles.hero}
+        >
+          {/* <View style={styles.logoCircle}>
+            <Image
+              source={{
+                uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FLOGO.png?alt=media&token=337b1e4a-eb49-41ad-ae52-3d9b3e1de02f',
+              }}
+              resizeMode="contain"
+            />
+          </View> */}
+          <AppText style={styles.heroTitle}>God's Kingdom Society</AppText>
+          <AppText style={styles.heroSub}>
+            (The Church of the Living God)
+          </AppText>
+          <View style={styles.versionBadge}>
+            <AppText style={styles.versionText}>v{aboutUsInfo.version}</AppText>
+          </View>
+        </LinearGradient>
+
+        <View style={styles.contentBody}>
+          {renderSection(
+            'mission',
+            Heart,
+            translations.ourMission || 'Our Mission',
+            aboutUsInfo.mission,
+          )}
+
+          {renderSection(
+            'aboutGKS',
+            Info,
+            'History & Vision',
+            aboutUsInfo.content,
+          )}
+
+          {renderSection(
+            'beliefs',
+            ShieldCheck,
+            'Core Beliefs',
+            aboutUsInfo.keyBeliefs,
+            true,
+          )}
+
+          {/* Contact Section - Redesigned as dynamic tiles */}
+          <View
+            style={[
+              styles.section,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
           >
-            <Mail size={24} color={colors.primary} />
-            <AppText style={[styles.sectionTitle, { color: colors.text }]}>
-              Contact Information
-            </AppText>
-          </TouchableOpacity>
-          {expandedSections.contact && (
-            <View style={styles.sectionContentContainer}>
-              {/* Headquarters */}
-              <View style={styles.contactItem}>
-                <MapPin size={18} color={colors.textSecondary} />
+            <View style={styles.sectionHeaderNoTouch}>
+              <View
+                style={[
+                  styles.iconBox,
+                  { backgroundColor: colors.primary + '15' },
+                ]}
+              >
+                <Mail size={20} color={colors.primary} />
+              </View>
+              <AppText style={[styles.sectionTitle, { color: colors.text }]}>
+                Connect With Us
+              </AppText>
+            </View>
+
+            <View style={styles.contactGrid}>
+              <View style={styles.addressBox}>
+                <MapPin size={16} color={colors.textSecondary} />
                 <AppText
-                  style={[styles.contactLabel, { color: colors.text }]}
-                ></AppText>
-                <AppText style={[styles.contactValue, { color: colors.text }]}>
+                  style={[styles.addressText, { color: colors.textSecondary }]}
+                >
                   {aboutUsInfo.contactInfo?.headquarters}
                 </AppText>
               </View>
 
-              {/* Phones */}
-              {aboutUsInfo.contactInfo?.phones?.map((phone, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.contactItem}
-                  onPress={() => handleContactPress('phone', phone)}
-                >
-                  <Phone size={18} color={colors.textSecondary} />
-                  <AppText
-                    style={[styles.contactValue, { color: colors.primary }]}
+              <View style={styles.contactRow}>
+                {aboutUsInfo.contactInfo?.phones?.map((phone, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={[
+                      styles.contactTile,
+                      { backgroundColor: colors.background },
+                    ]}
+                    onPress={() => handleContactPress('phone', phone)}
                   >
-                    {phone}
-                  </AppText>
-                </TouchableOpacity>
-              ))}
+                    <Phone size={16} color={colors.primary} />
+                    <AppText style={[styles.tileText, { color: colors.text }]}>
+                      {phone}
+                    </AppText>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-              {/* Emails */}
-              {aboutUsInfo.contactInfo?.emails?.map((email, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.contactItem}
-                  onPress={() => handleContactPress('email', email)}
-                >
-                  <Mail size={18} color={colors.textSecondary} />
-
-                  <AppText
-                    style={[styles.contactValue, { color: colors.primary }]}
+              <View style={styles.contactRow}>
+                {aboutUsInfo.contactInfo?.emails?.map((email, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={[
+                      styles.contactTile,
+                      { backgroundColor: colors.background },
+                    ]}
+                    onPress={() => handleContactPress('email', email)}
                   >
-                    {email}
-                  </AppText>
-                </TouchableOpacity>
-              ))}
+                    <Mail size={16} color={colors.primary} />
+                    <AppText
+                      style={[styles.tileText, { color: colors.text }]}
+                      numberOfLines={1}
+                    >
+                      {email}
+                    </AppText>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-          )}
-        </View>
+          </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <AppText style={[{ color: colors.textSecondary }]}>
-            Designed & Developed By HIGH-ER ENTERPRISES
-          </AppText>
-          <AppText
-            style={[styles.footerSubtext, { color: colors.textSecondary }]}
-          >
-            (+2349043970401; info@higher.com.ng)
-          </AppText>
-          <AppText
-            style={[
-              styles.footerText,
-              { color: colors.textSecondary, marginTop: 8 },
-            ]}
-          >
-            © 2025 God's Kingdom Society. All rights reserved.
-          </AppText>
-          <AppText
-            style={[styles.footerSubtext, { color: colors.textSecondary }]}
-          >
-            Towards God's perfect government
-          </AppText>
+          {/* Footer */}
+          <View style={styles.footer}>
+            <AppText
+              style={[styles.footerMain, { color: colors.textSecondary }]}
+            >
+              Developed by HIGH-ER ENTERPRISES
+            </AppText>
+            <AppText
+              style={[styles.footerCopy, { color: colors.textSecondary }]}
+            >
+              © {new Date().getFullYear()} God's Kingdom Society. All rights
+              reserved.
+            </AppText>
+            <View
+              style={[styles.footerDivider, { backgroundColor: colors.border }]}
+            />
+            <AppText style={[styles.footerMotto, { color: colors.primary }]}>
+              Towards God's perfect government
+            </AppText>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaWrapper>
@@ -233,60 +261,175 @@ export default function AboutScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { flex: 1, paddingHorizontal: 20, paddingTop: 20 },
-  logoContainer: {
+  hero: {
+    paddingVertical: 16,
     alignItems: 'center',
-    marginBottom: 32,
-    paddingVertical: 20,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
-  logo: { fontSize: 64, marginBottom: 16 },
-  appName: {
+  // logoCircle: {
+  //   width: 50,
+  //   height: 50,
+  //   borderRadius: 40,
+  //   backgroundColor: '#1b0c74',
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   shadowColor: '#000',
+  //   shadowOffset: { width: 0, height: 10 },
+  //   shadowOpacity: 0.2,
+  //   shadowRadius: 15,
+  //   elevation: 10,
+  //   marginBottom: 16,
+  // },
+  // logoImage: {
+  //   color: 'white',
+  // },
+  heroTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
+    fontWeight: '900',
+    color: '#FFF',
+    letterSpacing: 0.5,
+    marginBottom: 6,
   },
-  version: { fontSize: 14 },
-  section: {
-    borderRadius: 12,
+  heroSub: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#FFF',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+
+  versionBadge: {
+    marginTop: 8,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  versionText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  contentBody: {
     padding: 20,
+  },
+  section: {
+    borderRadius: 20,
+    padding: 16,
     marginBottom: 16,
+    borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 0,
   },
-  sectionTitle: { fontSize: 14, fontWeight: 'bold', marginLeft: 12 },
-  sectionContentContainer: { marginTop: 12 },
-  sectionContent: { fontSize: 16, lineHeight: 24 },
+  sectionHeaderNoTouch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  iconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  sectionTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  sectionContentContainer: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+  },
+  sectionContent: {
+    fontSize: 15,
+    lineHeight: 24,
+    opacity: 0.9,
+  },
   beliefItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  bullet: { fontSize: 16, marginRight: 8, marginTop: 2 },
-  beliefText: { fontSize: 14, lineHeight: 20, flex: 1 },
-  contactItem: {
+  beliefIcon: {
+    marginTop: 2,
+    marginRight: 10,
+  },
+  beliefText: {
+    fontSize: 14,
+    flex: 1,
+    lineHeight: 20,
+  },
+  contactGrid: {
+    marginTop: 4,
+  },
+  addressBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-    paddingVertical: 4,
+    marginBottom: 16,
+    paddingHorizontal: 4,
   },
-  contactLabel: {
-    fontSize: 14,
+  addressText: {
+    fontSize: 13,
+    marginLeft: 8,
+    lineHeight: 18,
+  },
+  contactRow: {
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    gap: 10,
+  },
+  contactTile: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
+  },
+  tileText: {
+    fontSize: 12,
     fontWeight: '600',
-
-    minWidth: 5,
+    marginLeft: 8,
   },
-  contactValue: { fontSize: 14, flex: 1, marginLeft: 8 },
-  footer: { alignItems: 'center', paddingVertical: 32 },
-  footerText: { fontSize: 14, textAlign: 'center', marginBottom: 4 },
-  footerSubtext: { fontSize: 12, textAlign: 'center', fontStyle: 'italic' },
+  footer: {
+    alignItems: 'center',
+    marginTop: 20,
+    paddingBottom: 40,
+  },
+  footerMain: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  footerCopy: {
+    fontSize: 11,
+    marginTop: 4,
+    opacity: 0.7,
+  },
+  footerDivider: {
+    width: 40,
+    height: 1,
+    marginVertical: 12,
+  },
+  footerMotto: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
 });

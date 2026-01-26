@@ -21,6 +21,9 @@ import {
   Film,
   HandCoins,
   Video,
+  ImageDownIcon,
+  ImageIcon,
+  Brain,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -36,7 +39,7 @@ const cards = [
     title: 'Songs of Praises',
     subtitle: 'Sacred melodies for worship and reflection.',
     image:
-      'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006527/CHOIR_o1kzpt.png',
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FCHOIR.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
     path: '/songs',
     icon: Music,
     accent: '#3B82F6',
@@ -45,7 +48,7 @@ const cards = [
     title: 'Edifying Sermons',
     subtitle: 'Deepen your understanding with sound biblical teaching.',
     image:
-      'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006515/SERMON_xeajaz.png',
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSERMON.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
     path: '/sermons',
     icon: Mic,
     accent: '#10B981',
@@ -54,16 +57,43 @@ const cards = [
     title: 'Bible-based Stories',
     subtitle: 'Spiritual values brought to life through narrative.',
     image:
-      'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006506/ANIMATIONS_hkemjy.png',
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FANIMATION.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
     path: '/animations',
     icon: Film,
     accent: '#F59E0B',
   },
   {
+    title: 'Archive',
+    subtitle: 'Explore historical records and past events of the society.',
+    image:
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FARCHIVE.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+    path: '/archive',
+    icon: ImageDownIcon,
+    accent: '#6366F1',
+  },
+  {
+    title: 'Gallery',
+    subtitle: 'A visual journey through our community and ministers.',
+    image:
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FGALLERY.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+    path: '/profile/gallery',
+    icon: ImageIcon,
+    accent: '#EC4899',
+  },
+  {
+    title: 'Quiz Resources',
+    subtitle: 'Study materials and resources to sharpen your knowledge.',
+    image:
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FQUIZ.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+    path: '/profile/quizresources',
+    icon: Brain,
+    accent: '#14B8A6',
+  },
+  {
     title: 'Tithes & Offering',
     subtitle: 'Contribute to the global mission of the GKS.',
     image:
-      'https://res.cloudinary.com/db6lml0b5/image/upload/v1766007156/PAYMENTS_ccgkod.png',
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FPAYMENTS.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
     path: '',
     icon: HandCoins,
     accent: '#EF4444',
@@ -72,7 +102,7 @@ const cards = [
     title: 'Live Events',
     subtitle: 'Stream services and special events in real-time.',
     image:
-      'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006543/STREAM_og07ye.png',
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSTREAM.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
     path: '/live',
     icon: Video,
     accent: '#8B5CF6',
@@ -134,7 +164,7 @@ export default function HomeScreen() {
       {/* Background Motif */}
       <Image
         source={{
-          uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006527/SHEPHARD_izw9ve.png',
+          uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FHERO.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
         }}
         style={[styles.fixedBackground, { opacity: isDark ? 0.05 : 0.03 }]}
       />
@@ -146,7 +176,7 @@ export default function HomeScreen() {
         <View style={styles.heroSection}>
           <Image
             source={{
-              uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006527/SHEPHARD_izw9ve.png',
+              uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FHERO.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
             }}
             style={styles.heroImage}
           />

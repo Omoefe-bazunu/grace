@@ -572,8 +572,10 @@ What makes GKS unique:
 
 From small beginnings in Lagos, GKS has grown into a vibrant Christian community across Nigeria and beyond, fulfilling the biblical prophecy: "A little one shall become a thousand" (Isaiah 60:22).`,
 
-    mission:
-      'To glorify God and make disciples of all nations through multilingual worship and biblical teaching.',
+    mission: `
+      1. To preach the good news of God's kingdom to the world as the only hope of suffering humanity. 
+      2. To expose all falsehoods which Satan has been using to keep many people in spiritual bondage. 
+      3. To proclaim God's written judgement against the wicked.`,
 
     contactInfo: {
       headquarters: 'Salem City, P.O. Box 424, Warri, Delta State, Nigeria',
@@ -610,8 +612,10 @@ Ohun ti o ṣe GKS yàtọ:
 
 Lati awọn ibẹrẹ kekere ni Lagos, GKS ti dagba si awujọ Kristian alagbara kari Gẹẹsi ati kari, ti n ṣe aṣẹ Bibeli: "Ẹni kekere kan yoo di ẹgbẹrun" (Isaiah 60:22).`,
 
-    mission:
-      'Lati yin Ọlọrun lógo ati lati ṣe awọn ọmọ-ẹhin ti gbogbo orilẹ-ede nipasẹ ijọsin ede pupọ ati ẹkọ Bibeli.',
+    mission: `
+      1. Lati ké ihinrere ìjọba Ọlọrun sí ayé gẹ́gẹ́ bí ìrètí kan ṣoṣo fún aráyé tí ń joró. 
+      2. Lati ṣí gbogbo irọ́ tí Sátánì ti ń lò láti pa ọ̀pọ̀lọpọ̀ ènìyàn mọ́ sínú ìdè tẹ̀mí payá. 
+      3. Lati kéde ìdájọ́ tí Ọlọrun kọ sílẹ̀ sí àwọn ènìyàn búburú.`,
 
     contactInfo: {
       headquarters: 'Ilu Salem, P.O. Apoti 424, Warri, Ipinle Delta, Nigeria',
@@ -648,8 +652,10 @@ Ce qui rend la GKS unique :
 
 Depuis ses modestes débuts à Lagos, la GKS est devenue une communauté chrétienne dynamique à travers le Nigeria et au-delà, accomplissant la prophétie biblique : "Le plus petit deviendra un millier" (Ésaïe 60:22).`,
 
-    mission:
-      'Glorifier Dieu et faire des disciples de toutes les nations par un culte multilingue et un enseignement biblique.',
+    mission: `
+      1. Prêcher la bonne nouvelle du royaume de Dieu au monde comme seul espoir de l'humanité souffrante. 
+      2. Exposer tous les mensonges que Satan utilise pour maintenir de nombreuses personnes dans la servitude spirituelle. 
+      3. Proclamer le jugement écrit de Dieu contre les méchants.`,
 
     contactInfo: {
       headquarters: 'Salem City, B.P. 424, Warri, État du Delta, Nigeria',
@@ -686,8 +692,10 @@ Deɛ ɛma GKS yɛ soronko:
 
 Fi mfitiase a ɛyɛ ketewaa bi wɔ Lagos, GKS ayɛ Kristosom kuo a ɛwɔ tumi wɔ Nigeria nyinaa ne nea ɛboro saa, na ɛdi Bible nkɔm no so: "Obi ketewaa bɛyɛ apem" (Yesaia 60:22).`,
 
-    mission:
-      'Sɛ yɛbɛhyɛ Onyankopɔn anuonyam na yɛayɛ nnipa a wɔfiri aman nyinaa mu nnipa sɛ ɔmɔbɔfo wɔ kasa pii mu nkwahosan ne Bible nkyerɛkyerɛ.',
+    mission: `
+      1. Sɛ yɛbɛka Onyankopɔn ahennie ho asɛmpa akyerɛ wiase sɛ anidasoɔ koro pɛ ma nnipa a wɔrehu amane. 
+      2. Sɛ yɛbɛda atorosɛm nyinaa a Ɔbonsam de aka nnipa pii agu honhom mu nkoasom mu adi. 
+      3. Sɛ yɛbɛpa Onyankopɔn atemmuo a wɔakwerɛ atia abɔnefoɔ.`,
 
     contactInfo: {
       headquarters: 'Salem City, P.O. Box 424, Warri, Delta Mantam, Nigeria',
@@ -724,7 +732,10 @@ GKS的獨特之處：
 
 從拉各斯的小規模開始，GKS已成長為遍及尼日利亞及以外的充滿活力的基督教社區，應驗了聖經預言："至小的族要加增千倍"（以賽亞書60:22）。`,
 
-    mission: '通過多語言崇拜和聖經教導，榮耀神並使萬國成為門徒。',
+    mission: `
+      1. 向世界宣揚上帝王國的福音，作為受苦人類唯一的希望。 
+      2. 揭露撒旦用來使許多人陷入屬靈束縛的所有謊言。 
+      3. 宣佈上帝對惡人的書面審判。`,
 
     contactInfo: {
       headquarters: '塞勒姆市，郵政信箱424，瓦里，三角洲州，尼日利亞',
@@ -761,8 +772,10 @@ Okwenza i-GKS ihluke:
 
 Kusukela ekuqaleni okuncane eLagos, i-GKS isikhule yaba umphakathi ophilayo wobuKristu eNingizimu Afrika nakwezinye izinda, ifezisa isiprofetho seBhayibheli: "Oyincane uyokuba yinkulungwane" (Isaya 60:22).`,
 
-    mission:
-      'Ukudumisa uNkulunkulu nokwenza abafundi bazo zonke izizwe ngokukhonza ngezilimi eziningi nangokufundisa kweBhayibheli.',
+    mission: `
+      1. Ukushumayela izindaba ezinhle zombuso kaNkulunkulu emhlabeni njengethemba kuphela lesintu esihluphekayo. 
+      2. Ukudalula wonke amanga uSathane abewasebenzisa ukugcina abantu abaningi ekuthunjweni ngokomoya. 
+      3. Ukumemezela isahlulelo sikaNkulunkulu esibhaliwe ngokumelene nababi.`,
 
     contactInfo: {
       headquarters: 'Salem City, P.O. Box 424, Warri, Delta State, Nigeria',
@@ -799,8 +812,10 @@ Kinachofanya GKS iwe ya kipekee:
 
 Kuanzia mwanzo mdogo huko Lagos, GKS imekua kuwa jamii hai ya Kikristo nchini Nigeria na nje, ikitimiza unabii wa kibiblia: "Mdogo atakuwa elfu" (Isaya 60:22).`,
 
-    mission:
-      'Kumtukuza Mungu na kufanya wanafunzi wa mataifa yote kupitia ibada ya lugha nyingi na mafundisho ya Biblia.',
+    mission: `
+      1. Kuhubiri habari njema ya ufalme wa Mungu kwa ulimwengu kama tumaini pekee kwa wanadamu wanaoteseka. 
+      2. Kufichua uwongo wote ambao Shetani amekuwa akiutumia kuwaweka watu wengi katika utumwa wa kiroho. 
+      3. Kutangaza hukumu ya Mungu iliyoandikwa dhidi ya waovu.`,
 
     contactInfo: {
       headquarters: 'Jiji la Salem, S.L. 424, Warri, Jimbo la Delta, Nigeria',

@@ -12,7 +12,6 @@ import {
   Platform,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-// 1. Removed Heart Import
 import {
   Play,
   Pause,
@@ -22,9 +21,11 @@ import {
   Download,
 } from 'lucide-react-native';
 
-// 2. FileSystem & MediaLibrary for Real Saving
 import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
+
+// === BACKGROUND AUDIO IMPORT ===
+import { Audio } from 'expo-av';
 
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { usePlayer } from '../../../../contexts/PlayListContext';
@@ -56,8 +57,25 @@ export default function MusicDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // Animation Refs
   const pulse = useRef(new Animated.Value(1)).current;
+
+  // === CONFIGURE BACKGROUND AUDIO ===
+  useEffect(() => {
+    const configureAudio = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          staysActiveInBackground: true,
+          playsInSilentModeIOS: true,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+        });
+      } catch (error) {
+        console.error('Failed to configure audio session:', error);
+      }
+    };
+
+    configureAudio();
+  }, []);
 
   // Animation Logic
   useEffect(() => {
@@ -92,7 +110,6 @@ export default function MusicDetailScreen() {
         const songData = await getSong(id);
         setLocalSongData(songData);
 
-        // Auto-play only if it's a NEW song request
         if (songData && (!currentSong || currentSong.id !== songData.id)) {
           await playSong(songData);
         }
@@ -113,12 +130,10 @@ export default function MusicDetailScreen() {
     }
   };
 
-  // === REAL SAVE TO DEVICE LOGIC ===
   const handleDownload = async () => {
     const songToDownload = currentSong || localSongData;
     if (!songToDownload?.audioUrl) return;
 
-    // 1. Permission Check
     const { status } = await MediaLibrary.requestPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
@@ -130,23 +145,19 @@ export default function MusicDetailScreen() {
 
     setIsDownloading(true);
     try {
-      // 2. Define path
       const filename = `${songToDownload.title.replace(
         /[^a-z0-9]/gi,
         '_',
       )}.mp3`;
       const fileUri = FileSystem.documentDirectory + filename;
 
-      // 3. Download to app cache
       const { uri } = await FileSystem.downloadAsync(
         songToDownload.audioUrl,
         fileUri,
       );
 
-      // 4. Move to System Music/Gallery
       const asset = await MediaLibrary.createAssetAsync(uri);
 
-      // Optional: Organize into an Album on Android
       if (Platform.OS === 'android') {
         const album = await MediaLibrary.getAlbumAsync('GraceApp Music');
         if (album == null) {
@@ -185,7 +196,6 @@ export default function MusicDetailScreen() {
     <SafeAreaWrapper>
       <TopNavigation showBackButton={true} />
       <ScrollView style={{ flex: 1, paddingHorizontal: 20 }}>
-        {/* Album Art */}
         <View style={{ alignItems: 'center', marginVertical: 20 }}>
           <Animated.View
             style={{
@@ -201,7 +211,6 @@ export default function MusicDetailScreen() {
           </Animated.View>
         </View>
 
-        {/* Titles */}
         <View style={{ alignItems: 'center', marginBottom: 30 }}>
           <AppText
             style={{ fontSize: 24, fontWeight: 'bold', color: colors.text }}
@@ -213,7 +222,6 @@ export default function MusicDetailScreen() {
           </AppText>
         </View>
 
-        {/* Progress Bar */}
         <View style={{ marginBottom: 30 }}>
           <View
             style={{
@@ -247,7 +255,6 @@ export default function MusicDetailScreen() {
           </View>
         </View>
 
-        {/* --- CONTROLS ROW (No Heart) --- */}
         <View
           style={{
             flexDirection: 'row',

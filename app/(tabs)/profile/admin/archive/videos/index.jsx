@@ -171,7 +171,7 @@ export default function UploadVideos() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} title="Upload Archive Video" />
+      <TopNavigation showBackButton={true} title="Upload Video" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Event Title *</Text>

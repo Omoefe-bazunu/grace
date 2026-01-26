@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ScrollView,
   View,
-  Text,
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
   ImageBackground,
   TextInput,
+  RefreshControl, // ✅ Added for drag to refresh
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { getGalleryVideos } from '../../../../../services/dataService';
@@ -16,10 +16,10 @@ import { SafeAreaWrapper } from '../../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../../components/TopNavigation';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '../../../../../components/ui/AppText';
-import { useTheme } from '../../../../../contexts/ThemeContext'; // ✅ Import Theme Hook
+import { useTheme } from '../../../../../contexts/ThemeContext';
 
 function EventCard({ event, items }) {
-  const { colors } = useTheme(); // ✅ Access colors for the card
+  const { colors } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleScroll = (e) => {
@@ -30,42 +30,66 @@ function EventCard({ event, items }) {
 
   return (
     <View style={[styles.eventCard, { backgroundColor: colors.card }]}>
-      <View style={styles.orangeBar} />
+      {/* ✅ Modern Top Accent Border */}
+      <View style={[styles.topBorder, { backgroundColor: colors.primary }]} />
+
       <View style={styles.cardContent}>
-        <AppText style={[styles.eventTitle, { color: colors.text }]}>
-          {event || 'Untitled Event'}
-        </AppText>
+        <View style={styles.cardHeader}>
+          <AppText style={[styles.eventTitle, { color: colors.text }]}>
+            {event || 'Untitled Event'}
+          </AppText>
+          {/* ✅ Video Count Badge */}
+          <View
+            style={[
+              styles.countBadge,
+              { backgroundColor: colors.primary + '15' },
+            ]}
+          >
+            <AppText style={[styles.countText, { color: colors.primary }]}>
+              {items.length} {items.length === 1 ? 'Video' : 'Videos'}
+            </AppText>
+          </View>
+        </View>
+
         {items[0]?.description && (
           <AppText style={[styles.desc, { color: colors.textSecondary }]}>
             {items[0].description}
           </AppText>
         )}
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.videoRow}
           onScroll={handleScroll}
           scrollEventThrottle={16}
+          snapToInterval={292}
+          decelerationRate="fast"
         >
           {items.map((vid) => (
-            <TouchableOpacity key={vid.id} style={styles.videoWrapper}>
+            <TouchableOpacity
+              key={vid.id}
+              style={styles.videoWrapper}
+              activeOpacity={0.9}
+            >
               <Video
                 source={{ uri: vid.url }}
                 style={styles.video}
                 useNativeControls
-                resizeMode={ResizeMode.CONTAIN}
+                resizeMode={ResizeMode.COVER}
                 isLooping={false}
               />
             </TouchableOpacity>
           ))}
         </ScrollView>
+
         <View style={styles.indicatorContainer}>
           {items.map((_, index) => (
             <View
               key={index}
               style={[
                 styles.indicator,
-                { backgroundColor: colors.border }, // ✅ Theme-based indicator
+                { backgroundColor: colors.border },
                 index === currentIndex && [
                   styles.indicatorActive,
                   { backgroundColor: colors.primary },
@@ -80,25 +104,36 @@ function EventCard({ event, items }) {
 }
 
 export default function GalleryVideos() {
-  const { colors } = useTheme(); // ✅ Access colors for the screen
+  const { colors } = useTheme();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); // ✅ Refresh state
   const [searchQuery, setSearchQuery] = useState('');
 
+  // ✅ Extracted logic to allow re-fetching on drag
+  const fetchVideos = async () => {
+    try {
+      const data = await getGalleryVideos();
+      const grouped = Object.entries(groupBy(data, 'event')).sort(([a], [b]) =>
+        b.localeCompare(a),
+      );
+      setVideos(grouped);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    (async () => {
-      try {
-        const data = await getGalleryVideos();
-        const grouped = Object.entries(groupBy(data, 'event')).sort(
-          ([a], [b]) => b.localeCompare(a),
-        );
-        setVideos(grouped);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    fetchVideos();
+  }, []);
+
+  // ✅ Refresh Handler
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchVideos();
   }, []);
 
   const filteredVideos = videos.filter(([event]) =>
@@ -118,12 +153,22 @@ export default function GalleryVideos() {
         <TopNavigation showBackButton={true} />
         <ScrollView
           style={[styles.container, { backgroundColor: colors.background }]}
+          showsVerticalScrollIndicator={false}
+          // ✅ Pull to Refresh added here
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
         >
           <View style={styles.headerSection}>
             <View style={styles.bannerContainer}>
               <ImageBackground
                 source={{
-                  uri: 'https://res.cloudinary.com/db6lml0b5/image/upload/v1766007961/GALLERY_c5xle3.png',
+                  uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FGALLERY.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
                 }}
                 style={styles.bannerImage}
               >
@@ -134,9 +179,8 @@ export default function GalleryVideos() {
                 <View style={styles.bannerText}>
                   <AppText style={styles.bannerTitle}>VIDEO GALLERY</AppText>
                   <AppText style={styles.bannerSubtitle}>
-                    This screen contains videos of major events across different
-                    branches of the church. They are displayed here for the
-                    viewing pleasure of all members and non-members.
+                    Major events across our branches, kept for your viewing
+                    pleasure.
                   </AppText>
                 </View>
               </ImageBackground>
@@ -154,17 +198,17 @@ export default function GalleryVideos() {
             </View>
           </View>
 
-          {filteredVideos.length === 0 ? (
-            <AppText style={[styles.empty, { color: colors.textSecondary }]}>
-              {searchQuery
-                ? 'No events found matching your search'
-                : 'No videos yet'}
-            </AppText>
-          ) : (
-            filteredVideos.map(([event, items]) => (
-              <EventCard key={event} event={event} items={items} />
-            ))
-          )}
+          <View style={styles.listContainer}>
+            {filteredVideos.length === 0 ? (
+              <AppText style={[styles.empty, { color: colors.textSecondary }]}>
+                {searchQuery ? 'No events found' : 'No videos yet'}
+              </AppText>
+            ) : (
+              filteredVideos.map(([event, items]) => (
+                <EventCard key={event} event={event} items={items} />
+              ))
+            )}
+          </View>
         </ScrollView>
       </SafeAreaWrapper>
     </View>
@@ -172,22 +216,12 @@ export default function GalleryVideos() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bannerContainer: {
-    overflow: 'hidden',
-    height: 200,
-    marginBottom: 10,
-  },
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  bannerContainer: { overflow: 'hidden', height: 120, marginBottom: 10 },
   bannerImage: {
     width: '100%',
-    height: 200,
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -198,23 +232,19 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: 300,
   },
-  bannerText: {
-    paddingHorizontal: 28,
-    alignItems: 'center',
-    zIndex: 1,
-  },
+  bannerText: { paddingHorizontal: 28, alignItems: 'center', zIndex: 1 },
   bannerTitle: {
     color: '#fff',
-    fontSize: 25,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 6,
   },
   bannerSubtitle: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 10,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 12,
   },
   searchContainer: {
     marginHorizontal: 20,
@@ -224,77 +254,89 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
+    elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
-    elevation: 8,
   },
-  searchInput: {
-    flex: 1,
-    paddingVertical: 16,
-    fontSize: 16,
-  },
-  empty: {
-    textAlign: 'center',
-    fontSize: 16,
-    marginTop: 40,
-  },
+  searchInput: { flex: 1, paddingVertical: 16, fontSize: 16 },
+  listContainer: { paddingBottom: 30 },
+  empty: { textAlign: 'center', fontSize: 16, marginTop: 40 },
+
+  // ✅ Modern Card Styling
   eventCard: {
-    flexDirection: 'row',
     marginHorizontal: 16,
     marginBottom: 20,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
   },
-  orangeBar: {
-    width: 6,
-    backgroundColor: '#ca5e0cff',
+  topBorder: {
+    height: 4,
+    width: '100%',
   },
   cardContent: {
-    flex: 1,
-    padding: 20,
+    padding: 16,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   eventTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
+    flex: 1,
+    marginRight: 10,
+  },
+  countBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  countText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   desc: {
     fontSize: 13,
     marginBottom: 16,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   videoRow: {
     flexDirection: 'row',
   },
   videoWrapper: {
-    marginRight: 12,
-  },
-  video: {
     width: 280,
     height: 180,
-    borderRadius: 8,
+    marginRight: 12,
+    borderRadius: 12,
     backgroundColor: '#000',
+    overflow: 'hidden',
+  },
+  video: {
+    width: '100%',
+    height: '100%',
   },
   indicatorContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 14,
     gap: 6,
   },
   indicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   indicatorActive: {
-    width: 24,
+    width: 20,
   },
 });
