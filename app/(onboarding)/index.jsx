@@ -28,9 +28,9 @@ const slides = [
     colors: ['#113c83', '#022e68'],
     // Placeholder: Church/Cathedral architecture
     bgImage:
-      'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=1000&auto=format&fit=crop',
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FCLOUD.png?alt=media&token=68c44e87-7805-4d68-99c0-48ef2ed559b1',
     imageSrc:
-      'https://firebasestorage.googleapis.com/v0/b/high-481fd.firebasestorage.app/o/logo%201.png?alt=media&token=bd2c3552-c369-47cd-81cd-2f50ff40aa8e',
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FLOGO.png?alt=media&token=337b1e4a-eb49-41ad-ae52-3d9b3e1de02f',
   },
   {
     id: '2',
@@ -41,9 +41,9 @@ const slides = [
     colors: ['#388338', '#1a421a'],
     // Placeholder: Bible/Study
     bgImage:
-      'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?q=80&w=1000&auto=format&fit=crop',
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSERMONBG.png?alt=media&token=95b4b423-4902-4861-928a-0a1b07e4b96c',
     imageSrc:
-      'https://firebasestorage.googleapis.com/v0/b/high-481fd.firebasestorage.app/o/mic%201.png?alt=media&token=a54757d1-5375-467c-95eb-5562b954ff45',
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FMIC.png?alt=media&token=337b1e4a-eb49-41ad-ae52-3d9b3e1de02f',
   },
   {
     id: '3',
@@ -54,9 +54,9 @@ const slides = [
     colors: ['#e7713d', '#a64d25'],
     // Placeholder: Worship/Choir atmosphere
     bgImage:
-      'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1000&auto=format&fit=crop',
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FMICBG.png?alt=media&token=4bd87730-77b1-42a1-b1b3-ea0237074dd6',
     imageSrc:
-      'https://firebasestorage.googleapis.com/v0/b/high-481fd.firebasestorage.app/o/MUSCI.png?alt=media&token=b1114017-7b58-4ff7-9b9d-dc16efe11e3b',
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FMUSIC.png?alt=media&token=337b1e4a-eb49-41ad-ae52-3d9b3e1de02f',
   },
   {
     id: '4',
@@ -67,9 +67,9 @@ const slides = [
     colors: ['#400eb6', '#09228f'],
     // Placeholder: Digital Archive/Library
     bgImage:
-      'https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?q=80&w=1000&auto=format&fit=crop',
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FMOREBG.png?alt=media&token=8f283082-fe5d-4a0b-a173-cb799cefce5b',
     imageSrc:
-      'https://firebasestorage.googleapis.com/v0/b/high-481fd.firebasestorage.app/o/GE.png?alt=media&token=96789499-f3ed-4185-9ca1-3fa786c4e7e2',
+      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FMORE.png?alt=media&token=337b1e4a-eb49-41ad-ae52-3d9b3e1de02f',
   },
 ];
 

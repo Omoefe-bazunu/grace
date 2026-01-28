@@ -139,7 +139,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.signupLink}
           onPress={() => router.push('/(auth)/signup')}
           disabled={isLoading}
@@ -150,7 +150,7 @@ export default function LoginScreen() {
               {translations.signup || 'Sign Up'}
             </Text>
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </ScrollView>
     </SafeAreaView>
   );
