@@ -50,25 +50,15 @@ export default function MusicScreen() {
         setNextCursor(null);
       }
       setError(null);
+
       let result;
+      // ✅ The server now handles the category filtering perfectly
       if (category && category !== 'all') {
-        try {
-          result = await getSongsByCategoryPaginated(
-            category,
-            15,
-            isRefresh ? null : nextCursor,
-          );
-        } catch (categoryError) {
-          const allSongsResult = await getSongsPaginated(
-            15,
-            isRefresh ? null : nextCursor,
-          );
-          result = {
-            songs: allSongsResult.songs.filter((s) => s.category === category),
-            hasMore: allSongsResult.hasMore,
-            nextCursor: allSongsResult.nextCursor,
-          };
-        }
+        result = await getSongsByCategoryPaginated(
+          category,
+          15,
+          isRefresh ? null : nextCursor,
+        );
       } else {
         result = await getSongsPaginated(15, isRefresh ? null : nextCursor);
       }
@@ -77,21 +67,17 @@ export default function MusicScreen() {
         setSongs(result.songs);
       } else {
         setSongs((prev) => {
-          const existingIds = new Set(prev.map((song) => song.id));
-          const uniqueNewSongs = result.songs.filter(
-            (song) => !existingIds.has(song.id),
-          );
-          return [...prev, ...uniqueNewSongs];
+          const existingIds = new Set(prev.map((s) => s.id));
+          const unique = result.songs.filter((s) => !existingIds.has(s.id));
+          return [...prev, ...unique];
         });
       }
 
       setHasMore(result.hasMore);
       setNextCursor(result.nextCursor);
     } catch (error) {
-      setError(error.message || 'Failed to load songs');
-      setSongs([]);
-      setHasMore(false);
-      Alert.alert('Error', 'Unable to load songs. Please try again.');
+      setError('Failed to load songs');
+      Alert.alert('Error', 'Unable to load songs.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -178,30 +164,32 @@ export default function MusicScreen() {
 
   const renderSongItem = ({ item }) => (
     <TouchableOpacity
+      activeOpacity={0.7}
       style={[
-        styles.songCard,
-        { backgroundColor: colors.card, borderColor: colors.primary },
+        styles.songItem,
+        {
+          backgroundColor: colors.card,
+          borderBottomColor: colors.border,
+        },
       ]}
       onPress={() => router.push(`/(tabs)/songs/music/${item.id}`)}
     >
-      <View
-        style={[styles.iconContainer, { backgroundColor: colors.background }]}
-      >
-        <Mic2 size={24} color={colors.primary} />
-      </View>
-      <View style={styles.titleContainer}>
-        <AppText style={[styles.songTitle, { color: colors.text }]}>
+      <View style={styles.songContent}>
+        {/* Title is now far more prominent without the extra clutter */}
+        <AppText
+          numberOfLines={1}
+          style={[styles.songTitle, { color: colors.text }]}
+        >
           {item.title || 'Untitled'}
         </AppText>
+
+        {/* Small Circle Play Icon on the far right */}
+        <View
+          style={[styles.miniPlayIcon, { backgroundColor: colors.primary }]}
+        >
+          <View style={styles.playTriangle} />
+        </View>
       </View>
-      <TouchableOpacity
-        style={[styles.playButton, { backgroundColor: '#ffcc00' }]}
-        onPress={() => router.push(`/(tabs)/songs/music/${item.id}`)}
-      >
-        <AppText style={[styles.playText, { color: '#000' }]}>
-          Start Playing
-        </AppText>
-      </TouchableOpacity>
     </TouchableOpacity>
   );
 
@@ -311,35 +299,59 @@ const styles = StyleSheet.create({
   },
   searchIcon: { marginRight: 10 },
   searchInput: { flex: 1, paddingVertical: 16, fontSize: 16 },
-  list: { paddingHorizontal: 20, paddingVertical: 20 },
-  songCard: {
-    borderLeftWidth: 4,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    gap: 12,
-    flexDirection: 'column',
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+  list: {
+    paddingHorizontal: 16, // Slightly tighter padding for a cleaner list
+    paddingVertical: 10,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+
+  // ✅ New Sleek List Item Style
+  songItem: {
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1, // Traditional list feel
+    borderRadius: 12, // Subtle curve
+    marginBottom: 8, // Small gap between items
+  },
+  songContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  songTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1, // Ensures text takes up available space but doesn't push the icon off
+    paddingRight: 10,
+  },
+  miniPlayIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  titleContainer: { flex: 1 },
-  songTitle: { fontSize: 17, fontWeight: '600', textAlign: 'center' },
-  playButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 25,
+  playTriangle: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 10,
+    borderTopWidth: 6,
+    borderBottomWidth: 6,
+    borderBackWidth: 0,
+    borderLeftColor: '#FFF', // White triangle
+    borderTopColor: 'transparent',
+    borderBottomColor: 'transparent',
+    marginLeft: 3, // Offset to center the triangle visually
   },
-  playText: { fontWeight: '600', fontSize: 14 },
-  empty: { textAlign: 'center', marginTop: 50, fontSize: 16 },
+  empty: {
+    textAlign: 'center',
+    marginTop: 50,
+    fontSize: 16,
+  },
 });

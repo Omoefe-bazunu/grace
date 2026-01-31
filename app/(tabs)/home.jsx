@@ -190,8 +190,7 @@ export default function HomeScreen() {
               Towards God's Perfect Government
             </AppText>
             <AppText style={styles.heroDesc}>
-              Read, listen, and grow in faith through the Church of the Living
-              God.
+              Read, listen, and grow in faith with the Church of the Living God.
             </AppText>
           </View>
         </View>

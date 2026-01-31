@@ -24,7 +24,6 @@ import {
 import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
 
-// === BACKGROUND AUDIO IMPORT ===
 import { Audio } from 'expo-av';
 
 import { useTheme } from '../../../../contexts/ThemeContext';
@@ -33,9 +32,7 @@ import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
 import { getSong } from '../../../../services/dataService';
 import { AppText } from '../../../../components/ui/AppText';
-
-const HARDCODED_ALBUM_ART_URL =
-  'https://res.cloudinary.com/db6lml0b5/image/upload/v1766006527/CHOIR_o1kzpt.png';
+import ChoirImage from '../../../../assets/images/CHOIR.png';
 
 export default function MusicDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -205,7 +202,7 @@ export default function MusicDetailScreen() {
             }}
           >
             <Image
-              source={{ uri: HARDCODED_ALBUM_ART_URL }}
+              source={ChoirImage}
               style={{ width: 250, height: 250, borderRadius: 125 }}
             />
           </Animated.View>

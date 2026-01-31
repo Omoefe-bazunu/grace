@@ -28,7 +28,7 @@ import { subscribeToNotices } from '../services/dataService';
 
 export function TopNavigation({ title, showBackButton = false, onPress }) {
   const { colors, isDark, toggleTheme } = useTheme();
-  const { isAdmin } = useAuth(); // Keeping this for context, though we aren't hiding the button anymore
+  const { isAdmin } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
   const [notices, setNotices] = useState([]);
 
@@ -50,7 +50,7 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
     };
   }, []);
 
-  // Updated menuItems to include Admin Panel by default
+  // ✅ Cleaned up menuItems (Removed Theme Toggle)
   const menuItems = [
     {
       icon: <Info size={20} color={colors.textSecondary} />,
@@ -66,18 +66,6 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
       onPress: () => {
         setShowMenu(false);
         router.push('/profile/contact');
-      },
-    },
-    {
-      icon: isDark ? (
-        <Sun size={20} color={colors.textSecondary} />
-      ) : (
-        <Moon size={20} color={colors.textSecondary} />
-      ),
-      title: isDark ? 'Light Mode' : 'Dark Mode',
-      onPress: () => {
-        setShowMenu(false);
-        toggleTheme();
       },
     },
     {
@@ -138,6 +126,19 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
                   { backgroundColor: '#EF4444', borderColor: colors.surface },
                 ]}
               />
+            )}
+          </TouchableOpacity>
+
+          {/* ✅ Theme Toggle Icon - Moved to main row */}
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            {isDark ? (
+              <Sun size={22} color={colors.text} strokeWidth={1.5} />
+            ) : (
+              <Moon size={22} color={colors.text} strokeWidth={1.5} />
             )}
           </TouchableOpacity>
 

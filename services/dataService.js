@@ -330,6 +330,28 @@ export const getSongsPaginated = async (limit = 15, after = null) => {
   }
 };
 
+export const getSongsByCategoryPaginated = async (
+  category,
+  limit = 15,
+  after = null,
+) => {
+  try {
+    const params = { category, limit, sort: 'title', order: 'asc' };
+    if (after) params.after = after;
+
+    const response = await apiClient.get('songs', params);
+
+    return {
+      songs: response.data.songs || [],
+      hasMore: response.data.pagination?.hasMore || false,
+      nextCursor: response.data.pagination?.nextCursor || null,
+    };
+  } catch (err) {
+    console.error('Error fetching songs by category:', err);
+    return { songs: [], hasMore: false };
+  }
+};
+
 export const getSong = async (id) => {
   try {
     const response = await apiClient.get(`songs/${id}`);

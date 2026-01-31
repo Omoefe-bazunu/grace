@@ -5,8 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Linking,
-  Modal,
-  Alert,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import {
@@ -20,11 +18,10 @@ import {
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { getQuizResource, addQuizHelpQuestion } from '@/services/dataService';
+import { getQuizResource } from '@/services/dataService';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
 import { TopNavigation } from '@/components/TopNavigation';
 import { AppText } from '@/components/ui/AppText';
-import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
 export default function QuizDetailScreen() {
@@ -48,29 +45,6 @@ export default function QuizDetailScreen() {
     };
     fetchQuiz();
   }, [id]);
-
-  const handleAskHelp = async () => {
-    if (!question.trim()) return Alert.alert('Error', 'Please type a question');
-
-    setIsSubmitting(true);
-    try {
-      await addQuizHelpQuestion({
-        quizId: id,
-        name: name,
-        number: number,
-        question: question.trim(),
-        title: quiz?.title,
-      });
-
-      Alert.alert('Sent', 'Your question has been sent to the admins.');
-      setQuestion('');
-      setHelpModalVisible(false);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to send question');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   if (loading || !quiz) return null;
 
@@ -118,7 +92,12 @@ export default function QuizDetailScreen() {
           </AppText>
           <TouchableOpacity
             style={[styles.helpBtn, { backgroundColor: colors.primary + '10' }]}
-            onPress={() => setHelpModalVisible(true)}
+            onPress={() =>
+              router.push({
+                pathname: `/profile/quizresources/${id}/questions`,
+                params: { id, title: quiz.title },
+              })
+            }
           >
             <HelpCircle size={20} color={colors.primary} />
             <AppText style={[styles.helpBtnText, { color: colors.primary }]}>
@@ -127,56 +106,6 @@ export default function QuizDetailScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-
-      {/* Help Request Modal */}
-      <Modal visible={helpModalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-            <View style={styles.modalHeader}>
-              <AppText style={styles.modalTitle}>Ask for Help</AppText>
-              <TouchableOpacity onPress={() => setHelpModalVisible(false)}>
-                <X size={24} color={colors.text} />
-              </TouchableOpacity>
-            </View>
-            <AppText style={styles.modalSub}>Enter your name</AppText>
-            <Input
-              value={name}
-              onChangeText={setName}
-              placeholder="e.g. Please share your name"
-            />
-            <View style={styles.divider}></View>
-
-            <AppText style={styles.modalSub}>
-              Enter Phone number (WhatsApp Preferred)
-            </AppText>
-            <Input
-              value={number}
-              onChangeText={setNumber}
-              placeholder="e.g. Please share your WhatsApp number"
-            />
-
-            <View style={styles.divider}></View>
-
-            <AppText style={styles.modalSub}>
-              Type your question about "{quiz.title}"
-            </AppText>
-            <Input
-              value={question}
-              onChangeText={setQuestion}
-              placeholder="e.g. Please explain Question 4 regarding the Exodus..."
-              multiline
-              numberOfLines={4}
-              style={styles.messageInput}
-            />
-
-            <Button
-              title={isSubmitting ? 'Sending...' : 'Submit Question'}
-              onPress={handleAskHelp}
-              disabled={isSubmitting}
-            />
-          </View>
-        </View>
-      </Modal>
     </SafeAreaWrapper>
   );
 }
@@ -233,6 +162,10 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'flex-end',
   },
   modalContent: {
