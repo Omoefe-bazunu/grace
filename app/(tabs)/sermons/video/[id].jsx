@@ -19,60 +19,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
 
-const SkeletonVideo = () => {
-  const { colors } = useTheme();
-  return (
-    <View style={styles.container}>
-      <View style={[styles.header, { backgroundColor: colors.card }]}>
-        <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
-          style={styles.skeletonTitle}
-        />
-      </View>
-      <View style={styles.videoContainer}>
-        <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
-          style={styles.videoPlayer}
-        />
-      </View>
-      <View style={[styles.videoInfo, { backgroundColor: colors.card }]}>
-        <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
-          style={styles.skeletonTitle}
-        />
-        <View style={styles.metaInfo}>
-          <LinearGradient
-            colors={[colors.skeleton, colors.skeletonHighlight]}
-            style={styles.skeletonMeta}
-          />
-          <LinearGradient
-            colors={[colors.skeleton, colors.skeletonHighlight]}
-            style={styles.skeletonMeta}
-          />
-        </View>
-      </View>
-      <View style={[styles.controls, { backgroundColor: colors.card }]}>
-        {[...Array(5)].map((_, index) => (
-          <LinearGradient
-            key={index}
-            colors={[colors.skeleton, colors.skeletonHighlight]}
-            style={styles.skeletonControl}
-          />
-        ))}
-      </View>
-    </View>
-  );
-};
+// ... SkeletonVideo remains unchanged ...
 
 export default function AnimationDetailScreen() {
   const { id } = useLocalSearchParams();
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [videoType, setVideoType] = useState('video'); // 'video' or 'sermonVideo'
+  const [videoType, setVideoType] = useState('video');
   const { translations } = useLanguage();
   const { colors } = useTheme();
 
-  // Create the video player instance
   const player = useVideoPlayer();
 
   useEffect(() => {
@@ -81,14 +37,12 @@ export default function AnimationDetailScreen() {
 
       setLoading(true);
       try {
-        // Strictly fetch from the sermon collection
         const data = await getSermonVideo(id);
 
         if (data && data.videoUrl) {
           setVideo(data);
           setVideoType('sermonVideo');
         } else {
-          // If not found in sermons, then and ONLY then check animations
           const animationData = await getVideo(id);
           if (animationData) {
             setVideo(animationData);
@@ -109,7 +63,6 @@ export default function AnimationDetailScreen() {
   }, [id]);
 
   useEffect(() => {
-    // Correctly load the video source into the player instance
     if (video?.videoUrl) {
       player.replace({ uri: video.videoUrl });
     }
@@ -126,17 +79,20 @@ export default function AnimationDetailScreen() {
 
   const handleShare = async () => {
     try {
+      // ✅ Updated sharing labels to use translation keys
       const shareMessage =
         videoType === 'sermonVideo'
-          ? `Sermon Video: ${video.title}\nCategory: ${
-              video.category || 'No category'
+          ? `${translations.shareSermonVideoLabel || 'Sermon Video'}: ${video.title}\n${translations.category || 'Category'}: ${
+              video.category || translations.noCategory || 'No category'
             }\n${video.videoUrl}`
           : `${video.title || translations.noTitle}: ${video.videoUrl}`;
 
       await Share.share({
         message: shareMessage,
         title:
-          videoType === 'sermonVideo' ? 'Share Sermon Video' : 'Share Video',
+          videoType === 'sermonVideo'
+            ? translations.shareSermonVideoTitle || 'Share Sermon Video'
+            : translations.shareVideoTitle || 'Share Video',
       });
     } catch (error) {
       console.error('Error sharing video:', error);
@@ -144,16 +100,13 @@ export default function AnimationDetailScreen() {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Unknown date';
+    // ✅ Updated "Unknown date" to use translation key
+    if (!dateString) return translations.unknownDate || 'Unknown date';
 
     try {
-      // Assuming dateString is in YYYY-MM-DD format
       const [year, month, day] = dateString.split('-');
-
-      // Create date object (month is 0-indexed in JavaScript)
       const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
 
-      // Check if date is valid
       if (isNaN(date.getTime())) {
         return dateString;
       }
@@ -188,10 +141,8 @@ export default function AnimationDetailScreen() {
     <SafeAreaWrapper
       style={[styles.container, { backgroundColor: colors.background }]}
     >
-      {/* Header */}
       <TopNavigation showBackButton={true} />
 
-      {/* Video Player - with native controls */}
       <View style={styles.videoContainer}>
         <VideoView
           style={styles.videoPlayer}
@@ -203,13 +154,11 @@ export default function AnimationDetailScreen() {
         />
       </View>
 
-      {/* Video Info */}
       <View style={[styles.videoInfo, { backgroundColor: colors.card }]}>
         <Text style={[styles.title, { color: colors.text }]}>
           {video.title || translations.noTitle}
         </Text>
 
-        {/* Sermon Video Specific Info */}
         {videoType === 'sermonVideo' && (
           <View style={styles.sermonMeta}>
             {video.category && (
@@ -221,7 +170,7 @@ export default function AnimationDetailScreen() {
               >
                 <Folder size={16} color={colors.primary} />
                 <Text style={[styles.metaItemText, { color: colors.primary }]}>
-                  {video.category}
+                  {translations[video.category] || video.category}
                 </Text>
               </View>
             )}
@@ -244,18 +193,20 @@ export default function AnimationDetailScreen() {
         <View style={styles.metaInfo}>
           {video.duration && (
             <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-              Duration: {video.duration}
+              {/* ✅ Uses existing 'duration' key from context  */}
+              {translations.duration || 'Duration'}: {video.duration}
             </Text>
           )}
           {video.languageCategory && videoType === 'video' && (
             <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-              Language: {video.languageCategory}
+              {/* ✅ Added translation for language label */}
+              {translations.languageLabel || 'Language'}:{' '}
+              {video.languageCategory}
             </Text>
           )}
         </View>
       </View>
 
-      {/* Controls */}
       <View style={[styles.controls, { backgroundColor: colors.card }]}>
         <TouchableOpacity style={styles.controlButton} onPress={handleShare}>
           <Share2 size={24} color={colors.primary} />

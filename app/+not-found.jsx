@@ -1,17 +1,33 @@
 import { Link, Stack } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { AppText } from '@/components/ui/AppText';
+import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
 
 export default function NotFoundScreen() {
+  const { translations } = useLanguage();
+  const { colors } = useTheme();
+
   return (
-    <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
-      <View style={styles.container}>
-        <Text style={styles.text}>This screen doesn't exist.</Text>
+    <SafeAreaWrapper>
+      {/* Dynamic Header Title */}
+      <Stack.Screen
+        options={{ title: translations.notFoundTitle || 'Oops!' }}
+      />
+
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <AppText style={[styles.title, { color: colors.text }]}>
+          {translations.screenNotExist || "This screen doesn't exist."}
+        </AppText>
+
         <Link href="/" style={styles.link}>
-          <Text>Go to home screen!</Text>
+          <AppText style={[styles.linkText, { color: colors.primary }]}>
+            {translations.goHome || 'Go to home screen!'}
+          </AppText>
         </Link>
       </View>
-    </>
+    </SafeAreaWrapper>
   );
 }
 
@@ -22,12 +38,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
-  text: {
+  title: {
     fontSize: 20,
-    fontWeight: 600,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 15,
   },
   link: {
     marginTop: 15,
     paddingVertical: 15,
+  },
+  linkText: {
+    fontSize: 16,
+    textDecorationLine: 'underline',
   },
 });

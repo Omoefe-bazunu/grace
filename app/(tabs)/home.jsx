@@ -1,16 +1,15 @@
 import React from 'react';
 import {
   View,
-  Text,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   Image,
   Dimensions,
-  ImageBackground,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext'; // ✅ Added Language Hook
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../components/TopNavigation';
 import { AppText } from '../../components/ui/AppText';
@@ -34,83 +33,85 @@ import Animated, {
 
 const { width } = Dimensions.get('window');
 
-const cards = [
-  {
-    title: 'Songs of Praises',
-    subtitle: 'Sacred melodies for worship and reflection.',
-    image:
-      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FCHOIR.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
-    path: '/songs',
-    icon: Music,
-    accent: '#3B82F6',
-  },
-  {
-    title: 'Edifying Sermons',
-    subtitle: 'Deepen your understanding with sound biblical teaching.',
-    image:
-      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSERMON.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
-    path: '/sermons',
-    icon: Mic,
-    accent: '#10B981',
-  },
-  {
-    title: 'Bible-based Stories',
-    subtitle: 'Spiritual values brought to life through narrative.',
-    image:
-      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FANIMATION.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
-    path: '/animations',
-    icon: Film,
-    accent: '#F59E0B',
-  },
-  {
-    title: 'Archive',
-    subtitle: 'Explore historical records and past events of the society.',
-    image:
-      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FARCHIVE.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
-    path: '/archive',
-    icon: ImageDownIcon,
-    accent: '#6366F1',
-  },
-  {
-    title: 'Gallery',
-    subtitle: 'A visual journey through our community and ministers.',
-    image:
-      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FGALLERY.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
-    path: '/profile/gallery',
-    icon: ImageIcon,
-    accent: '#EC4899',
-  },
-  {
-    title: 'Quiz Resources',
-    subtitle: 'Study materials and resources to sharpen your knowledge.',
-    image:
-      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FQUIZ.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
-    path: '/profile/quizresources',
-    icon: Brain,
-    accent: '#14B8A6',
-  },
-  {
-    title: 'Tithes & Offering',
-    subtitle: 'Contribute to the global mission of the GKS.',
-    image:
-      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FPAYMENTS.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
-    path: '',
-    icon: HandCoins,
-    accent: '#EF4444',
-  },
-  {
-    title: 'Live Events',
-    subtitle: 'Stream services and special events in real-time.',
-    image:
-      'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSTREAM.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
-    path: '/live',
-    icon: Video,
-    accent: '#8B5CF6',
-  },
-];
-
 export default function HomeScreen() {
   const { colors, isDark } = useTheme();
+  const { translations } = useLanguage(); // ✅ Access translations
+
+  // ✅ Updated cards to use translation keys
+  const cards = [
+    {
+      title: translations.homeCardTitleSermons,
+      subtitle: translations.homeCardSubtitleSermons,
+      image:
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSERMON.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+      path: '/sermons',
+      icon: Mic,
+      accent: '#10B981',
+    },
+    {
+      title: translations.homeCardTitleSongs,
+      subtitle: translations.homeCardSubtitleSongs,
+      image:
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FCHOIR.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+      path: '/songs',
+      icon: Music,
+      accent: '#3B82F6',
+    },
+    {
+      title: translations.homeCardTitleStories,
+      subtitle: translations.homeCardSubtitleStories,
+      image:
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FANIMATION.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+      path: '/animations',
+      icon: Film,
+      accent: '#F59E0B',
+    },
+    {
+      title: translations.homeCardTitleArchive,
+      subtitle: translations.homeCardSubtitleArchive,
+      image:
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FARCHIVE.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+      path: '/archive',
+      icon: ImageDownIcon,
+      accent: '#6366F1',
+    },
+    {
+      title: translations.homeCardTitleGallery,
+      subtitle: translations.homeCardSubtitleGallery,
+      image:
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FGALLERY.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+      path: '/profile/gallery',
+      icon: ImageIcon,
+      accent: '#EC4899',
+    },
+    {
+      title: translations.homeCardTitleQuiz,
+      subtitle: translations.homeCardSubtitleQuiz,
+      image:
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FQUIZ.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+      path: '/profile/quizresources',
+      icon: Brain,
+      accent: '#14B8A6',
+    },
+    {
+      title: translations.homeCardTitleGiving,
+      subtitle: translations.homeCardSubtitleGiving,
+      image:
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FPAYMENTS.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+      path: '',
+      icon: HandCoins,
+      accent: '#EF4444',
+    },
+    {
+      title: translations.homeCardTitleLive,
+      subtitle: translations.homeCardSubtitleLive,
+      image:
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSTREAM.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+      path: '/live',
+      icon: Video,
+      accent: '#8B5CF6',
+    },
+  ];
 
   const renderCard = (card, index) => {
     const scale = useSharedValue(1);
@@ -161,7 +162,6 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaWrapper>
-      {/* Background Motif */}
       <Image
         source={{
           uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FHERO.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
@@ -169,10 +169,9 @@ export default function HomeScreen() {
         style={[styles.fixedBackground, { opacity: isDark ? 0.05 : 0.03 }]}
       />
 
-      <TopNavigation title="Grace" />
+      <TopNavigation title={translations.homeNavTitle || 'Grace'} />
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Modern Editorial Banner */}
         <View style={styles.heroSection}>
           <Image
             source={{
@@ -185,19 +184,22 @@ export default function HomeScreen() {
             style={styles.heroGradient}
           />
           <View style={styles.heroTextContainer}>
-            <AppText style={styles.heroLabel}>GOD'S KINGDOM SOCIETY</AppText>
+            <AppText style={styles.heroLabel}>
+              {translations.heroLabel || "GOD'S KINGDOM SOCIETY"}
+            </AppText>
             <AppText style={styles.heroTitle}>
-              Towards God's Perfect Government
+              {translations.heroTitle || "Towards God's Perfect Government"}
             </AppText>
             <AppText style={styles.heroDesc}>
-              Read, listen, and grow in faith with the Church of the Living God.
+              {translations.heroDesc ||
+                'Read, listen, and grow in faith with the Church of the Living God.'}
             </AppText>
           </View>
         </View>
 
         <View style={styles.sectionHeader}>
           <AppText style={[styles.sectionTitle, { color: colors.text }]}>
-            Explore Resources
+            {translations.exploreResources || 'Explore Resources'}
           </AppText>
           <View
             style={[styles.titleLine, { backgroundColor: colors.primary }]}

@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   StyleSheet,
   ImageBackground,
@@ -45,7 +44,10 @@ export default function GalleryScreen() {
         { flex: 1, backgroundColor: colors.background },
       ]}
     >
-      <TopNavigation showBackButton={true} />
+      <TopNavigation
+        showBackButton={true}
+        title={translations.galleryNavTitle || 'Gallery'}
+      />
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         style={{ flex: 1, backgroundColor: colors.background }}
@@ -62,12 +64,13 @@ export default function GalleryScreen() {
               colors={['transparent', 'rgba(0,0,0,0.8)']}
               style={styles.bannerGradient}
             />
-            {/* Restored Center Alignment */}
             <View style={styles.bannerText}>
-              <AppText style={styles.bannerTitle}>GALLERY</AppText>
+              <AppText style={styles.bannerTitle}>
+                {translations.galleryBannerTitle || 'GALLERY'}
+              </AppText>
               <AppText style={styles.bannerSubtitle}>
-                Here you find the profile of ministers of the GKS, pictures and
-                videos of events across the branches of the church.
+                {translations.galleryBannerSubtitle ||
+                  'Here you find the profile of ministers of the GKS, pictures and videos of events across the branches of the church.'}
               </AppText>
             </View>
           </ImageBackground>

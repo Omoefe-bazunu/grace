@@ -17,7 +17,6 @@ import {
   SkipForward,
   SkipBack,
   Calendar,
-  User,
   Volume2,
 } from 'lucide-react-native';
 import { Audio } from 'expo-av';
@@ -36,7 +35,7 @@ const SENTENCE_ENDINGS = /[.!?]+/;
 
 export default function SermonDetailScreen() {
   const { id } = useLocalSearchParams();
-  const { currentLanguage } = useLanguage();
+  const { currentLanguage, translations } = useLanguage(); // ✅ Added translations
   const { colors } = useTheme();
 
   const [sermon, setSermon] = useState(null);
@@ -77,8 +76,8 @@ export default function SermonDetailScreen() {
     let tempChunk = '';
     const sentences = text.split(SENTENCE_ENDINGS);
     for (const sentence of sentences) {
-      const fullSentence =
-        sentence + (text[text.indexOf(sentence) + sentence.length] || '.');
+      const index = text.indexOf(sentence);
+      const fullSentence = sentence + (text[index + sentence.length] || '.');
       if ((tempChunk + fullSentence).length <= MAX_CHARS_PER_CHUNK) {
         tempChunk += fullSentence;
       } else {
@@ -157,7 +156,6 @@ export default function SermonDetailScreen() {
         throw new Error('No audio content received from server');
       }
 
-      // Unload previous sound completely before creating new one
       if (sound) {
         try {
           const status = await sound.getStatusAsync();
@@ -171,14 +169,12 @@ export default function SermonDetailScreen() {
         setSound(null);
       }
 
-      // Write base64 audio to a temporary file
       fileUri = `${FileSystem.cacheDirectory}tts_${Date.now()}.mp3`;
 
       await FileSystem.writeAsStringAsync(fileUri, response.data.audioContent, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      // Create and load the sound
       const { sound: newSound } = await Audio.Sound.createAsync(
         { uri: fileUri },
         { shouldPlay: true },
@@ -191,14 +187,17 @@ export default function SermonDetailScreen() {
       console.error('Audio playback error:', error);
       setGenerating(false);
 
-      // Clean up file if it was created
       if (fileUri) {
         FileSystem.deleteAsync(fileUri, { idempotent: true }).catch(
           console.error,
         );
       }
 
-      Alert.alert('Audio Error', 'Unable to play audio. Please try again.');
+      Alert.alert(
+        translations.audioError || 'Audio Error',
+        translations.audioPlayError ||
+          'Unable to play audio. Please try again.',
+      );
       handleStop();
     }
   };
@@ -209,13 +208,11 @@ export default function SermonDetailScreen() {
       setPlaybackDuration(status.durationMillis || 0);
 
       if (status.didJustFinish) {
-        // Clean up the temporary file
         if (fileUri) {
           FileSystem.deleteAsync(fileUri, { idempotent: true }).catch(
             console.error,
           );
         }
-        // Play next chunk
         playChunk(chunkIndex + 1);
       }
     } else if (status.error) {
@@ -226,7 +223,6 @@ export default function SermonDetailScreen() {
   const handleSpeak = async () => {
     try {
       if (isSpeaking && !isPaused) {
-        // Pause
         if (sound) {
           const status = await sound.getStatusAsync();
           if (status.isLoaded) {
@@ -238,7 +234,6 @@ export default function SermonDetailScreen() {
       }
 
       if (isSpeaking && isPaused) {
-        // Resume
         if (sound) {
           const status = await sound.getStatusAsync();
           if (status.isLoaded) {
@@ -249,13 +244,15 @@ export default function SermonDetailScreen() {
         return;
       }
 
-      // Start new playback
       setIsSpeaking(true);
       setIsPaused(false);
       await playChunk(0);
     } catch (error) {
       console.error('Error in handleSpeak:', error);
-      Alert.alert('Error', 'Failed to control audio playback');
+      Alert.alert(
+        translations.error || 'Error',
+        translations.playbackControlError || 'Failed to control audio playback',
+      );
     }
   };
 
@@ -324,7 +321,10 @@ export default function SermonDetailScreen() {
       sermon;
     if (!contentObj?.content) return;
     await Clipboard.setStringAsync(contentObj.content);
-    Alert.alert('Success', 'Copied to clipboard');
+    Alert.alert(
+      translations.success || 'Success',
+      translations.copiedToClipboard || 'Copied to clipboard',
+    );
   };
 
   if (loading) {
@@ -340,10 +340,13 @@ export default function SermonDetailScreen() {
   if (!sermon) {
     return (
       <SafeAreaWrapper>
-        <TopNavigation showBackButton={true} title="Sermon" />
+        <TopNavigation
+          showBackButton={true}
+          title={translations.sermonDetail || 'Sermon'}
+        />
         <View style={styles.center}>
           <AppText style={{ color: colors.textSecondary }}>
-            Sermon not found
+            {translations.sermonNotFound || 'Sermon not found'}
           </AppText>
         </View>
       </SafeAreaWrapper>
@@ -359,14 +362,17 @@ export default function SermonDetailScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} title="Sermon" />
+      <TopNavigation
+        showBackButton={true}
+        title={translations.sermonDetail || 'Sermon'}
+      />
       <ScrollView
         style={[styles.container, { backgroundColor: colors.background }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
           <AppText style={[styles.title, { color: colors.text }]}>
-            {contentObj.title || 'Untitled'}
+            {contentObj.title || translations.untitled || 'Untitled'}
           </AppText>
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
@@ -374,7 +380,7 @@ export default function SermonDetailScreen() {
               <AppText
                 style={[styles.metaText, { color: colors.textSecondary }]}
               >
-                {sermon.date || 'GKS Sermon'}
+                {sermon.date || translations.gksSermon || 'GKS Sermon'}
               </AppText>
             </View>
           </View>
@@ -390,7 +396,7 @@ export default function SermonDetailScreen() {
             <View style={styles.playerInfo}>
               <Volume2 size={18} color={colors.primary} />
               <AppText style={[styles.playerLabel, { color: colors.text }]}>
-                Audio Assistant
+                {translations.audioAssistant || 'Audio Assistant'}
               </AppText>
             </View>
             <TouchableOpacity
@@ -422,7 +428,8 @@ export default function SermonDetailScreen() {
               <AppText
                 style={[styles.progressText, { color: colors.textSecondary }]}
               >
-                Part {currentChunk + 1} of {totalChunks}
+                {translations.part || 'Part'} {currentChunk + 1}{' '}
+                {translations.of || 'of'} {totalChunks}
               </AppText>
               <AppText
                 style={[styles.progressText, { color: colors.textSecondary }]}

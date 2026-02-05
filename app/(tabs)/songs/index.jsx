@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
-  Text,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { useLanguage } from '../../../contexts/LanguageContext'; // ✅ Added Language Hook
 import { SafeAreaWrapper } from '../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../components/TopNavigation';
 import { getSongsPaginated } from '../../../services/dataService';
@@ -19,19 +19,21 @@ import { AppText } from '../../../components/ui/AppText';
 
 const { width } = Dimensions.get('window');
 
-const featuredPlaylist = {
-  title: 'Theocratic Songs of Praise',
-  subtitle: '(Hymns & Psalms)',
-  button: 'Get Started',
-  isFeatured: true,
-};
-
 export default function SongsScreen() {
-  const { colors } = useTheme(); // ✅ Access theme colors
+  const { colors } = useTheme();
+  const { translations } = useLanguage(); // ✅ Access translations
   const [categories, setCategories] = useState([]);
   const [categoryCounts, setCategoryCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // ✅ Moved featuredPlaylist inside to use translations
+  const featuredPlaylist = {
+    title: translations.featuredSongsTitle || 'Theocratic Songs of Praise',
+    subtitle: translations.featuredSongsSubtitle || '(Hymns & Psalms)',
+    button: translations.getStarted || 'Get Started',
+    isFeatured: true,
+  };
 
   const loadSongs = async () => {
     try {
@@ -144,23 +146,19 @@ export default function SongsScreen() {
         >
           {item.subtitle}
         </AppText>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#FFD700' }]}
-          disabled // Nested touchables can be tricky, the main card handles navigation
-        >
+        <View style={[styles.button, { backgroundColor: '#FFD700' }]}>
           <AppText style={[styles.buttonText, { color: '#000' }]}>
             {item.button}
           </AppText>
-        </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
 
   return (
-    // ✅ Applied root background color
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <SafeAreaWrapper>
-        <TopNavigation title="Songs" />
+        <TopNavigation title={translations.songsNavTitle || 'Songs'} />
         <View style={styles.bannerContainer}>
           <ImageBackground
             source={{
@@ -173,10 +171,12 @@ export default function SongsScreen() {
               style={styles.bannerGradient}
             />
             <View style={styles.bannerText}>
-              <AppText style={styles.bannerTitle}>SONGS OF PRAISE</AppText>
+              <AppText style={styles.bannerTitle}>
+                {translations.songsBannerTitle || 'SONGS OF PRAISE'}
+              </AppText>
               <AppText style={styles.bannerSubtitle}>
-                Worship through a collection of uplifting spiritual songs and
-                hymns that strengthen your faith.
+                {translations.songsBannerSubtitle ||
+                  'Worship through a collection of uplifting spiritual songs and hymns that strengthen your faith.'}
               </AppText>
             </View>
           </ImageBackground>
@@ -184,7 +184,7 @@ export default function SongsScreen() {
         <ScrollView
           contentContainerStyle={{ paddingBottom: 30 }}
           showsVerticalScrollIndicator={false}
-          style={{ backgroundColor: colors.background }} // ✅ Applied theme background
+          style={{ backgroundColor: colors.background }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -204,8 +204,8 @@ export default function SongsScreen() {
                   renderPlaylist(
                     {
                       title: cat,
-                      subtitle: `(${categoryCounts[cat] || 0} songs)`,
-                      button: 'See Playlist',
+                      subtitle: `(${categoryCounts[cat] || 0} ${translations.songsCountLabel || 'songs'})`,
+                      button: translations.seePlaylist || 'See Playlist',
                     },
                     i,
                   ),

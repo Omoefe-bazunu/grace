@@ -63,7 +63,7 @@ const SkeletonCard = () => {
   );
 };
 
-const CategoryCard = ({ category, count, onPress, colors }) => (
+const CategoryCard = ({ category, count, onPress, colors, translations }) => (
   <TouchableOpacity
     style={[styles.categoryCard, { backgroundColor: colors.card }]}
     onPress={onPress}
@@ -80,10 +80,13 @@ const CategoryCard = ({ category, count, onPress, colors }) => (
         style={[styles.categoryTitle, { color: colors.text }]}
         numberOfLines={2}
       >
-        {category}
+        {translations[category] || category}
       </AppText>
       <AppText style={[styles.categoryCount, { color: colors.textSecondary }]}>
-        {count} {count === 1 ? 'video' : 'videos'}
+        {count}{' '}
+        {count === 1
+          ? translations.videoSingular || 'video'
+          : translations.videoPlural || 'videos'}
       </AppText>
     </View>
     <View style={[styles.chevron, { backgroundColor: colors.primary + '15' }]}>
@@ -92,7 +95,7 @@ const CategoryCard = ({ category, count, onPress, colors }) => (
   </TouchableOpacity>
 );
 
-const VideoModalItem = ({ item, colors, onPress }) => (
+const VideoModalItem = ({ item, colors, onPress, translations }) => (
   <TouchableOpacity
     style={[styles.modalVideoCard, { backgroundColor: colors.card }]}
     onPress={onPress}
@@ -148,7 +151,7 @@ const VideoModalItem = ({ item, colors, onPress }) => (
         >
           <PlayIcon size={10} color={colors.primary} />
           <AppText style={[styles.modalBadgeText, { color: colors.primary }]}>
-            Watch
+            {translations.watch || 'Watch'}
           </AppText>
         </View>
         {item.category && (
@@ -161,7 +164,7 @@ const VideoModalItem = ({ item, colors, onPress }) => (
             <AppText
               style={[styles.modalCategoryText, { color: colors.primary }]}
             >
-              {item.category}
+              {translations[item.category] || item.category}
             </AppText>
           </View>
         )}
@@ -169,6 +172,13 @@ const VideoModalItem = ({ item, colors, onPress }) => (
     </View>
   </TouchableOpacity>
 );
+
+const formatDuration = (duration) => {
+  if (!duration) return '--:--';
+  const minutes = Math.floor(duration / 60);
+  const seconds = duration % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
 
 export default function SermonVideosScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -186,7 +196,6 @@ export default function SermonVideosScreen() {
   const { translations } = useLanguage();
   const { colors } = useTheme();
 
-  // Load initial sermon videos and categories
   const loadInitialData = async (isRefresh = false) => {
     try {
       if (isRefresh) {
@@ -200,7 +209,6 @@ export default function SermonVideosScreen() {
       setHasMore(sermonVideosResult.hasMore);
       setNextCursor(sermonVideosResult.nextCursor);
 
-      // Extract unique categories from sermon videos
       const categoriesMap = {};
       sermonVideosResult.sermonVideos.forEach((video) => {
         if (video.category) {
@@ -216,7 +224,7 @@ export default function SermonVideosScreen() {
           category,
           count,
         }))
-        .sort((a, b) => b.count - a.count); // Sort by count descending
+        .sort((a, b) => b.count - a.count);
 
       setSermonVideoCategories(categories);
     } catch (error) {
@@ -291,7 +299,6 @@ export default function SermonVideosScreen() {
       try {
         setLoading(true);
         const results = await searchContentPaginated(query, null, 20, null);
-        // Filter to only show sermon videos in search results
         setSermonVideos(results.sermonVideos || []);
         setHasMore(results.pagination?.hasMore || false);
         setNextCursor(results.pagination?.nextCursor || null);
@@ -312,13 +319,6 @@ export default function SermonVideosScreen() {
     }
     debouncedSearch(searchQuery);
   }, [searchQuery, debouncedSearch]);
-
-  const formatDuration = (duration) => {
-    if (!duration) return '--:--';
-    const minutes = Math.floor(duration / 60);
-    const seconds = duration % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
 
   const renderVideoItem = ({ item }) => (
     <TouchableOpacity
@@ -379,7 +379,7 @@ export default function SermonVideosScreen() {
           >
             <PlayIcon size={12} color={colors.primary} />
             <AppText style={[styles.badgeText, { color: colors.primary }]}>
-              Watch Now
+              {translations.watchNow || 'Watch Now'}
             </AppText>
           </View>
 
@@ -391,7 +391,7 @@ export default function SermonVideosScreen() {
               ]}
             >
               <AppText style={[styles.categoryText, { color: colors.primary }]}>
-                {item.category}
+                {translations[item.category] || item.category}
               </AppText>
             </View>
           )}
@@ -406,12 +406,12 @@ export default function SermonVideosScreen() {
     return (
       <View style={styles.categoriesSection}>
         <AppText style={[styles.sectionTitle, { color: colors.text }]}>
-          Sermon Video Categories
+          {translations.sermonVideoCategoriesTitle || 'Sermon Video Categories'}
         </AppText>
         <AppText
           style={[styles.sectionSubtitle, { color: colors.textSecondary }]}
         >
-          Browse sermons by category
+          {translations.browseSermonsByCategory || 'Browse sermons by category'}
         </AppText>
 
         <View style={styles.categoriesGrid}>
@@ -421,6 +421,7 @@ export default function SermonVideosScreen() {
               category={cat.category}
               count={cat.count}
               colors={colors}
+              translations={translations}
               onPress={() => handleCategoryPress(cat)}
             />
           ))}
@@ -436,7 +437,7 @@ export default function SermonVideosScreen() {
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={colors.primary} />
         <AppText style={[styles.loadingText, { color: colors.textSecondary }]}>
-          Loading more videos...
+          {translations.loadingMoreVideos || 'Loading more videos...'}
         </AppText>
       </View>
     );
@@ -462,12 +463,16 @@ export default function SermonVideosScreen() {
         <VideoIcon size={48} color={colors.primary} />
       </View>
       <AppText style={[styles.emptyTitle, { color: colors.text }]}>
-        {searchQuery ? 'No sermon videos found' : 'No sermon videos available'}
+        {searchQuery
+          ? translations.noSermonVideosFound || 'No sermon videos found'
+          : translations.noSermonVideosAvailable ||
+            'No sermon videos available'}
       </AppText>
       <AppText style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
         {searchQuery
-          ? 'Try adjusting your search terms'
-          : 'Check back later for new sermon videos'}
+          ? translations.adjustSearchTerms || 'Try adjusting your search terms'
+          : translations.checkBackLaterSermons ||
+            'Check back later for new sermon videos'}
       </AppText>
     </View>
   );
@@ -480,9 +485,11 @@ export default function SermonVideosScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} />
+      <TopNavigation
+        showBackButton={true}
+        title={translations.videoSermonsTitle || 'Video Sermons'}
+      />
 
-      {/* Category Videos Modal */}
       <Modal
         visible={categoryModalVisible}
         animationType="slide"
@@ -497,12 +504,16 @@ export default function SermonVideosScreen() {
         >
           <View style={styles.modalHeader}>
             <AppText style={[styles.modalTitle, { color: colors.text }]}>
-              {selectedCategory?.category}
+              {translations[selectedCategory?.category] ||
+                selectedCategory?.category}
             </AppText>
             <AppText
               style={[styles.modalSubtitle, { color: colors.textSecondary }]}
             >
-              {categoryVideos.length} videos
+              {categoryVideos.length}{' '}
+              {categoryVideos.length === 1
+                ? translations.videoSingular || 'video'
+                : translations.videoPlural || 'videos'}
             </AppText>
             <TouchableOpacity
               style={styles.closeButton}
@@ -521,7 +532,7 @@ export default function SermonVideosScreen() {
                   { color: colors.textSecondary },
                 ]}
               >
-                Loading videos...
+                {translations.loadingVideos || 'Loading videos...'}
               </AppText>
             </View>
           ) : (
@@ -531,6 +542,7 @@ export default function SermonVideosScreen() {
                 <VideoModalItem
                   item={item}
                   colors={colors}
+                  translations={translations}
                   onPress={() => handleVideoPress(item)}
                 />
               )}
@@ -545,7 +557,8 @@ export default function SermonVideosScreen() {
                       { color: colors.textSecondary },
                     ]}
                   >
-                    No videos found in this category
+                    {translations.noVideosInCategory ||
+                      'No videos found in this category'}
                   </AppText>
                 </View>
               }
@@ -566,15 +579,17 @@ export default function SermonVideosScreen() {
             style={styles.bannerGradient}
           />
           <View style={styles.bannerText}>
-            <AppText style={styles.bannerTitle}>SERMON VIDEOS</AppText>
+            <AppText style={styles.bannerTitle}>
+              {translations.sermonVideosBannerTitle || 'SERMON VIDEOS'}
+            </AppText>
             <AppText style={styles.bannerSubtitle}>
-              Watch the video versions of sermons organized by categories.
+              {translations.sermonVideosBannerSubtitle ||
+                'Watch the video versions of sermons organized by categories.'}
             </AppText>
           </View>
         </ImageBackground>
       </View>
 
-      {/* Search Bar */}
       <View style={styles.searchWrapper}>
         <View
           style={[styles.searchContainer, { backgroundColor: colors.surface }]}
@@ -583,7 +598,10 @@ export default function SermonVideosScreen() {
             <Search size={18} color={colors.text} />
           </View>
           <TextInput
-            placeholder="Search sermon videos..."
+            placeholder={
+              translations.searchSermonVideosPlaceholder ||
+              'Search sermon videos...'
+            }
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor={colors.textSecondary}
@@ -595,7 +613,7 @@ export default function SermonVideosScreen() {
               style={styles.clearButton}
             >
               <AppText style={[styles.clearText, { color: colors.primary }]}>
-                Clear
+                {translations.clearSearch || 'Clear'}
               </AppText>
             </TouchableOpacity>
           )}
@@ -620,20 +638,17 @@ export default function SermonVideosScreen() {
                   { color: colors.text, marginTop: 20 },
                 ]}
               >
-                Search Results
+                {translations.searchResults || 'Search Results'}
               </AppText>
             )}
           </>
         }
         ListEmptyComponent={
-          // 1. If we are still loading, show skeletons
           loading
             ? renderSkeletonCards()
-            : // 2. ONLY show empty state if user is searching and results are 0
-              searchQuery && sermonVideos.length === 0
+            : searchQuery && sermonVideos.length === 0
               ? renderEmptyState()
-              : // 3. Otherwise, show nothing (null) so the category cards stay clean
-                null
+              : null
         }
         ListFooterComponent={renderFooter}
         refreshControl={

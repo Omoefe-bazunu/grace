@@ -39,10 +39,9 @@ export default function MusicScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [nextCursor, setNextCursor] = useState(null);
   const [error, setError] = useState(null);
-  const { translations } = useLanguage();
-  const { colors } = useTheme(); // ✅ Hook used for dynamic theme
+  const { translations } = useLanguage(); // ✅ Context used for translations
+  const { colors } = useTheme();
 
-  // === DATA FETCHING LOGIC === (Kept identical as requested)
   const loadSongs = async (isRefresh = false) => {
     try {
       if (isRefresh) {
@@ -52,7 +51,6 @@ export default function MusicScreen() {
       setError(null);
 
       let result;
-      // ✅ The server now handles the category filtering perfectly
       if (category && category !== 'all') {
         result = await getSongsByCategoryPaginated(
           category,
@@ -76,8 +74,12 @@ export default function MusicScreen() {
       setHasMore(result.hasMore);
       setNextCursor(result.nextCursor);
     } catch (error) {
-      setError('Failed to load songs');
-      Alert.alert('Error', 'Unable to load songs.');
+      // ✅ Using translation for error handling
+      setError(translations.songLoadError || 'Unable to load songs.');
+      Alert.alert(
+        translations.error || 'Error',
+        translations.songLoadError || 'Unable to load songs.',
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -143,7 +145,7 @@ export default function MusicScreen() {
         setLoading(false);
       }
     }, 500),
-    [category],
+    [category, translations],
   );
 
   useEffect(() => {
@@ -175,15 +177,13 @@ export default function MusicScreen() {
       onPress={() => router.push(`/(tabs)/songs/music/${item.id}`)}
     >
       <View style={styles.songContent}>
-        {/* Title is now far more prominent without the extra clutter */}
         <AppText
           numberOfLines={1}
           style={[styles.songTitle, { color: colors.text }]}
         >
-          {item.title || 'Untitled'}
+          {item.title || translations.untitled}
         </AppText>
 
-        {/* Small Circle Play Icon on the far right */}
         <View
           style={[styles.miniPlayIcon, { backgroundColor: colors.primary }]}
         >
@@ -204,7 +204,10 @@ export default function MusicScreen() {
           resizeMode="cover"
         >
           <View style={styles.headerOverlay} />
-          <AppText style={styles.headerTitle}>{category || 'Category'}</AppText>
+          {/* ✅ Translation for Category label */}
+          <AppText style={styles.headerTitle}>
+            {category || translations.categoryLabel}
+          </AppText>
         </ImageBackground>
 
         <View style={[styles.searchWrapper, { backgroundColor: colors.card }]}>
@@ -214,7 +217,7 @@ export default function MusicScreen() {
             style={styles.searchIcon}
           />
           <TextInput
-            placeholder="Search songs..."
+            placeholder={translations.searchSongsPlaceholder}
             placeholderTextColor={colors.textSecondary}
             style={[styles.searchInput, { color: colors.text }]}
             value={searchQuery}
@@ -253,7 +256,7 @@ export default function MusicScreen() {
               />
             ) : (
               <AppText style={[styles.empty, { color: colors.textSecondary }]}>
-                No songs found
+                {translations.noSongs}
               </AppText>
             )
           }

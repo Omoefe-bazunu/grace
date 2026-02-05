@@ -23,12 +23,14 @@ import {
 } from 'lucide-react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext'; // ✅ Added Language Hook
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { subscribeToNotices } from '../services/dataService';
 
 export function TopNavigation({ title, showBackButton = false, onPress }) {
   const { colors, isDark, toggleTheme } = useTheme();
   const { isAdmin } = useAuth();
+  const { translations } = useLanguage(); // ✅ Access translations
   const [showMenu, setShowMenu] = useState(false);
   const [notices, setNotices] = useState([]);
 
@@ -50,11 +52,10 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
     };
   }, []);
 
-  // ✅ Cleaned up menuItems (Removed Theme Toggle)
   const menuItems = [
     {
       icon: <Info size={20} color={colors.textSecondary} />,
-      title: 'About',
+      title: translations.about || 'About',
       onPress: () => {
         setShowMenu(false);
         router.push('/profile/about');
@@ -62,20 +63,25 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
     },
     {
       icon: <MessageCircle size={20} color={colors.textSecondary} />,
-      title: 'Contact',
+      title: translations.contact || 'Contact',
       onPress: () => {
         setShowMenu(false);
         router.push('/profile/contact');
       },
     },
-    {
-      icon: <Settings size={20} color={colors.primary} />,
-      title: 'Admin Panel',
-      onPress: () => {
-        setShowMenu(false);
-        router.push('/profile/admin');
-      },
-    },
+    // Only show Admin Panel if user has rights
+    ...(isAdmin
+      ? [
+          {
+            icon: <Settings size={20} color={colors.primary} />,
+            title: translations.adminPanel || 'Admin Panel',
+            onPress: () => {
+              setShowMenu(false);
+              router.push('/profile/admin');
+            },
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -129,7 +135,6 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
             )}
           </TouchableOpacity>
 
-          {/* ✅ Theme Toggle Icon - Moved to main row */}
           <TouchableOpacity
             style={styles.iconButton}
             onPress={toggleTheme}
@@ -167,7 +172,7 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
                 ]}
                 allowFontScaling={false}
               >
-                Options
+                {translations.options || 'Options'}
               </Text>
               <LanguageSwitcher />
             </View>

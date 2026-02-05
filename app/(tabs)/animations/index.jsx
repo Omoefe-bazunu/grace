@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
-  Text,
   TextInput,
   FlatList,
   TouchableOpacity,
@@ -9,18 +8,10 @@ import {
   ImageBackground,
   RefreshControl,
   ActivityIndicator,
-  // Image is no longer needed for the video card, but kept just in case
-  Image,
+  Text,
 } from 'react-native';
 import { router } from 'expo-router';
-import {
-  Search,
-  Play,
-  Clock,
-  Film,
-  PlayIcon,
-  Video as VideoIcon,
-} from 'lucide-react-native';
+import { Search, Play, Clock, Film, PlayIcon } from 'lucide-react-native';
 
 import { Video } from 'expo-av';
 
@@ -66,7 +57,7 @@ export default function AnimationsScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [nextCursor, setNextCursor] = useState(null);
-  const { translations } = useLanguage();
+  const { translations } = useLanguage(); // ✅ Accessing translations
   const { colors } = useTheme();
 
   const loadVideos = async (isRefresh = false) => {
@@ -157,32 +148,24 @@ export default function AnimationsScreen() {
       onPress={() => router.push(`/(tabs)/animations/${item.id}`)}
       activeOpacity={0.7}
     >
-      {/* Thumbnail Container */}
       <View style={styles.thumbnailContainer}>
-        {/* MODIFICATION: Using Video component instead of Image */}
         <Video
-          // IMPORTANT: Use item.videoUrl for the actual video source
           source={{ uri: item.videoUrl }}
           style={styles.thumbnail}
           resizeMode="cover"
-          shouldPlay={true} // Auto-play the video snippet
-          isLooping={true} // Loop the video
-          isMuted={true} // Mute for automatic playback
-          useNativeControls={false} // Hide controls for a cleaner snippet look
+          shouldPlay={true}
+          isLooping={true}
+          isMuted={true}
+          useNativeControls={false}
           onError={(e) => {
             console.error('Video load error:', e.error);
           }}
-          // The posterSource can be set to item.thumbnailUrl for a fallback/initial image
-          // posterSource={{ uri: item.thumbnailUrl }}
-          // usePoster={true}
         />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.7)']}
           style={styles.thumbnailOverlay}
         />
 
-        {/* Play Button Overlay (Kept, but is visually redundant for an auto-playing snippet. 
-            You may want to remove it or make it just a pause/unmute indicator.) */}
         <View style={styles.playButtonOverlay}>
           <View
             style={[styles.playButton, { backgroundColor: colors.primary }]}
@@ -191,7 +174,6 @@ export default function AnimationsScreen() {
           </View>
         </View>
 
-        {/* Duration Badge */}
         {item.duration && (
           <View style={styles.durationBadge}>
             <Clock size={12} color="#fff" />
@@ -202,7 +184,6 @@ export default function AnimationsScreen() {
         )}
       </View>
 
-      {/* Video Info */}
       <View style={styles.videoInfo}>
         <Text
           style={[styles.videoTitle, { color: colors.text }]}
@@ -220,7 +201,7 @@ export default function AnimationsScreen() {
           >
             <PlayIcon size={12} color={colors.primary} />
             <Text style={[styles.badgeText, { color: colors.primary }]}>
-              Watch Now
+              {translations.watchNow || 'Watch Now'}
             </Text>
           </View>
 
@@ -248,7 +229,7 @@ export default function AnimationsScreen() {
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={colors.primary} />
         <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-          Loading more videos...
+          {translations.loadingMoreVideos || 'Loading more videos...'}
         </Text>
       </View>
     );
@@ -274,12 +255,14 @@ export default function AnimationsScreen() {
         <Film size={48} color={colors.primary} />
       </View>
       <Text style={[styles.emptyTitle, { color: colors.text }]}>
-        {searchQuery ? 'No videos found' : 'No animations available'}
+        {searchQuery
+          ? translations.noVideosFound || 'No videos found'
+          : translations.noAnimationsAvailable || 'No animations available'}
       </Text>
       <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
         {searchQuery
-          ? 'Try adjusting your search terms'
-          : 'Check back later for new content'}
+          ? translations.adjustSearchTerms || 'Try adjusting your search terms'
+          : translations.checkBackLater || 'Check back later for new content'}
       </Text>
     </View>
   );
@@ -292,7 +275,7 @@ export default function AnimationsScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title={'Animations'} />
+      <TopNavigation title={translations.animations || 'Animations'} />
       <View style={styles.bannerContainer}>
         <ImageBackground
           source={{
@@ -305,25 +288,28 @@ export default function AnimationsScreen() {
             style={styles.bannerGradient}
           />
           <View style={styles.bannerText}>
-            <Text style={styles.bannerTitle}>BIBLE-BASED STORIES</Text>
+            <Text style={styles.bannerTitle}>
+              {translations.animationsBannerTitle || 'BIBLE-BASED STORIES'}
+            </Text>
             <Text style={styles.bannerSubtitle}>
-              Learn the word of God through visual illustrations that brings the
-              stories and characters to life.
+              {translations.animationsBannerSubtitle ||
+                'Learn the word of God through visual illustrations that brings the stories and characters to life.'}
             </Text>
           </View>
         </ImageBackground>
       </View>
 
-      {/* Search Bar */}
       <View style={styles.searchWrapper}>
         <View
           style={[styles.searchContainer, { backgroundColor: colors.surface }]}
         >
-          <View style={[styles.searchIcon, ,]}>
+          <View style={styles.searchIcon}>
             <Search size={18} color={colors.text} />
           </View>
           <TextInput
-            placeholder={translations.search || 'Search animations...'}
+            placeholder={
+              translations.searchAnimationsPlaceholder || 'Search animations...'
+            }
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor={colors.textSecondary}
@@ -335,28 +321,12 @@ export default function AnimationsScreen() {
               style={styles.clearButton}
             >
               <Text style={[styles.clearText, { color: colors.primary }]}>
-                Clear
+                {translations.clear || 'Clear'}
               </Text>
             </TouchableOpacity>
           )}
         </View>
       </View>
-
-      {/* Results Count */}
-      {/* {!loading && videos.length > 0 && (
-        <View style={styles.resultsHeader}>
-          <Text
-            style={[
-              styles.resultsCount,
-              { color: colors.textSecondary, textAlign: 'center' },
-            ]}
-          >
-            {videos.length} {videos.length === 1 ? 'video' : 'videos'}
-            {searchQuery ? ' found' : ' available'}
-            {hasMore && !searchQuery && '+'}
-          </Text>
-        </View>
-      )} */}
 
       <FlatList
         data={loading ? [] : videos}
@@ -364,7 +334,6 @@ export default function AnimationsScreen() {
         keyExtractor={(item) => item.id}
         numColumns={1}
         contentContainerStyle={styles.listContainer}
-        // columnWrapperStyle={styles.row}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={<View style={styles.headerSpacer} />}
         ListEmptyComponent={

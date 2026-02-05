@@ -30,7 +30,6 @@ import { AppText } from '../../../../components/ui/AppText';
 
 const { width } = Dimensions.get('window');
 
-// Enable layout animations for Android
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental &&
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -40,7 +39,6 @@ export default function AboutScreen() {
   const { translations, aboutUsInfo } = useLanguage();
   const { colors } = useTheme();
 
-  // Initialize with 'mission' expanded for a welcoming start
   const [expandedSections, setExpandedSections] = useState({
     mission: true,
   });
@@ -116,23 +114,20 @@ export default function AboutScreen() {
 
   return (
     <SafeAreaWrapper style={{ backgroundColor: colors.background }}>
-      <TopNavigation showBackButton={true} />
+      <TopNavigation
+        showBackButton={true}
+        title={translations.aboutUsNav || 'About Us'}
+      />
       <ScrollView showsVerticalScrollIndicator={false}>
         <LinearGradient
           colors={[colors.primary, colors.primary + 'CC']}
           style={styles.hero}
         >
-          {/* <View style={styles.logoCircle}>
-            <Image
-              source={{
-                uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FLOGO.png?alt=media&token=337b1e4a-eb49-41ad-ae52-3d9b3e1de02f',
-              }}
-              resizeMode="contain"
-            />
-          </View> */}
-          <AppText style={styles.heroTitle}>God's Kingdom Society</AppText>
+          <AppText style={styles.heroTitle}>
+            {translations.churchName || "God's Kingdom Society"}
+          </AppText>
           <AppText style={styles.heroSub}>
-            (The Church of the Living God)
+            {translations.churchSlogan || '(The Church of the Living God)'}
           </AppText>
           <View style={styles.versionBadge}>
             <AppText style={styles.versionText}>v{aboutUsInfo.version}</AppText>
@@ -150,19 +145,18 @@ export default function AboutScreen() {
           {renderSection(
             'aboutGKS',
             Info,
-            'History & Vision',
+            translations.historyVision || 'History & Vision',
             aboutUsInfo.content,
           )}
 
           {renderSection(
             'beliefs',
             ShieldCheck,
-            'Core Beliefs',
+            translations.coreBeliefs || 'Core Beliefs',
             aboutUsInfo.keyBeliefs,
             true,
           )}
 
-          {/* Contact Section - Redesigned as dynamic tiles */}
           <View
             style={[
               styles.section,
@@ -179,7 +173,7 @@ export default function AboutScreen() {
                 <Mail size={20} color={colors.primary} />
               </View>
               <AppText style={[styles.sectionTitle, { color: colors.text }]}>
-                Connect With Us
+                {translations.connectWithUs || 'Connect With Us'}
               </AppText>
             </View>
 
@@ -234,24 +228,24 @@ export default function AboutScreen() {
             </View>
           </View>
 
-          {/* Footer */}
           <View style={styles.footer}>
             <AppText
               style={[styles.footerMain, { color: colors.textSecondary }]}
             >
-              Developed by HIGH-ER ENTERPRISES
+              {translations.developedBy || 'Developed by HIGH-ER ENTERPRISES'}
             </AppText>
             <AppText
               style={[styles.footerCopy, { color: colors.textSecondary }]}
             >
-              © {new Date().getFullYear()} God's Kingdom Society. All rights
-              reserved.
+              © {new Date().getFullYear()}{' '}
+              {translations.churchName || "God's Kingdom Society"}.{' '}
+              {translations.allRightsReserved || 'All rights reserved.'}
             </AppText>
             <View
               style={[styles.footerDivider, { backgroundColor: colors.border }]}
             />
             <AppText style={[styles.footerMotto, { color: colors.primary }]}>
-              Towards God's perfect government
+              {translations.churchMotto || "Towards God's perfect government"}
             </AppText>
           </View>
         </View>

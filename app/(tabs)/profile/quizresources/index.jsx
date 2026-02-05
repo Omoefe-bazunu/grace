@@ -19,6 +19,8 @@ import { AppText } from '../../../../components/ui/AppText';
 import debounce from 'lodash.debounce';
 
 const QuizCard = ({ item, colors }) => {
+  const { translations } = useLanguage(); // ✅ Access translations inside card
+
   const openPdf = () => {
     if (item.pdfUrl) Linking.openURL(item.pdfUrl);
   };
@@ -60,7 +62,9 @@ const QuizCard = ({ item, colors }) => {
           onPress={openPdf}
         >
           <Download size={16} color="#FFF" />
-          <AppText style={styles.actionBtnText}>Download PDF</AppText>
+          <AppText style={styles.actionBtnText}>
+            {translations.downloadPdf || 'Download PDF'}
+          </AppText>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -72,7 +76,7 @@ const QuizCard = ({ item, colors }) => {
           <AppText
             style={[styles.detailsBtnText, { color: colors.textSecondary }]}
           >
-            Details
+            {translations.details || 'Details'}
           </AppText>
           <ChevronRight size={16} color={colors.textSecondary} />
         </TouchableOpacity>
@@ -88,6 +92,7 @@ export default function QuizResourcesScreen() {
   const [loading, setLoading] = useState(true);
 
   const { colors } = useTheme();
+  const { translations } = useLanguage(); // ✅ Access translations
 
   useEffect(() => {
     fetchQuizzes();
@@ -127,13 +132,19 @@ export default function QuizResourcesScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton title="Quiz " />
+      <TopNavigation
+        showBackButton
+        title={translations.quizNavTitle || 'Quiz Resources'}
+      />
 
       <View style={styles.container}>
         <View style={[styles.searchBar, { backgroundColor: colors.surface }]}>
           <Search size={20} color={colors.textSecondary} />
           <TextInput
-            placeholder="Search by title, year, or category..."
+            placeholder={
+              translations.quizSearchPlaceholder ||
+              'Search by title, year, or category...'
+            }
             value={searchQuery}
             onChangeText={setSearchQuery}
             style={[styles.searchInput, { color: colors.text }]}
@@ -157,7 +168,7 @@ export default function QuizResourcesScreen() {
             ListEmptyComponent={
               <View style={styles.empty}>
                 <AppText style={{ color: colors.textSecondary }}>
-                  No resources found.
+                  {translations.noResourcesFound || 'No resources found.'}
                 </AppText>
               </View>
             }

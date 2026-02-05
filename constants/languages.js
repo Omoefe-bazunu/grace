@@ -1,14 +1,14 @@
 export const LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'yo', name: 'Yoruba', flag: '🇳🇬' },
-  { code: 'ig', name: 'Igbo', flag: '🇳🇬' },
-  { code: 'ur', name: 'Urhobo', flag: '🇳🇬' },
-  { code: 'ha', name: 'Hausa', flag: '🇳🇬' },
-  { code: 'fr', name: 'French', flag: '🇫🇷' },
-  { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
-  { code: 'sw', name: 'Swahili', flag: '🇰🇪' },
-  { code: 'zu', name: 'Zulu', flag: '🇿🇦' },
-  { code: 'tw', name: 'Twi', flag: '🇬🇭' },
+  { code: 'yo', name: 'Èdè Yorùbá', flag: '🇳🇬' }, //yoruba
+  { code: 'ig', name: 'Asụsụ Igbo', flag: '🇳🇬' }, //igbo
+  { code: 'ur', name: 'Ophẹrẹ rẹ Urhobo', flag: '🇳🇬' }, //urhobo
+  { code: 'ha', name: 'Harshen Hausa', flag: '🇳🇬' }, //hausa
+  { code: 'fr', name: 'Français', flag: '🇫🇷' }, //french
+  { code: 'zh', name: '中文', flag: '🇨🇳' }, //chinese
+  { code: 'sw', name: 'Kiswahili', flag: '🇰🇪' }, //swahili
+  { code: 'is', name: 'Ẹp hẹrẹ Isoko', flag: '🇳🇬' }, //isoko
+  { code: 'its', name: 'Uvun Itṣẹkiri', flag: '🇳🇬' }, //itsekiri
 ];
 
 export const DEFAULT_LANGUAGE = 'en';

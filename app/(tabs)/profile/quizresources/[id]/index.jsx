@@ -10,13 +10,12 @@ import { useLocalSearchParams, router } from 'expo-router';
 import {
   FileText,
   HelpCircle,
-  Send,
-  X,
   Calendar,
   User,
   Users,
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLanguage } from '@/contexts/LanguageContext'; // ✅ Added Language Hook
 import { useAuth } from '@/contexts/AuthContext';
 import { getQuizResource } from '@/services/dataService';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
@@ -28,14 +27,10 @@ export default function QuizDetailScreen() {
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { translations } = useLanguage(); // ✅ Access translations
 
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [helpModalVisible, setHelpModalVisible] = useState(false);
-  const [name, setName] = useState(false);
-  const [number, setNumber] = useState(false);
-  const [question, setQuestion] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -50,7 +45,10 @@ export default function QuizDetailScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton title="Quiz Details" />
+      <TopNavigation
+        showBackButton
+        title={translations.quizDetailNavTitle || 'Quiz Details'}
+      />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.iconCircle}>
@@ -76,7 +74,9 @@ export default function QuizDetailScreen() {
           </View>
 
           <Button
-            title="Open Study Material (PDF)"
+            title={
+              translations.openStudyMaterial || 'Open Study Material (PDF)'
+            }
             onPress={() => Linking.openURL(quiz.pdfUrl)}
             style={styles.mainBtn}
           />
@@ -84,11 +84,11 @@ export default function QuizDetailScreen() {
 
         <View style={styles.helpSection}>
           <AppText style={[styles.helpTitle, { color: colors.text }]}>
-            Need Clarification?
+            {translations.needClarification || 'Need Clarification?'}
           </AppText>
           <AppText style={[styles.helpDesc, { color: colors.textSecondary }]}>
-            If you're confused about any question in this study material, ask
-            our admins for help.
+            {translations.clarificationDesc ||
+              "If you're confused about any question in this study material, ask our admins for help."}
           </AppText>
           <TouchableOpacity
             style={[styles.helpBtn, { backgroundColor: colors.primary + '10' }]}
@@ -101,7 +101,7 @@ export default function QuizDetailScreen() {
           >
             <HelpCircle size={20} color={colors.primary} />
             <AppText style={[styles.helpBtnText, { color: colors.primary }]}>
-              Ask a Question
+              {translations.askQuestion || 'Ask a Question'}
             </AppText>
           </TouchableOpacity>
         </View>

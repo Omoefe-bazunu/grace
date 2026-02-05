@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   ImageBackground,
   TextInput,
-  RefreshControl, // ✅ Added for drag to refresh
+  RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { getGalleryVideos } from '../../../../../services/dataService';
@@ -17,9 +18,13 @@ import { TopNavigation } from '../../../../../components/TopNavigation';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '../../../../../components/ui/AppText';
 import { useTheme } from '../../../../../contexts/ThemeContext';
+import { useLanguage } from '../../../../../contexts/LanguageContext'; // ✅ Added Language Hook
+
+const { width } = Dimensions.get('window');
 
 function EventCard({ event, items }) {
   const { colors } = useTheme();
+  const { translations } = useLanguage(); // ✅ Access translations
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleScroll = (e) => {
@@ -30,15 +35,13 @@ function EventCard({ event, items }) {
 
   return (
     <View style={[styles.eventCard, { backgroundColor: colors.card }]}>
-      {/* ✅ Modern Top Accent Border */}
       <View style={[styles.topBorder, { backgroundColor: colors.primary }]} />
 
       <View style={styles.cardContent}>
         <View style={styles.cardHeader}>
           <AppText style={[styles.eventTitle, { color: colors.text }]}>
-            {event || 'Untitled Event'}
+            {event || translations.untitledEvent || 'Untitled Event'}
           </AppText>
-          {/* ✅ Video Count Badge */}
           <View
             style={[
               styles.countBadge,
@@ -46,7 +49,10 @@ function EventCard({ event, items }) {
             ]}
           >
             <AppText style={[styles.countText, { color: colors.primary }]}>
-              {items.length} {items.length === 1 ? 'Video' : 'Videos'}
+              {items.length}{' '}
+              {items.length === 1
+                ? translations.videoLabel || 'Video'
+                : translations.videosLabel || 'Videos'}
             </AppText>
           </View>
         </View>
@@ -60,7 +66,7 @@ function EventCard({ event, items }) {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.videoRow}
+          style={styles.imageRow}
           onScroll={handleScroll}
           scrollEventThrottle={16}
           snapToInterval={292}
@@ -105,12 +111,12 @@ function EventCard({ event, items }) {
 
 export default function GalleryVideos() {
   const { colors } = useTheme();
+  const { translations } = useLanguage(); // ✅ Access translations
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false); // ✅ Refresh state
+  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // ✅ Extracted logic to allow re-fetching on drag
   const fetchVideos = async () => {
     try {
       const data = await getGalleryVideos();
@@ -130,7 +136,6 @@ export default function GalleryVideos() {
     fetchVideos();
   }, []);
 
-  // ✅ Refresh Handler
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchVideos();
@@ -150,11 +155,13 @@ export default function GalleryVideos() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <SafeAreaWrapper>
-        <TopNavigation showBackButton={true} />
+        <TopNavigation
+          showBackButton={true}
+          title={translations.videoGalleryTitle || 'Video Gallery'}
+        />
         <ScrollView
           style={[styles.container, { backgroundColor: colors.background }]}
           showsVerticalScrollIndicator={false}
-          // ✅ Pull to Refresh added here
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -177,10 +184,12 @@ export default function GalleryVideos() {
                   style={styles.bannerGradient}
                 />
                 <View style={styles.bannerText}>
-                  <AppText style={styles.bannerTitle}>VIDEO GALLERY</AppText>
+                  <AppText style={styles.bannerTitle}>
+                    {translations.videoGalleryTitle || 'VIDEO GALLERY'}
+                  </AppText>
                   <AppText style={styles.bannerSubtitle}>
-                    Major events across our branches, kept for your viewing
-                    pleasure.
+                    {translations.videoGallerySubtitle ||
+                      'Major events across our branches, kept for your viewing pleasure.'}
                   </AppText>
                 </View>
               </ImageBackground>
@@ -190,7 +199,7 @@ export default function GalleryVideos() {
             >
               <TextInput
                 style={[styles.searchInput, { color: colors.text }]}
-                placeholder="Search"
+                placeholder={translations.search || 'Search'}
                 placeholderTextColor={colors.textSecondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -201,7 +210,10 @@ export default function GalleryVideos() {
           <View style={styles.listContainer}>
             {filteredVideos.length === 0 ? (
               <AppText style={[styles.empty, { color: colors.textSecondary }]}>
-                {searchQuery ? 'No events found' : 'No videos yet'}
+                {searchQuery
+                  ? translations.noEventsFound ||
+                    'No events found matching your search'
+                  : translations.noVideosYet || 'No videos yet'}
               </AppText>
             ) : (
               filteredVideos.map(([event, items]) => (

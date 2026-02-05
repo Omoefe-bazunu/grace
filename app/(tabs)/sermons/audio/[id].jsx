@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
-  Text,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -13,7 +12,6 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
-  ArrowLeft,
   Play,
   Pause,
   FastForward,
@@ -24,7 +22,6 @@ import {
   Download,
 } from 'lucide-react-native';
 
-// FileSystem & MediaLibrary for Real Saving
 import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
 import { Audio } from 'expo-av';
@@ -37,7 +34,6 @@ import { getSermon } from '@/services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TopNavigation } from '../../../../components/TopNavigation';
 
-// --- Placeholder/Skeleton Component ---
 const SkeletonSermon = () => {
   const { colors } = useTheme();
   return (
@@ -78,7 +74,6 @@ export default function SermonAudioDetailScreen() {
   const [sermon, setSermon] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Audio State
   const [sound, setSound] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
@@ -86,12 +81,10 @@ export default function SermonAudioDetailScreen() {
   const [isLooping, setIsLooping] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // --- ANIMATION STATE ---
   const pulse = useRef(new Animated.Value(1)).current;
   const animationRef = useRef(null);
   const isMounted = useRef(true);
 
-  // === CONFIGURE BACKGROUND AUDIO ===
   useEffect(() => {
     const configureAudio = async () => {
       try {
@@ -109,7 +102,6 @@ export default function SermonAudioDetailScreen() {
     configureAudio();
   }, []);
 
-  // --- PULSE ANIMATION LOGIC ---
   const startPulse = useCallback(() => {
     if (animationRef.current) animationRef.current.stop();
     pulse.setValue(1);
@@ -140,13 +132,11 @@ export default function SermonAudioDetailScreen() {
     }
   }, [pulse]);
 
-  // --- AUDIO LOGIC ---
   const onPlaybackStatusUpdate = useCallback(
     (status) => {
       if (!isMounted.current) return;
 
       if (status.isLoaded) {
-        // Pulse Logic
         if (status.isPlaying !== isPlaying) {
           status.isPlaying ? startPulse() : stopPulse();
         }
@@ -155,15 +145,11 @@ export default function SermonAudioDetailScreen() {
         setPosition(status.positionMillis);
         if (status.durationMillis) setDuration(status.durationMillis);
 
-        // Loop / End Logic
         if (status.didJustFinish) {
-          if (isLooping) {
-            // If looping, the player might handle it automatically if setIsLoopingAsync is set,
-            // but we ensure logic consistency here.
-          } else {
+          if (!isLooping) {
             setIsPlaying(false);
             setPosition(0);
-            sound.setPositionAsync(0);
+            sound?.setPositionAsync(0);
             stopPulse();
           }
         }
@@ -189,7 +175,10 @@ export default function SermonAudioDetailScreen() {
     } catch (error) {
       console.error('Audio load error:', error);
       if (isMounted.current)
-        Alert.alert('Load Error', 'Failed to load audio source.');
+        Alert.alert(
+          translations.error || 'Error',
+          translations.audioLoadError || 'Failed to load audio source.',
+        );
     }
   };
 
@@ -220,8 +209,6 @@ export default function SermonAudioDetailScreen() {
       stopPulse();
     };
   }, [id, stopPulse]);
-
-  // --- CONTROLS ---
 
   const handlePlayPause = async () => {
     if (sound) {
@@ -257,30 +244,26 @@ export default function SermonAudioDetailScreen() {
     }
   };
 
-  // --- DOWNLOAD LOGIC (Same as Music Player) ---
   const handleDownload = async () => {
     if (!sermon?.audioUrl) return;
 
-    // 1. Permission Check
     const { status } = await MediaLibrary.requestPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
-        'Permission required',
-        'Please allow access to save sermons to your device.',
+        translations.permissionRequired || 'Permission required',
+        translations.saveSermonPermission ||
+          'Please allow access to save sermons to your device.',
       );
       return;
     }
 
     setIsDownloading(true);
     try {
-      // 2. Define path
       const filename = `Sermon_${sermon.title.replace(/[^a-z0-9]/gi, '_')}.mp3`;
       const fileUri = FileSystem.documentDirectory + filename;
 
-      // 3. Download
       const { uri } = await FileSystem.downloadAsync(sermon.audioUrl, fileUri);
 
-      // 4. Save to Gallery/Music
       const asset = await MediaLibrary.createAssetAsync(uri);
 
       if (Platform.OS === 'android') {
@@ -292,10 +275,16 @@ export default function SermonAudioDetailScreen() {
         }
       }
 
-      Alert.alert('Success', 'Sermon saved to your device!');
+      Alert.alert(
+        translations.success || 'Success',
+        translations.sermonSaved || 'Sermon saved to your device!',
+      );
     } catch (e) {
       console.error(e);
-      Alert.alert('Error', 'Could not save file.');
+      Alert.alert(
+        translations.error || 'Error',
+        translations.fileSaveError || 'Could not save file.',
+      );
     } finally {
       setIsDownloading(false);
     }
@@ -321,12 +310,14 @@ export default function SermonAudioDetailScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} />
+      <TopNavigation
+        showBackButton={true}
+        title={translations.audioPlayer || 'Audio Player'}
+      />
 
       <ScrollView
         style={[styles.content, { backgroundColor: colors.background }]}
       >
-        {/* Visualizer (Pulsing Mic) */}
         <View style={styles.audioVisualContainer}>
           <Animated.View
             style={[
@@ -350,7 +341,6 @@ export default function SermonAudioDetailScreen() {
           </Animated.View>
         </View>
 
-        {/* Titles */}
         <View style={{ alignItems: 'center', marginBottom: 20 }}>
           <AppText style={[styles.title, { color: colors.text }]}>
             {sermon.title || translations.noTitle}
@@ -364,7 +354,6 @@ export default function SermonAudioDetailScreen() {
           </View>
         </View>
 
-        {/* Progress Bar */}
         <View style={{ marginBottom: 30 }}>
           <View
             style={{
@@ -398,9 +387,7 @@ export default function SermonAudioDetailScreen() {
           </View>
         </View>
 
-        {/* --- CONTROLS ROW --- */}
         <View style={styles.audioControls}>
-          {/* Repeat */}
           <TouchableOpacity onPress={handleToggleLoop}>
             <Repeat
               color={isLooping ? colors.primary : colors.textSecondary}
@@ -408,12 +395,10 @@ export default function SermonAudioDetailScreen() {
             />
           </TouchableOpacity>
 
-          {/* Rewind */}
           <TouchableOpacity onPress={handleRewind}>
             <Rewind size={32} color={colors.text} />
           </TouchableOpacity>
 
-          {/* Play/Pause */}
           <TouchableOpacity
             onPress={handlePlayPause}
             style={[
@@ -428,7 +413,6 @@ export default function SermonAudioDetailScreen() {
             )}
           </TouchableOpacity>
 
-          {/* Fast Forward */}
           <TouchableOpacity onPress={handleFastForward}>
             <FastForward size={32} color={colors.text} />
           </TouchableOpacity>

@@ -2,39 +2,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
-  StyleSheet,
   TextInput,
   ImageBackground,
-  ScrollView, // Using ScrollView for the main content
+  StyleSheet,
+  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
-import {
-  Search,
-  BookOpen, // Used for Text Sermons
-  Mic2, // Lucide icon for Audio (Mic2 or Music2)
-  Video, // Lucide icon for Video
-} from 'lucide-react-native';
+import { Search, BookOpen, Mic2, Video } from 'lucide-react-native';
 import { AppText } from '../../../components/ui/AppText';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../components/TopNavigation';
-// Removed unused data service imports as core logic is moving
 import debounce from 'lodash.debounce';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Lightbulb } from 'lucide-react';
-
-// We only need the categories list for the new Text Sermons screen
-const SERMON_CATEGORIES = [
-  'Weekly Sermon Volume 1',
-  'Weekly Sermon Volume 2',
-  "God's Kingdom Advocate Volume 1",
-  "God's Kingdom Advocate Volume 2",
-  "God's Kingdom Advocate Volume 3",
-  'Abridged Bible Subjects',
-];
 
 // --- NEW COMPONENT: Feature Tile (Audio/Text/Video) ---
 const FeatureTile = ({ title, subtitle, icon: Icon, onPress, colors }) => (
@@ -71,12 +53,9 @@ export default function SermonsScreen() {
   const { translations } = useLanguage();
   const { colors } = useTheme();
 
-  // Debounced search logic is simplified here since category list logic is removed
   const debouncedSearch = useCallback(
     debounce((query) => {
       if (query.trim()) {
-        // In a real app, this should navigate to a search results screen
-        // or update content on the currently active Text Sermons screen.
         console.log('Searching for:', query);
       }
     }, 500),
@@ -102,10 +81,12 @@ export default function SermonsScreen() {
             style={styles.bannerGradient}
           />
           <View style={styles.bannerText}>
-            <AppText style={styles.bannerTitle}>EDIFYING SERMONS</AppText>
+            <AppText style={styles.bannerTitle}>
+              {translations.sermonsBannerTitle || 'EDIFYING SERMONS'}
+            </AppText>
             <AppText style={styles.bannerSubtitle}>
-              Access inspiring sermons in different languages, sharing God’s
-              Word in every tongue.
+              {translations.sermonsBannerSubtitle ||
+                'Access inspiring sermons in different languages, sharing God’s Word in every tongue.'}
             </AppText>
           </View>
         </ImageBackground>
@@ -141,14 +122,14 @@ export default function SermonsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.tileWrapper}>
-          {/* 1. Text Sermons Tile (Navigates to the new category list screen) */}
+          {/* 1. Text Sermons Tile */}
           <FeatureTile
             title={translations.textSermons || 'Text Sermons'}
             subtitle={
               translations.readSermons || 'Organized by volume and subject'
             }
             icon={BookOpen}
-            onPress={() => router.push('/(tabs)/sermons/text')} // NEW SCREEN ROUTE
+            onPress={() => router.push('/(tabs)/sermons/text')}
             colors={colors}
           />
 
@@ -170,16 +151,18 @@ export default function SermonsScreen() {
               translations.watchSermons || 'Watch live sessions and recordings'
             }
             icon={Video}
-            onPress={() => router.push('/(tabs)/sermons/video')} // You will create this screen
+            onPress={() => router.push('/(tabs)/sermons/video')}
             colors={colors}
           />
 
           {/* 4. Daily Devotional Tile */}
           <FeatureTile
             title={translations.dailyGuide || 'Daily Guide'}
-            subtitle={translations.dailyGuide || "Study God's word daily"}
+            subtitle={
+              translations.dailyGuideSubtitle || "Study God's word daily"
+            }
             icon={BookOpen}
-            onPress={() => router.push('/(tabs)/sermons/daily-guide')} // You will create this screen
+            onPress={() => router.push('/(tabs)/sermons/daily-guide')}
             colors={colors}
           />
         </View>

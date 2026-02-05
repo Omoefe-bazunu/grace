@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   ImageBackground,
   TextInput,
-  RefreshControl, // ✅ Added for drag refresh
+  RefreshControl,
   Dimensions,
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
@@ -18,13 +18,15 @@ import { TopNavigation } from '../../../../components/TopNavigation';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '../../../../components/ui/AppText';
 import { useTheme } from '../../../../contexts/ThemeContext';
-import { Play } from 'lucide-react-native'; // ✅ Added for a modern "Video" feel
+import { useLanguage } from '../../../../contexts/LanguageContext'; // ✅ Added Language Hook
+import { Play } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.8;
 
 function EventCard({ event, items }) {
   const { colors } = useTheme();
+  const { translations } = useLanguage(); // ✅ Access translations
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleScroll = (e) => {
@@ -35,16 +37,18 @@ function EventCard({ event, items }) {
 
   return (
     <View style={[styles.eventCard, { backgroundColor: colors.card }]}>
-      {/* Top Accent Line */}
       <View style={[styles.topAccent, { backgroundColor: colors.primary }]} />
 
       <View style={styles.cardContent}>
         <View style={styles.textHeader}>
           <AppText style={[styles.eventTitle, { color: colors.text }]}>
-            {event || 'Untitled Event'}
+            {event || translations.untitledEvent || 'Untitled Event'}
           </AppText>
           <AppText style={[styles.videoCount, { color: colors.primary }]}>
-            {items.length} {items.length === 1 ? 'Video' : 'Videos'}
+            {items.length}{' '}
+            {items.length === 1
+              ? translations.video || 'Video'
+              : translations.videos || 'Videos'}
           </AppText>
         </View>
 
@@ -102,9 +106,10 @@ function EventCard({ event, items }) {
 
 export default function archiveVideos() {
   const { colors } = useTheme();
+  const { translations } = useLanguage(); // ✅ Access translations
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false); // ✅ Added state
+  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchVideos = async () => {
@@ -153,8 +158,8 @@ export default function archiveVideos() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={colors.primary} // iOS
-              colors={[colors.primary]} // Android
+              tintColor={colors.primary}
+              colors={[colors.primary]}
             />
           }
         >
@@ -171,10 +176,12 @@ export default function archiveVideos() {
                   style={styles.bannerGradient}
                 />
                 <View style={styles.bannerText}>
-                  <AppText style={styles.bannerTitle}>VIDEO ARCHIVE</AppText>
+                  <AppText style={styles.bannerTitle}>
+                    {translations.videoArchiveTitle || 'VIDEO ARCHIVE'}
+                  </AppText>
                   <AppText style={styles.bannerSubtitle}>
-                    This screen contains videos of old events of the church,
-                    kept for reference and memories.
+                    {translations.videoArchiveSubtitle ||
+                      'This screen contains videos of old events of the church, kept for reference and memories.'}
                   </AppText>
                 </View>
               </ImageBackground>
@@ -184,7 +191,7 @@ export default function archiveVideos() {
             >
               <TextInput
                 style={[styles.searchInput, { color: colors.text }]}
-                placeholder="Search"
+                placeholder={translations.search || 'Search'}
                 placeholderTextColor={colors.textSecondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -196,8 +203,9 @@ export default function archiveVideos() {
             {filteredVideos.length === 0 ? (
               <AppText style={[styles.empty, { color: colors.textSecondary }]}>
                 {searchQuery
-                  ? 'No events found matching your search'
-                  : 'No videos yet'}
+                  ? translations.noEventsFound ||
+                    'No events found matching your search'
+                  : translations.noVideosYet || 'No videos yet'}
               </AppText>
             ) : (
               filteredVideos.map(([event, items]) => (

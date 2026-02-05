@@ -1,14 +1,13 @@
 import React from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   StyleSheet,
   ImageBackground,
   ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Image, Video, Users } from 'lucide-react-native';
+import { Image, Video } from 'lucide-react-native';
 import { SafeAreaWrapper } from '../../../components/ui/SafeAreaWrapper';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useLanguage } from '../../../contexts/LanguageContext';
@@ -17,8 +16,8 @@ import { TopNavigation } from '../../../components/TopNavigation';
 import { AppText } from '../../../components/ui/AppText';
 
 export default function ArchiveScreen() {
-  const { colors } = useTheme(); // Access theme colors
-  const { translations } = useLanguage(); // Access translations
+  const { colors } = useTheme();
+  const { translations } = useLanguage();
 
   const cards = [
     {
@@ -40,7 +39,10 @@ export default function ArchiveScreen() {
         { flex: 1, backgroundColor: colors.background },
       ]}
     >
-      <TopNavigation showBackButton={true} />
+      <TopNavigation
+        showBackButton={true}
+        title={translations.archive || 'Archive'}
+      />
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
@@ -57,10 +59,12 @@ export default function ArchiveScreen() {
               style={styles.bannerGradient}
             />
             <View style={styles.bannerText}>
-              <AppText style={styles.bannerTitle}>ARCHIVE</AppText>
+              <AppText style={styles.bannerTitle}>
+                {translations.archiveBannerTitle || 'ARCHIVE'}
+              </AppText>
               <AppText style={styles.bannerSubtitle}>
-                Here you will find pictures and videos from old events of the
-                church, kept for reference and memories.
+                {translations.archiveBannerSubtitle ||
+                  'Here you will find pictures and videos from old events of the church, kept for reference and memories.'}
               </AppText>
             </View>
           </ImageBackground>
@@ -80,13 +84,12 @@ export default function ArchiveScreen() {
                 styles.card,
                 {
                   backgroundColor: colors.card,
-                  shadowColor: colors.text, // Using text color for shadow helps visibility in both modes
+                  shadowColor: colors.text,
                 },
                 index === cards.length - 1 ? styles.lastCardMargin : null,
               ]}
               onPress={() => router.push(`/(tabs)/archive/${card.route}/`)}
             >
-              {/* Orange accent bar */}
               <View
                 style={[styles.cardAccent, { backgroundColor: '#ca5e0cff' }]}
               />

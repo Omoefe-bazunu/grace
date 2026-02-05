@@ -39,10 +39,8 @@ export default function TabLayout() {
           fontSize: 11,
           fontWeight: '600',
           marginTop: 2,
-          // THIS PREVENTS SYSTEM FONT SCALING
           allowFontScaling: false,
         },
-        // Prevents the tab bar icons from scaling with system accessibility settings
         tabBarAllowFontScaling: false,
         tabBarScrollEnabled: true,
       }}
@@ -86,7 +84,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="live"
         options={{
-          title: 'Live',
+          title: translations.live,
           tabBarIcon: ({ color }) => (
             <Podcast size={24} color={color} strokeWidth={2.2} />
           ),
@@ -95,7 +93,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="archive"
         options={{
-          title: 'Archive',
+          title: translations.archive,
           tabBarIcon: ({ color }) => (
             <Archive size={24} color={color} strokeWidth={2.2} />
           ),
@@ -104,7 +102,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          href: null, // Keeps the profile tab hidden as requested
+          href: null,
           title: translations.profile,
           tabBarIcon: ({ color }) => (
             <User size={24} color={color} strokeWidth={2.2} />

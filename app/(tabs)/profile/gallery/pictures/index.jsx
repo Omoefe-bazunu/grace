@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   ScrollView,
   View,
+  Image,
   StyleSheet,
   ActivityIndicator,
   ImageBackground,
@@ -9,21 +10,21 @@ import {
   TouchableOpacity,
   Modal,
   Dimensions,
-  Image,
-  RefreshControl, // ✅ Added for drag to refresh
+  RefreshControl,
 } from 'react-native';
 import { getGalleryPictures } from '../../../../../services/dataService';
 import { groupBy } from 'lodash';
 import { SafeAreaWrapper } from '../../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../../components/TopNavigation';
-import { AppText } from '../../../../../components/ui/AppText';
 import { LinearGradient } from 'expo-linear-gradient';
-import { X, Maximize2 } from 'lucide-react-native'; // ✅ Added Maximize2 for indicator
+import { X, Maximize2 } from 'lucide-react-native';
+import { AppText } from '../../../../../components/ui/AppText';
 import { useTheme } from '../../../../../contexts/ThemeContext';
+import { useLanguage } from '../../../../../contexts/LanguageContext'; // ✅ Added Language Hook
 
 const { width, height } = Dimensions.get('window');
 
-function EventCard({ event, items, onImagePress }) {
+function EventCard({ event, items, onImagePress, translations }) {
   const { colors } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -35,15 +36,13 @@ function EventCard({ event, items, onImagePress }) {
 
   return (
     <View style={[styles.eventCard, { backgroundColor: colors.card }]}>
-      {/* ✅ Modern Top Accent Border */}
       <View style={[styles.topBorder, { backgroundColor: colors.primary }]} />
 
       <View style={styles.cardContent}>
         <View style={styles.cardHeader}>
           <AppText style={[styles.eventTitle, { color: colors.text }]}>
-            {event || 'Untitled Event'}
+            {event || translations.untitledEvent || 'Untitled Event'}
           </AppText>
-          {/* ✅ Picture Count Badge */}
           <View
             style={[
               styles.countBadge,
@@ -51,7 +50,10 @@ function EventCard({ event, items, onImagePress }) {
             ]}
           >
             <AppText style={[styles.countText, { color: colors.primary }]}>
-              {items.length} {items.length === 1 ? 'Photo' : 'Photos'}
+              {items.length}{' '}
+              {items.length === 1
+                ? translations.photo || 'Photo'
+                : translations.photos || 'Photos'}
             </AppText>
           </View>
         </View>
@@ -83,7 +85,6 @@ function EventCard({ event, items, onImagePress }) {
                 style={styles.image}
                 resizeMode="cover"
               />
-              {/* ✅ Fullscreen Hint Indicator */}
               <View style={styles.fullscreenHint}>
                 <Maximize2 size={16} color="white" />
               </View>
@@ -113,9 +114,10 @@ function EventCard({ event, items, onImagePress }) {
 
 export default function GalleryPictures() {
   const { colors } = useTheme();
+  const { translations } = useLanguage(); // ✅ Access translations
   const [pictures, setPictures] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false); // ✅ Refresh state
+  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
 
@@ -157,7 +159,10 @@ export default function GalleryPictures() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <SafeAreaWrapper>
-        <TopNavigation showBackButton={true} />
+        <TopNavigation
+          showBackButton={true}
+          title={translations.galleryNavTitle || 'Gallery'}
+        />
         <ScrollView
           style={[styles.container, { backgroundColor: colors.background }]}
           showsVerticalScrollIndicator={false}
@@ -183,10 +188,12 @@ export default function GalleryPictures() {
                   style={styles.bannerGradient}
                 />
                 <View style={styles.bannerText}>
-                  <AppText style={styles.bannerTitle}>PICTURE GALLERY</AppText>
+                  <AppText style={styles.bannerTitle}>
+                    {translations.pictureGalleryTitle || 'PICTURE GALLERY'}
+                  </AppText>
                   <AppText style={styles.bannerSubtitle}>
-                    Memories of major events across different branches, kept for
-                    your viewing.
+                    {translations.pictureGallerySubtitle ||
+                      'Memories of major events across different branches, kept for your viewing.'}
                   </AppText>
                 </View>
               </ImageBackground>
@@ -196,7 +203,7 @@ export default function GalleryPictures() {
             >
               <TextInput
                 style={[styles.searchInput, { color: colors.text }]}
-                placeholder="Search"
+                placeholder={translations.search || 'Search'}
                 placeholderTextColor={colors.textSecondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -207,7 +214,9 @@ export default function GalleryPictures() {
           <View style={styles.listContainer}>
             {filteredPictures.length === 0 ? (
               <AppText style={[styles.empty, { color: colors.textSecondary }]}>
-                {searchQuery ? 'No events found' : 'No pictures yet'}
+                {searchQuery
+                  ? translations.noEventsFound || 'No events found'
+                  : translations.noPicturesYet || 'No pictures yet'}
               </AppText>
             ) : (
               filteredPictures.map(([event, items]) => (
@@ -216,6 +225,7 @@ export default function GalleryPictures() {
                   event={event}
                   items={items}
                   onImagePress={(url) => setSelectedImage(url)}
+                  translations={translations}
                 />
               ))
             )}

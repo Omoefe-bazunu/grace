@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
   FlatList,
   TouchableOpacity,
   StyleSheet,
@@ -38,23 +37,21 @@ export default function AudioSermonsScreen() {
   const { colors } = useTheme();
   const { translations } = useLanguage();
 
-  // Fetch all audio sermons
   const loadSermons = async (isRefresh = false) => {
     try {
       if (isRefresh) setRefreshing(true);
-      const result = await getSermonsPaginated(1000, null); // large limit to get all
+      const result = await getSermonsPaginated(1000, null);
       const audioSermons = result.sermons.filter((s) => s.audioUrl);
 
-      // Group by year
       const grouped = {};
       audioSermons.forEach((sermon) => {
         const date = sermon.date || '';
-        const year = date.split('-')[0] || 'Unknown';
+        const year =
+          date.split('-')[0] || translations.unknownYear || 'Unknown';
         if (!grouped[year]) grouped[year] = [];
         grouped[year].push(sermon);
       });
 
-      // Sort years descending
       const sortedYears = Object.keys(grouped).sort((a, b) =>
         b.localeCompare(a),
       );
@@ -90,7 +87,10 @@ export default function AudioSermonsScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} />
+      <TopNavigation
+        showBackButton={true}
+        title={translations.audioSermonsTitle || 'Audio Sermons'}
+      />
 
       <View style={styles.bannerContainer}>
         <ImageBackground
@@ -104,9 +104,12 @@ export default function AudioSermonsScreen() {
             style={styles.bannerGradient}
           />
           <View style={styles.bannerText}>
-            <AppText style={styles.bannerTitle}>AUDIO SERMONS</AppText>
+            <AppText style={styles.bannerTitle}>
+              {translations.audioSermonsBannerTitle || 'AUDIO SERMONS'}
+            </AppText>
             <AppText style={styles.bannerSubtitle}>
-              Learn the word of God with audio sermons, organized by year.
+              {translations.audioSermonsBannerSubtitle ||
+                'Learn the word of God with audio sermons, organized by year.'}
             </AppText>
           </View>
         </ImageBackground>
@@ -140,7 +143,7 @@ export default function AudioSermonsScreen() {
         <View style={styles.emptyContainer}>
           <Mic size={64} color={colors.textSecondary} />
           <AppText style={[styles.emptyText, { color: colors.text }]}>
-            No audio sermons available
+            {translations.noAudioSermons || 'No audio sermons available'}
           </AppText>
         </View>
       ) : (
@@ -182,7 +185,10 @@ export default function AudioSermonsScreen() {
                         { color: colors.textSecondary },
                       ]}
                     >
-                      {filtered.length} sermon{filtered.length !== 1 ? 's' : ''}
+                      {filtered.length}{' '}
+                      {filtered.length !== 1
+                        ? translations.sermonsCountPlural || 'sermons'
+                        : translations.sermonCountSingular || 'sermon'}
                     </AppText>
                   </View>
                   {expandedYear === year ? (
@@ -199,10 +205,18 @@ export default function AudioSermonsScreen() {
                   onRequestClose={() => setExpandedYear(null)}
                 >
                   <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
+                    <View
+                      style={[
+                        styles.modalContent,
+                        { backgroundColor: colors.card },
+                      ]}
+                    >
                       <View style={styles.modalHeader}>
-                        <AppText style={styles.modalTitle}>
-                          {year} Sermons ({filtered.length})
+                        <AppText
+                          style={[styles.modalTitle, { color: colors.text }]}
+                        >
+                          {year} {translations.sermonsLabel || 'Sermons'} (
+                          {filtered.length})
                         </AppText>
                         <TouchableOpacity onPress={() => setExpandedYear(null)}>
                           <AppText
@@ -222,19 +236,34 @@ export default function AudioSermonsScreen() {
                         keyExtractor={(item) => item.id}
                         renderItem={({ item: sermon }) => (
                           <TouchableOpacity
-                            style={styles.sermonItem}
+                            style={[
+                              styles.sermonItem,
+                              { borderBottomColor: colors.border },
+                            ]}
                             onPress={() => openSermon(sermon.id)}
                           >
                             <Mic size={22} color={colors.primary} />
                             <View style={styles.sermonText}>
                               <AppText
-                                style={styles.sermonTitle}
+                                style={[
+                                  styles.sermonTitle,
+                                  { color: colors.text },
+                                ]}
                                 numberOfLines={2}
                               >
-                                {sermon.title || 'Untitled Sermon'}
+                                {sermon.title ||
+                                  translations.untitledSermon ||
+                                  'Untitled Sermon'}
                               </AppText>
-                              <AppText style={styles.sermonDate}>
-                                {sermon.date || 'No date'}
+                              <AppText
+                                style={[
+                                  styles.sermonDate,
+                                  { color: colors.textSecondary },
+                                ]}
+                              >
+                                {sermon.date ||
+                                  translations.noDate ||
+                                  'No date'}
                               </AppText>
                             </View>
                           </TouchableOpacity>

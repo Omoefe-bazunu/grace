@@ -1,8 +1,6 @@
-// app/(tabs)/sermons/text/index.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
-  Text,
   FlatList,
   TouchableOpacity,
   StyleSheet,
@@ -11,9 +9,10 @@ import {
   ActivityIndicator,
   ImageBackground,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Search, BookOpen, ChevronRight } from 'lucide-react-native';
+import { Search, BookOpen, ChevronRight, X } from 'lucide-react-native';
 import { useLanguage } from '../../../../contexts/LanguageContext';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
@@ -25,6 +24,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import debounce from 'lodash.debounce';
 import { AppText } from '../../../../components/ui/AppText';
+
+const { height } = Dimensions.get('window');
 
 const SERMON_CATEGORIES = [
   'Weekly Sermon Volume 1',
@@ -47,22 +48,34 @@ export default function TextSermonsScreen() {
   const [expandedCategory, setExpandedCategory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Modal Pagination States
+  const [modalLoadingMore, setModalLoadingMore] = useState(false);
+  const [modalHasMore, setModalHasMore] = useState(true);
+  const [modalNextCursor, setModalNextCursor] = useState(null);
+
   const { translations } = useLanguage();
   const { colors } = useTheme();
 
+  // ✅ Optimized: Parallel Loading
   const loadSermons = async (isRefresh = false) => {
     try {
       if (isRefresh) setRefreshing(true);
-      const result = {};
 
-      for (const cat of SERMON_CATEGORIES) {
-        const data = await getSermonsByCategoryPaginated(cat, 1000, null);
-        result[cat] = data.sermons || [];
-      }
+      const fetchPromises = SERMON_CATEGORIES.map((cat) =>
+        getSermonsByCategoryPaginated(cat, 15, null),
+      );
+
+      const resultsArray = await Promise.all(fetchPromises);
+
+      const result = {};
+      SERMON_CATEGORIES.forEach((cat, index) => {
+        result[cat] = resultsArray[index].sermons || [];
+      });
 
       setCategorizedSermons(result);
     } catch (err) {
-      console.error('Load error:', err);
+      console.error('Parallel Load error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -75,14 +88,15 @@ export default function TextSermonsScreen() {
 
   const debouncedSearch = useCallback(
     debounce(async (query) => {
-      if (!query.trim()) {
+      const trimmed = query.trim();
+      if (!trimmed) {
         loadSermons(true);
         return;
       }
       try {
         setRefreshing(true);
         const { sermons } = await searchContentPaginated(
-          query,
+          trimmed,
           null,
           100,
           null,
@@ -100,7 +114,7 @@ export default function TextSermonsScreen() {
       } finally {
         setRefreshing(false);
       }
-    }, 500),
+    }, 400),
     [],
   );
 
@@ -108,8 +122,46 @@ export default function TextSermonsScreen() {
     debouncedSearch(searchQuery);
   }, [searchQuery]);
 
-  const openCategory = (category) => setExpandedCategory(category);
-  const closeModal = () => setExpandedCategory(null);
+  const openCategory = async (category) => {
+    setExpandedCategory(category);
+    setModalLoadingMore(false);
+
+    const initialSermons = categorizedSermons[category] || [];
+    if (initialSermons.length > 0) {
+      setModalNextCursor(initialSermons[initialSermons.length - 1].id);
+      setModalHasMore(initialSermons.length >= 15);
+    }
+  };
+
+  const loadMoreInModal = async () => {
+    if (modalLoadingMore || !modalHasMore || !modalNextCursor) return;
+
+    setModalLoadingMore(true);
+    try {
+      const res = await getSermonsByCategoryPaginated(
+        expandedCategory,
+        15,
+        modalNextCursor,
+      );
+
+      setCategorizedSermons((prev) => ({
+        ...prev,
+        [expandedCategory]: [...prev[expandedCategory], ...res.sermons],
+      }));
+
+      setModalNextCursor(res.nextCursor);
+      setModalHasMore(res.hasMore);
+    } catch (err) {
+      setModalHasMore(false);
+    } finally {
+      setModalLoadingMore(false);
+    }
+  };
+
+  const closeModal = () => {
+    setExpandedCategory(null);
+    setModalNextCursor(null);
+  };
 
   const categoriesWithSermons = SERMON_CATEGORIES.filter(
     (cat) => categorizedSermons[cat]?.length > 0,
@@ -117,36 +169,40 @@ export default function TextSermonsScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} />
+      <TopNavigation
+        showBackButton={true}
+        title={translations.sermons || 'Sermons'}
+      />
 
-      <View style={styles.bannerContainer}>
-        <ImageBackground
-          source={{
-            uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSERMON.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
-          }}
-          style={styles.bannerImage}
-        >
-          <LinearGradient
-            colors={['transparent', 'black']}
-            style={styles.bannerGradient}
-          />
-          <View style={styles.bannerText}>
-            <AppText style={styles.bannerTitle}>TEXT SERMONS</AppText>
-            <AppText style={styles.bannerSubtitle}>
-              Read and study God's word with full text sermons.
-            </AppText>
-          </View>
-        </ImageBackground>
-      </View>
+      <ImageBackground
+        source={{
+          uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSERMON.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+        }}
+        style={styles.bannerImage}
+      >
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.8)']}
+          style={styles.bannerGradient}
+        />
+        <View style={styles.bannerText}>
+          <AppText style={styles.bannerTitle}>
+            {translations.textSermonsBannerTitle || 'TEXT SERMONS'}
+          </AppText>
+          <AppText style={styles.bannerSubtitle}>
+            {translations.textSermonsBannerSubtitle ||
+              "Read and study God's word with full text sermons."}
+          </AppText>
+        </View>
+      </ImageBackground>
 
-      <View style={[styles.searchContainer, { backgroundColor: '#fff' }]}>
+      <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
         <Search
           size={20}
           color={colors.textSecondary}
           style={styles.searchIcon}
         />
         <TextInput
-          placeholder="Search sermons..."
+          placeholder={translations.searchPlaceholder || 'Search sermons...'}
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor={colors.textSecondary}
@@ -160,13 +216,6 @@ export default function TextSermonsScreen() {
           color={colors.primary}
           style={{ marginTop: 50 }}
         />
-      ) : categoriesWithSermons.length === 0 ? (
-        <View style={styles.empty}>
-          <BookOpen size={64} color={colors.textSecondary} />
-          <AppText style={[styles.emptyText, { color: colors.text }]}>
-            {searchQuery ? 'No sermons found' : 'No text sermons available'}
-          </AppText>
-        </View>
       ) : (
         <FlatList
           data={categoriesWithSermons}
@@ -176,103 +225,90 @@ export default function TextSermonsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => loadSermons(true)}
+              tintColor={colors.primary}
             />
           }
-          renderItem={({ item: category }) => {
-            const sermons = categorizedSermons[category] || [];
-            const filtered = searchQuery
-              ? sermons.filter((s) =>
-                  (s.translations?.en?.title || s.title || '')
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()),
-                )
-              : sermons;
-
-            if (filtered.length === 0 && searchQuery) return null;
-
-            return (
-              <TouchableOpacity
-                style={[styles.categoryCard, { backgroundColor: colors.card }]}
-                onPress={() => openCategory(category)}
-              >
-                <View style={styles.categoryHeader}>
-                  <AppText
-                    style={[styles.categoryTitle, { color: colors.text }]}
-                  >
-                    {category}
-                  </AppText>
-                  <AppText
-                    style={[
-                      styles.categoryCount,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    {filtered.length} sermon{filtered.length !== 1 ? 's' : ''}
-                  </AppText>
-                </View>
-                <ChevronRight size={24} color={colors.textSecondary} />
-              </TouchableOpacity>
-            );
-          }}
+          renderItem={({ item: category }) => (
+            <TouchableOpacity
+              style={[
+                styles.categoryCard,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+              onPress={() => openCategory(category)}
+            >
+              <View style={styles.categoryHeader}>
+                <AppText style={[styles.categoryTitle, { color: colors.text }]}>
+                  {translations[category] || category}
+                </AppText>
+                <AppText
+                  style={[
+                    styles.categoryCount,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  {categorizedSermons[category].length}+{' '}
+                  {translations.subjectsCountLabel || 'subjects'}
+                </AppText>
+              </View>
+              <ChevronRight size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
         />
       )}
 
-      {/* MODAL – Replaces old accordion */}
-      <Modal
-        visible={!!expandedCategory}
-        transparent
-        animationType="slide"
-        onRequestClose={closeModal}
-      >
+      {/* MODAL – Infinite Scroll Enabled */}
+      <Modal visible={!!expandedCategory} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.modalContent,
-              { backgroundColor: colors.background },
-            ]}
-          >
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
-              <TouchableOpacity onPress={closeModal}>
-                <AppText style={{ fontSize: 36, color: colors.textSecondary }}>
-                  ×
-                </AppText>
-              </TouchableOpacity>
-              <AppText style={[styles.modalTitle, { color: colors.text }]}>
-                {expandedCategory} (
-                {categorizedSermons[expandedCategory]?.length || 0})
+              <AppText
+                style={[styles.modalTitle, { color: colors.text }]}
+                numberOfLines={1}
+              >
+                {translations[expandedCategory] || expandedCategory}
               </AppText>
+              <TouchableOpacity onPress={closeModal} style={styles.closeBtn}>
+                <X size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
             </View>
 
             <FlatList
               data={categorizedSermons[expandedCategory] || []}
               keyExtractor={(item) => item.id}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 30 }}
-              renderItem={({ item: sermon }) => {
-                const title =
-                  sermon.translations?.[translations.currentLanguage]?.title ||
-                  sermon.title ||
-                  'Untitled';
-                return (
-                  <TouchableOpacity
-                    style={styles.sermonRow}
-                    onPress={() => {
-                      closeModal();
-                      router.push(`/(tabs)/sermons/text/${sermon.id}`);
-                    }}
+              onEndReached={loadMoreInModal}
+              onEndReachedThreshold={0.3}
+              ListFooterComponent={
+                modalLoadingMore && (
+                  <ActivityIndicator
+                    color={colors.primary}
+                    style={{ margin: 20 }}
+                  />
+                )
+              }
+              renderItem={({ item: sermon }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.sermonRow,
+                    { borderBottomColor: colors.border },
+                  ]}
+                  onPress={() => {
+                    closeModal();
+                    router.push(`/(tabs)/sermons/text/${sermon.id}`);
+                  }}
+                >
+                  <AppText
+                    style={[styles.sermonTitleText, { color: colors.text }]}
+                    numberOfLines={2}
                   >
-                    <View style={styles.sermonText}>
-                      <AppText
-                        style={[styles.sermonTitle, { color: colors.text }]}
-                        numberOfLines={2}
-                      >
-                        {title}
-                      </AppText>
-                    </View>
-                    <ChevronRight size={20} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                );
-              }}
+                    {sermon.translations?.[translations.currentLanguage]
+                      ?.title ||
+                      sermon.title ||
+                      'Untitled'}
+                  </AppText>
+                  <ChevronRight size={18} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
             />
           </View>
         </View>
@@ -282,111 +318,82 @@ export default function TextSermonsScreen() {
 }
 
 const styles = StyleSheet.create({
-  bannerContainer: { height: 180, overflow: 'hidden', marginBottom: 10 },
   bannerImage: {
     width: '100%',
-    height: 120,
-    justifyContent: 'center',
-    alignItems: 'center',
+    height: 160,
+    justifyContent: 'flex-end',
+    paddingBottom: 40,
   },
-  bannerGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 300,
-  },
-  bannerText: { paddingHorizontal: 40, alignItems: 'center' },
+  bannerGradient: { ...StyleSheet.absoluteFillObject },
+  bannerText: { alignItems: 'center', zIndex: 1, paddingHorizontal: 20 },
   bannerTitle: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   bannerSubtitle: {
-    color: '#fff',
-    fontSize: 10,
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
     textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: 4,
   },
   searchContainer: {
     marginHorizontal: 20,
-    marginTop: -100,
+    marginTop: -25,
     marginBottom: 20,
     borderRadius: 30,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
+    elevation: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 10,
-    elevation: 8,
   },
   searchIcon: { marginRight: 10 },
-  searchInput: { flex: 1, paddingVertical: 16, fontSize: 16 },
+  searchInput: { flex: 1, paddingVertical: 14, fontSize: 16 },
   list: { paddingHorizontal: 20, paddingBottom: 40 },
   categoryCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 18,
-    borderRadius: 16,
+    padding: 20,
+    borderRadius: 20,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    borderWidth: 1,
   },
   categoryHeader: { flex: 1 },
-  categoryTitle: { fontSize: 17, fontWeight: '600' },
-  categoryCount: { fontSize: 14, marginTop: 4, opacity: 0.8 },
-  empty: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyText: { fontSize: 18, marginTop: 16, textAlign: 'center' },
-
-  // Modal styles – centered & spacious
+  categoryTitle: { fontSize: 16, fontWeight: '700' },
+  categoryCount: { fontSize: 12, marginTop: 4 },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 100, // safe from bottom tab
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
-    maxHeight: '88%',
-    borderRadius: 24,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 20,
+    height: height * 0.85,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 24,
   },
   modalHeader: {
-    flexDirection: 'column',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    marginBottom: 20,
   },
-  modalTitle: { fontSize: 16, fontWeight: 'bold' },
+  modalTitle: { fontSize: 18, fontWeight: '800', flex: 1, marginRight: 10 },
+  closeBtn: { padding: 5 },
   sermonRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingVertical: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    gap: 16,
   },
-  sermonText: { flex: 1 },
-  sermonTitle: { fontSize: 17, fontWeight: '600' },
+  sermonTitleText: {
+    fontSize: 15,
+    fontWeight: '600',
+    flex: 1,
+    marginRight: 10,
+  },
 });

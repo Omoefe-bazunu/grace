@@ -27,6 +27,7 @@ import * as MediaLibrary from 'expo-media-library';
 import { Audio } from 'expo-av';
 
 import { useTheme } from '../../../../contexts/ThemeContext';
+import { useLanguage } from '../../../../contexts/LanguageContext'; // ✅ Added Language Hook
 import { usePlayer } from '../../../../contexts/PlayListContext';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
@@ -37,6 +38,7 @@ import ChoirImage from '../../../../assets/images/CHOIR.png';
 export default function MusicDetailScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
+  const { translations } = useLanguage(); // ✅ Access translations
 
   const {
     currentSong,
@@ -134,8 +136,9 @@ export default function MusicDetailScreen() {
     const { status } = await MediaLibrary.requestPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
-        'Permission required',
-        'Please allow access to save songs to your device.',
+        translations.permissionRequired || 'Permission required',
+        translations.saveSongsPermission ||
+          'Please allow access to save songs to your device.',
       );
       return;
     }
@@ -164,10 +167,16 @@ export default function MusicDetailScreen() {
         }
       }
 
-      Alert.alert('Success', 'Song saved to your device!');
+      Alert.alert(
+        translations.success || 'Success',
+        translations.songSavedSuccess || 'Song saved to your device!',
+      );
     } catch (e) {
       console.error(e);
-      Alert.alert('Error', 'Could not save file.');
+      Alert.alert(
+        translations.error || 'Error',
+        translations.saveFileError || 'Could not save file.',
+      );
     } finally {
       setIsDownloading(false);
     }
@@ -191,7 +200,10 @@ export default function MusicDetailScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} />
+      <TopNavigation
+        showBackButton={true}
+        title={translations.musicPlayerTitle || 'Music Player'}
+      />
       <ScrollView style={{ flex: 1, paddingHorizontal: 20 }}>
         <View style={{ alignItems: 'center', marginVertical: 20 }}>
           <Animated.View
@@ -215,7 +227,9 @@ export default function MusicDetailScreen() {
             {localSongData.title}
           </AppText>
           <AppText style={{ fontSize: 16, color: colors.textSecondary }}>
-            {localSongData.category || 'Unknown'}
+            {localSongData.category ||
+              translations.unknownCategory ||
+              'Unknown'}
           </AppText>
         </View>
 

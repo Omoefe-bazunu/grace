@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
   ScrollView,
-  StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
   ImageBackground,
   Dimensions,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
@@ -49,8 +48,6 @@ export default function DailyGuideScreen() {
     try {
       const result = await getDailyDevotionalsPaginated(30, null);
       setDevotionals(result.dailyDevotionals || []);
-
-      // Load devotional for selected date
       loadDevotionalForDate(selectedDate, result.dailyDevotionals || []);
     } catch (error) {
       console.error('Error fetching devotionals:', error);
@@ -64,20 +61,14 @@ export default function DailyGuideScreen() {
   const loadDevotionalForDate = (date, devotionalsList = null) => {
     setLoadingDevotional(true);
     const dateString = format(date, 'yyyy-MM-dd');
-
-    // Use provided list or current state
     const listToSearch = devotionalsList || devotionals;
-
-    // Find devotional for the selected date in the list
     const devotionalForDate = listToSearch.find((d) => d.date === dateString);
 
     if (devotionalForDate) {
       setCurrentDevotional(devotionalForDate);
     } else {
-      // No devotional found for this date - this is normal, not an error
       setCurrentDevotional(null);
     }
-
     setLoadingDevotional(false);
   };
 
@@ -103,9 +94,9 @@ export default function DailyGuideScreen() {
   };
 
   const formatDisplayDate = (date) => {
-    if (isToday(date)) return 'Today';
-    if (isYesterday(date)) return 'Yesterday';
-    if (isTomorrow(date)) return 'Tomorrow';
+    if (isToday(date)) return translations.today || 'Today';
+    if (isYesterday(date)) return translations.yesterday || 'Yesterday';
+    if (isTomorrow(date)) return translations.tomorrow || 'Tomorrow';
     return format(date, 'MMMM d, yyyy');
   };
 
@@ -125,7 +116,10 @@ export default function DailyGuideScreen() {
   if (loading) {
     return (
       <SafeAreaWrapper>
-        <TopNavigation title="Daily Guide" showBackButton={true} />
+        <TopNavigation
+          title={translations.dailyGuideTitle || 'Daily Guide'}
+          showBackButton={true}
+        />
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -135,7 +129,10 @@ export default function DailyGuideScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} />
+      <TopNavigation
+        showBackButton={true}
+        title={translations.dailyGuideTitle || 'Daily Guide'}
+      />
 
       {/* Header with Calendar */}
       <View style={styles.header}>
@@ -150,9 +147,12 @@ export default function DailyGuideScreen() {
             style={styles.headerGradient}
           />
           <View style={styles.headerContent}>
-            <AppText style={styles.headerTitle}>Daily Devotional</AppText>
+            <AppText style={styles.headerTitle}>
+              {translations.dailyDevotionalBanner || 'Daily Devotional'}
+            </AppText>
             <AppText style={styles.headerSubtitle}>
-              Nourish your spirit with daily guidance.
+              {translations.dailyDevotionalBannerSubtitle ||
+                'Nourish your spirit with daily guidance.'}
             </AppText>
           </View>
         </ImageBackground>
@@ -200,7 +200,7 @@ export default function DailyGuideScreen() {
             <AppText
               style={[styles.loadingText, { color: colors.textSecondary }]}
             >
-              Loading devotional...
+              {translations.loadingDevotional || 'Loading devotional...'}
             </AppText>
           </View>
         ) : currentDevotional ? (
@@ -247,14 +247,16 @@ export default function DailyGuideScreen() {
               <BookOpen size={48} color={colors.primary} />
             </View>
             <AppText style={[styles.emptyTitle, { color: colors.text }]}>
-              No Devotional Available
+              {translations.noDevotionalAvailable || 'No Devotional Available'}
             </AppText>
             <AppText
               style={[styles.emptySubtitle, { color: colors.textSecondary }]}
             >
               {getDateStatus(selectedDate).type === 'future'
-                ? 'Check back on this date for a new devotional'
-                : 'No devotional was published for this date'}
+                ? translations.checkBackFuture ||
+                  'Check back on this date for a new devotional'
+                : translations.noDevotionalPast ||
+                  'No devotional was published for this date'}
             </AppText>
           </View>
         )}
@@ -263,7 +265,7 @@ export default function DailyGuideScreen() {
         {devotionals.length > 0 && (
           <View style={styles.recentSection}>
             <AppText style={[styles.sectionTitle, { color: colors.text }]}>
-              Recent Devotionals
+              {translations.recentDevotionals || 'Recent Devotionals'}
             </AppText>
             <ScrollView
               horizontal
@@ -291,7 +293,9 @@ export default function DailyGuideScreen() {
                     style={[styles.recentTitle, { color: colors.text }]}
                     numberOfLines={2}
                   >
-                    {devotional.title || 'Daily Devotional'}
+                    {devotional.title ||
+                      translations.dailyDevotionalFallback ||
+                      'Daily Devotional'}
                   </AppText>
                 </TouchableOpacity>
               ))}

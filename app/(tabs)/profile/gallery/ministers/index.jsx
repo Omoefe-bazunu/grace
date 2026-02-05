@@ -18,12 +18,14 @@ import { TopNavigation } from '../../../../../components/TopNavigation';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '../../../../../components/ui/AppText';
 import { useTheme } from '../../../../../contexts/ThemeContext';
+import { useLanguage } from '../../../../../contexts/LanguageContext'; // ✅ Added Language Hook
 import { Calendar, Phone, BadgeCheck, X, Maximize2 } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 
 export default function MinistersGallery() {
   const { colors } = useTheme();
+  const { translations } = useLanguage(); // ✅ Access translations
   const [ministers, setMinisters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -66,7 +68,10 @@ export default function MinistersGallery() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <SafeAreaWrapper>
-        <TopNavigation showBackButton={true} />
+        <TopNavigation
+          showBackButton={true}
+          title={translations.ministersNavTitle || 'Ministers'}
+        />
 
         <ScrollView
           style={[styles.container, { backgroundColor: colors.background }]}
@@ -95,11 +100,11 @@ export default function MinistersGallery() {
                 />
                 <View style={styles.bannerText}>
                   <AppText style={styles.bannerTitle}>
-                    MINISTERS PROFILE
+                    {translations.ministersBannerTitle || 'MINISTERS PROFILE'}
                   </AppText>
                   <AppText style={styles.bannerSubtitle}>
-                    Official profiles of the GKS ministry. Identifying and
-                    honouring those who labour in the word.
+                    {translations.ministersBannerSubtitle ||
+                      'Official profiles of the GKS ministry. Identifying and honouring those who labour in the word.'}
                   </AppText>
                 </View>
               </ImageBackground>
@@ -109,7 +114,7 @@ export default function MinistersGallery() {
             >
               <TextInput
                 style={[styles.searchInput, { color: colors.text }]}
-                placeholder="Search by name..."
+                placeholder={translations.searchByName || 'Search by name...'}
                 placeholderTextColor={colors.textSecondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -151,7 +156,9 @@ export default function MinistersGallery() {
 
                   <View style={styles.info}>
                     <AppText style={[styles.name, { color: colors.text }]}>
-                      {m.name || 'Unnamed Minister'}
+                      {m.name ||
+                        translations.unnamedMinister ||
+                        'Unnamed Minister'}
                     </AppText>
 
                     <View style={styles.detailRow}>
@@ -163,7 +170,7 @@ export default function MinistersGallery() {
                       <AppText
                         style={[styles.value, { color: colors.textSecondary }]}
                       >
-                        {m.category || 'Minister'}
+                        {m.category || translations.ministerLabel || 'Minister'}
                       </AppText>
                     </View>
 
@@ -176,11 +183,11 @@ export default function MinistersGallery() {
                       <AppText
                         style={[styles.value, { color: colors.textSecondary }]}
                       >
-                        Devoted: {m.dateDevoted || 'N/A'}
+                        {translations.devotedLabel || 'Devoted'}:{' '}
+                        {m.dateDevoted || 'N/A'}
                       </AppText>
                     </View>
 
-                    {/* ✅ RE-ADDED CONTACT SECTION */}
                     <View style={styles.detailRow}>
                       <Phone
                         size={14}
@@ -190,7 +197,9 @@ export default function MinistersGallery() {
                       <AppText
                         style={[styles.value, { color: colors.textSecondary }]}
                       >
-                        {m.contact || 'Contact not provided'}
+                        {m.contact ||
+                          translations.contactNotProvided ||
+                          'Contact not provided'}
                       </AppText>
                     </View>
                   </View>

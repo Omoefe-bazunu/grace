@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'; // Added useMemo
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,16 +20,14 @@ export default function LanguageSelectionScreen() {
   };
 
   const handleContinue = () => {
-    // Navigate to the next screen after language selection
-    router.replace('/(tabs)/home');
+    // ✅ Change: Navigate to Onboarding FIRST so they see the beauty in their language!
+    router.replace('/(onboarding)'); // This will lead to the onboarding flow where they can see the app in their chosen language.
   };
 
-  // === 1. Sorting Logic ===
   const sortedLanguages = useMemo(() => {
     return [...LANGUAGES].sort((a, b) => a.name.localeCompare(b.name));
   }, [LANGUAGES]);
 
-  // === 2. Updated renderLanguageItem to use initials and custom style ===
   const renderLanguageItem = ({ item }) => (
     <TouchableOpacity
       style={[
@@ -38,7 +36,6 @@ export default function LanguageSelectionScreen() {
       ]}
       onPress={() => handleLanguageSelect(item.code)}
     >
-      {/* Replaced item.flag with a View containing initials */}
       <View
         style={[
           styles.initialsContainer,
@@ -75,7 +72,6 @@ export default function LanguageSelectionScreen() {
       </View>
 
       <FlatList
-        // Use the new sorted array
         data={sortedLanguages}
         renderItem={renderLanguageItem}
         keyExtractor={(item) => item.code}

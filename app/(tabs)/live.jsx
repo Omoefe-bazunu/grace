@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
@@ -10,7 +9,6 @@ import {
   RefreshControl,
   Alert,
   Linking,
-  Platform,
   Dimensions,
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
@@ -19,6 +17,7 @@ import { WebView } from 'react-native-webview';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../components/TopNavigation';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext'; // ✅ Added Language Hook
 import {
   getActiveLiveStreams,
   getYouTubeVideoId,
@@ -29,6 +28,7 @@ const { width: screenWidth } = Dimensions.get('window');
 
 export default function LiveStreamScreen() {
   const { colors } = useTheme();
+  const { translations } = useLanguage(); // ✅ Access translations
   const [streams, setStreams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,14 +44,9 @@ export default function LiveStreamScreen() {
   const loadStreams = async () => {
     try {
       setError(null);
-      console.log('Loading active streams...');
-
       const activeStreams = await getActiveLiveStreams();
-      console.log('Loaded streams:', activeStreams);
-
       setStreams(activeStreams);
 
-      // Initialize video loading states
       const loadingStates = {};
       const errorStates = {};
       activeStreams.forEach((stream) => {
@@ -61,8 +56,10 @@ export default function LiveStreamScreen() {
       setVideoLoading(loadingStates);
       setVideoErrors(errorStates);
     } catch (error) {
-      console.error('Error loading streams:', error);
-      setError('Failed to load streams. Please try again.');
+      setError(
+        translations.liveStreamError ||
+          'Failed to load streams. Please try again.',
+      );
     } finally {
       setLoading(false);
     }
@@ -73,33 +70,35 @@ export default function LiveStreamScreen() {
     try {
       await loadStreams();
     } catch (error) {
-      console.error('Error refreshing streams:', error);
-      Alert.alert('Refresh Failed', 'Could not refresh streams');
+      Alert.alert(
+        translations.refreshFailed || 'Refresh Failed',
+        translations.refreshFailedMsg || 'Could not refresh streams',
+      );
     } finally {
       setRefreshing(false);
     }
   };
 
   const handleVideoLoadStart = (streamId) => {
-    console.log(`Video load start: ${streamId}`);
     setVideoLoading((prev) => ({ ...prev, [streamId]: true }));
     setVideoErrors((prev) => ({ ...prev, [streamId]: false }));
   };
 
   const handleVideoLoad = (streamId) => {
-    console.log(`Video loaded successfully: ${streamId}`);
     setVideoLoading((prev) => ({ ...prev, [streamId]: false }));
   };
 
   const handleVideoError = (streamId, error) => {
-    console.error(`Video error for stream ${streamId}:`, error);
     setVideoLoading((prev) => ({ ...prev, [streamId]: false }));
     setVideoErrors((prev) => ({ ...prev, [streamId]: true }));
   };
 
   const openInBrowser = (url) => {
     Linking.openURL(url).catch((err) =>
-      Alert.alert('Error', 'Could not open link'),
+      Alert.alert(
+        translations.error || 'Error',
+        translations.openLinkError || 'Could not open link',
+      ),
     );
   };
 
@@ -135,12 +134,16 @@ export default function LiveStreamScreen() {
         {videoLoading[stream.id] && (
           <View style={styles.videoLoadingOverlay}>
             <ActivityIndicator size="large" color="#fff" />
-            <AppText style={styles.videoLoadingText}>Loading stream...</AppText>
+            <AppText style={styles.videoLoadingText}>
+              {translations.loadingStream || 'Loading stream...'}
+            </AppText>
           </View>
         )}
         {videoErrors[stream.id] && (
           <View style={styles.videoErrorOverlay}>
-            <AppText style={styles.videoErrorText}>Stream unavailable</AppText>
+            <AppText style={styles.videoErrorText}>
+              {translations.streamUnavailable || 'Stream unavailable'}
+            </AppText>
             <TouchableOpacity
               style={styles.openBrowserButton}
               onPress={() =>
@@ -148,7 +151,9 @@ export default function LiveStreamScreen() {
               }
             >
               <ExternalLink size={16} color="#fff" />
-              <AppText style={styles.openBrowserText}>Open in YouTube</AppText>
+              <AppText style={styles.openBrowserText}>
+                {translations.openInYouTube || 'Open in YouTube'}
+              </AppText>
             </TouchableOpacity>
           </View>
         )}
@@ -169,17 +174,14 @@ export default function LiveStreamScreen() {
           useNativeControls={true}
           onLoadStart={() => handleVideoLoadStart(stream.id)}
           onReadyForDisplay={() => handleVideoLoad(stream.id)}
-          onError={(error) => {
-            console.error('Video component error:', error);
-            handleVideoError(stream.id, error);
-          }}
+          onError={(error) => handleVideoError(stream.id, error)}
         />
 
         {videoLoading[stream.id] && (
           <View style={styles.videoLoadingOverlay}>
             <ActivityIndicator size="large" color="#fff" />
             <AppText style={styles.videoLoadingText}>
-              Loading HLS stream...
+              {translations.loadingHLSStream || 'Loading HLS stream...'}
             </AppText>
           </View>
         )}
@@ -187,10 +189,10 @@ export default function LiveStreamScreen() {
         {videoErrors[stream.id] && (
           <View style={styles.videoErrorOverlay}>
             <AppText style={styles.videoErrorText}>
-              HLS Stream unavailable
+              {translations.hlsStreamUnavailable || 'HLS Stream unavailable'}
             </AppText>
             <AppText style={styles.videoErrorSubtext}>
-              Could not load this stream
+              {translations.couldNotLoadStream || 'Could not load this stream'}
             </AppText>
           </View>
         )}
@@ -200,17 +202,11 @@ export default function LiveStreamScreen() {
 
   const renderStreamPlayer = (stream) => {
     const { streamType } = stream;
-
     switch (streamType) {
       case 'youtube':
         return renderYouTubePlayer(stream);
-
       case 'hls':
         return renderHLSPlayer(stream);
-
-      case 'facebook':
-      case 'rtmp':
-      case 'obs':
       default:
         return renderFallbackPlayer(stream);
     }
@@ -218,18 +214,22 @@ export default function LiveStreamScreen() {
 
   const renderFallbackPlayer = (stream) => {
     const videoId = getYouTubeVideoId(stream.streamUrl) || stream.originalUrl;
-
     return (
       <View style={styles.videoContainer}>
         <View style={styles.externalStreamContainer}>
           <Play size={48} color="#fff" opacity={0.8} />
           <AppText style={styles.externalStreamText}>
-            {stream.streamType?.toUpperCase() || 'EXTERNAL'} Stream
+            {stream.streamType?.toUpperCase() ||
+              translations.external ||
+              'EXTERNAL'}{' '}
+            {translations.streamLabel || 'Stream'}
           </AppText>
           <AppText style={styles.externalStreamSubtext}>
             {stream.streamType === 'youtube'
-              ? 'Tap below to watch in YouTube app'
-              : 'This stream type must be opened externally'}
+              ? translations.tapToWatchYouTube ||
+                'Tap below to watch in YouTube app'
+              : translations.externalStreamExternalOnly ||
+                'This stream type must be opened externally'}
           </AppText>
           <TouchableOpacity
             style={[
@@ -250,8 +250,8 @@ export default function LiveStreamScreen() {
             <ExternalLink size={20} color="#fff" />
             <AppText style={styles.openBrowserTextLarge}>
               {stream.streamType === 'youtube'
-                ? 'Open in YouTube'
-                : 'Watch in Browser'}
+                ? translations.openInYouTube || 'Open in YouTube'
+                : translations.watchInBrowser || 'Watch in Browser'}
             </AppText>
           </TouchableOpacity>
         </View>
@@ -262,7 +262,10 @@ export default function LiveStreamScreen() {
   if (loading) {
     return (
       <SafeAreaWrapper>
-        <TopNavigation showBackButton={true} />
+        <TopNavigation
+          showBackButton={true}
+          title={translations.live || 'Live'}
+        />
         <View
           style={[
             styles.centerContainer,
@@ -273,7 +276,7 @@ export default function LiveStreamScreen() {
           <AppText
             style={[styles.loadingText, { color: colors.textSecondary }]}
           >
-            Loading streams...
+            {translations.liveStreamLoading || 'Loading streams...'}
           </AppText>
         </View>
       </SafeAreaWrapper>
@@ -283,7 +286,10 @@ export default function LiveStreamScreen() {
   if (error) {
     return (
       <SafeAreaWrapper>
-        <TopNavigation showBackButton={true} />
+        <TopNavigation
+          showBackButton={true}
+          title={translations.live || 'Live'}
+        />
         <View
           style={[
             styles.centerContainer,
@@ -296,14 +302,17 @@ export default function LiveStreamScreen() {
           <AppText
             style={[styles.errorSubtext, { color: colors.textSecondary }]}
           >
-            Please check your connection and try again.
+            {translations.checkConnectionRetry ||
+              'Please check your connection and try again.'}
           </AppText>
           <TouchableOpacity
             style={[styles.retryButton, { backgroundColor: colors.primary }]}
             onPress={loadStreams}
           >
             <RefreshCw size={20} color="#fff" />
-            <AppText style={styles.retryButtonText}>Retry</AppText>
+            <AppText style={styles.retryButtonText}>
+              {translations.retry || 'Retry'}
+            </AppText>
           </TouchableOpacity>
         </View>
       </SafeAreaWrapper>
@@ -312,7 +321,10 @@ export default function LiveStreamScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} />
+      <TopNavigation
+        showBackButton={true}
+        title={translations.live || 'Live'}
+      />
 
       <View
         style={[styles.headerActions, { backgroundColor: colors.background }]}
@@ -330,7 +342,9 @@ export default function LiveStreamScreen() {
           <AppText
             style={[styles.refreshButtonText, { color: colors.primary }]}
           >
-            {refreshing ? 'Refreshing...' : 'Refresh Streams'}
+            {refreshing
+              ? translations.refreshing || 'Refreshing...'
+              : translations.refreshStreams || 'Refresh Streams'}
           </AppText>
         </TouchableOpacity>
       </View>
@@ -379,7 +393,9 @@ export default function LiveStreamScreen() {
                     { color: stream.isActive ? '#10B981' : '#6B7280' },
                   ]}
                 >
-                  {stream.isActive ? 'LIVE' : 'OFFLINE'}
+                  {stream.isActive
+                    ? translations.liveLabel || 'LIVE'
+                    : translations.offlineLabel || 'OFFLINE'}
                 </AppText>
               </View>
             </View>
@@ -388,9 +404,12 @@ export default function LiveStreamScreen() {
               renderStreamPlayer(stream)
             ) : (
               <View style={styles.offlineContainer}>
-                <AppText style={styles.offlineText}>Stream Offline</AppText>
+                <AppText style={styles.offlineText}>
+                  {translations.streamOffline || 'Stream Offline'}
+                </AppText>
                 <AppText style={styles.offlineSubtext}>
-                  This stream is currently not active
+                  {translations.streamNotActive ||
+                    'This stream is currently not active'}
                 </AppText>
               </View>
             )}
@@ -406,7 +425,6 @@ export default function LiveStreamScreen() {
                   {stream.description}
                 </AppText>
               )}
-
               {stream.schedule && (
                 <AppText
                   style={[styles.streamSchedule, { color: colors.primary }]}
@@ -414,11 +432,13 @@ export default function LiveStreamScreen() {
                   📅 {stream.schedule}
                 </AppText>
               )}
-
               <AppText
                 style={[styles.streamType, { color: colors.textSecondary }]}
               >
-                Type: {stream.streamType?.toUpperCase() || 'Unknown'}
+                {translations.streamTypeLabel || 'Type: '}{' '}
+                {stream.streamType?.toUpperCase() ||
+                  translations.unknown ||
+                  'Unknown'}
               </AppText>
             </View>
           </View>
@@ -427,12 +447,13 @@ export default function LiveStreamScreen() {
         {streams.length === 0 && (
           <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
             <AppText style={[styles.emptyTitle, { color: colors.text }]}>
-              No Active Streams
+              {translations.noActiveStreams || 'No Active Streams'}
             </AppText>
             <AppText
               style={[styles.emptySubtitle, { color: colors.textSecondary }]}
             >
-              Check back later for live streams
+              {translations.checkBackLaterLive ||
+                'Check back later for live streams'}
             </AppText>
             <TouchableOpacity
               style={[
@@ -442,7 +463,9 @@ export default function LiveStreamScreen() {
               onPress={onRefresh}
             >
               <RefreshCw size={20} color="#fff" />
-              <AppText style={styles.refreshButtonLargeText}>Refresh</AppText>
+              <AppText style={styles.refreshButtonLargeText}>
+                {translations.refresh || 'Refresh'}
+              </AppText>
             </TouchableOpacity>
           </View>
         )}

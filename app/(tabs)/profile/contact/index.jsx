@@ -7,6 +7,7 @@ import {
   ScrollView,
   Platform,
   Dimensions,
+  Alert,
 } from 'react-native';
 import {
   Send,
@@ -48,7 +49,10 @@ export default function ContactScreen() {
 
   const handleSubmit = async () => {
     if (!name || !email || !message || !category) {
-      alert('Please fill in all fields');
+      Alert.alert(
+        translations.error || 'Error',
+        translations.fillAllFields || 'Please fill in all fields',
+      );
       return;
     }
 
@@ -62,6 +66,11 @@ export default function ContactScreen() {
       setCategory('');
     } catch (e) {
       console.error('Failed to submit message:', e);
+      Alert.alert(
+        translations.error || 'Error',
+        translations.submitError ||
+          'Failed to submit message. Please try again.',
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -69,7 +78,10 @@ export default function ContactScreen() {
 
   return (
     <SafeAreaWrapper style={{ backgroundColor: colors.background }}>
-      <TopNavigation showBackButton={true} />
+      <TopNavigation
+        showBackButton={true}
+        title={translations.contactTitle || 'Contact Us'}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -83,7 +95,9 @@ export default function ContactScreen() {
           <View style={styles.iconCircle}>
             <MessageSquare size={40} color={colors.primary} />
           </View>
-          <AppText style={styles.heroTitle}>Get in Touch</AppText>
+          <AppText style={styles.heroTitle}>
+            {translations.getInTouch || 'Get in Touch'}
+          </AppText>
           <AppText style={styles.heroSubtitle}>
             {translations.contactDesc ||
               "We'd love to hear from you. Your feedback helps us serve you better."}
@@ -100,10 +114,10 @@ export default function ContactScreen() {
             {/* Name Input */}
             <View style={styles.inputWrapper}>
               <Input
-                label={translations.name}
+                label={translations.name || 'Name'}
                 value={name}
                 onChangeText={setName}
-                placeholder="Enter your name"
+                placeholder={translations.namePlaceholder || 'Enter your name'}
                 icon={<User size={18} color={colors.textSecondary} />}
               />
             </View>
@@ -111,12 +125,14 @@ export default function ContactScreen() {
             {/* Email Input */}
             <View style={styles.inputWrapper}>
               <Input
-                label={translations.email}
+                label={translations.email || 'Email'}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                placeholder="Enter your email"
+                placeholder={
+                  translations.emailPlaceholder || 'Enter your email'
+                }
                 icon={<MailIcon size={18} color={colors.textSecondary} />}
               />
             </View>
@@ -163,18 +179,25 @@ export default function ContactScreen() {
             {/* Message Input */}
             <View style={styles.inputWrapper}>
               <Input
-                label={translations.message}
+                label={translations.message || 'Message'}
                 value={message}
                 onChangeText={setMessage}
                 multiline
                 numberOfLines={5}
-                placeholder="Write your message here..."
+                placeholder={
+                  translations.messagePlaceholder ||
+                  'Write your message here...'
+                }
                 style={styles.messageArea}
               />
             </View>
 
             <Button
-              title={isSubmitting ? 'Sending Message...' : 'Send Message'}
+              title={
+                isSubmitting
+                  ? translations.sendingMessage || 'Sending Message...'
+                  : translations.sendMessage || 'Send Message'
+              }
               onPress={handleSubmit}
               disabled={isSubmitting}
               size="large"
@@ -195,19 +218,21 @@ export default function ContactScreen() {
             />
             <CheckCircle size={64} color={colors.primary} strokeWidth={1.5} />
             <AppText style={[styles.modalTitle, { color: colors.text }]}>
-              Thank You!
+              {translations.thankYou || 'Thank You!'}
             </AppText>
             <AppText
               style={[styles.modalDesc, { color: colors.textSecondary }]}
             >
-              Your message has been sent successfully. We appreciate your
-              feedback.
+              {translations.contactSuccessMsg ||
+                'Your message has been sent successfully. We appreciate your feedback.'}
             </AppText>
             <TouchableOpacity
               style={[styles.modalButton, { backgroundColor: colors.primary }]}
               onPress={() => setShowSuccessModal(false)}
             >
-              <AppText style={styles.modalButtonText}>Return to App</AppText>
+              <AppText style={styles.modalButtonText}>
+                {translations.returnToApp || 'Return to App'}
+              </AppText>
             </TouchableOpacity>
           </View>
         </View>

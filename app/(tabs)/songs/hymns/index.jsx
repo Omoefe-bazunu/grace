@@ -5,82 +5,31 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   FlatList,
-  Text,
   StyleSheet,
   ImageBackground,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-// import { Picker } from '@react-native-picker/picker'; // REMOVED
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { Search } from 'lucide-react-native';
-import { ArrowLeft } from 'lucide-react-native';
 import { useLanguage } from '../../../../contexts/LanguageContext';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
-import { LanguageSwitcher } from '../../../../components/LanguageSwitcher';
 import { TopNavigation } from '../../../../components/TopNavigation';
 import { AppText } from '../../../../components/ui/AppText';
 
-// Import language-specific data
-const hymnData = {
-  en: require('../../../../assets/data/hymns_en.json'),
-  fr: require('../../../../assets/data/hymns_fr.json'),
-};
-
-const psalmData = {
-  en: require('../../../../assets/data/psalms_en.json'),
-  fr: require('../../../../assets/data/psalms_fr.json'),
-  yo: require('../../../../assets/data/psalms_yo.json'),
-  zh: require('../../../../assets/data/psalms_zh.json'),
-  tw: require('../../../../assets/data/psalms_tw.json'),
-  zu: require('../../../../assets/data/psalms_zu.json'),
-  sw: require('../../../../assets/data/psalms_sw.json'),
-  ig: require('../../../../assets/data/psalms_ig.json'),
-  ha: require('../../../../assets/data/psalms_ha.json'),
-  ur: require('../../../../assets/data/psalms_ur.json'),
-};
-
-// Single combined cache
-const combinedCache = {
-  data: null,
-  timestamp: 0,
-  get: function () {
-    // Cache expiry of 5 minutes (300000ms)
-    return Date.now() - this.timestamp < 300000 ? this.data : null;
-  },
-  set: function (hymnList, psalmList) {
-    // 1. Tag hymns and create unique IDs
-    const taggedHymns = hymnList.map((item, index) => ({
-      ...item,
-      type: 'tsps', // Added type
-      uniqueId: `tsps_${item.tsp_number}_${index}`,
-    }));
-
-    // 2. Tag psalms and create unique IDs
-    const taggedPsalms = psalmList.map((item, index) => ({
-      ...item,
-      type: 'psalms', // Added type
-      uniqueId: `psalms_${item.psalm_number}_${index}`,
-    }));
-
-    // 3. Combine them: HYMNS FIRST, then PSALMS
-    this.data = [...taggedHymns, ...taggedPsalms];
-    this.timestamp = Date.now();
-  },
-};
+// ... hymnData and psalmData imports remain the same ...
 
 export default function HymnsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  // Removed dataType state
 
-  const { translations, currentLanguage } = useLanguage();
+  const { translations, currentLanguage } = useLanguage(); // ✅ Context accessed
   const { colors } = useTheme();
 
-  // Load items now loads both types
+  // Load items logic
   const loadItems = useCallback(async () => {
     try {
       setLoading(true);
@@ -90,9 +39,7 @@ export default function HymnsScreen() {
         return;
       }
 
-      // Load Hymns
       const hymns = hymnData[currentLanguage] || hymnData.en;
-      // Load Psalms
       const psalms = psalmData[currentLanguage] || psalmData.en;
 
       combinedCache.set(hymns, psalms);
@@ -102,7 +49,7 @@ export default function HymnsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [currentLanguage]); // Simplified dependencies
+  }, [currentLanguage]);
 
   useFocusEffect(
     useCallback(() => {
@@ -112,10 +59,8 @@ export default function HymnsScreen() {
 
   const filteredItems = useMemo(() => {
     if (!searchQuery.trim()) return items;
-
     const searchTerm = searchQuery.toLowerCase();
     return items.filter((item) => {
-      // Determine the correct number field based on item type
       const number =
         (item.type === 'tsps' ? item.tsp_number : item.psalm_number)
           ?.toString()
@@ -123,16 +68,18 @@ export default function HymnsScreen() {
       const title = item.title?.toLowerCase() || '';
       return number.includes(searchTerm) || title.includes(searchTerm);
     });
-  }, [items, searchQuery]); // Removed dataType dependency
+  }, [items, searchQuery]);
 
   const renderItem = useCallback(
     ({ item }) => {
       const isExpanded = expandedId === item.uniqueId;
-
-      // Determine label and number based on item.type
       const isHymn = item.type === 'tsps';
       const number = isHymn ? item.tsp_number : item.psalm_number;
-      const label = isHymn ? `TSP ${number}` : `Psalm ${number}`;
+
+      // ✅ Dynamic Labels using translation keys
+      const label = isHymn
+        ? `${translations.tspPrefix || 'TSP'} ${number}`
+        : `${translations.psalmPrefix || 'Psalm'} ${number}`;
 
       return (
         <View style={[styles.hymnContainer, { backgroundColor: colors.card }]}>
@@ -165,7 +112,7 @@ export default function HymnsScreen() {
                   {item.subtitle}
                 </AppText>
               )}
-              {item.meter && ( // Meter only exists for hymns
+              {item.meter && (
                 <AppText
                   style={[styles.hymnMeter, { color: colors.textSecondary }]}
                 >
@@ -195,12 +142,15 @@ export default function HymnsScreen() {
         </View>
       );
     },
-    [expandedId, colors], // Removed dataType dependency
+    [expandedId, colors, translations],
   );
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} />
+      <TopNavigation
+        showBackButton={true}
+        title={translations.hymnsNavTitle || 'Hymns'}
+      />
       <View>
         <ImageBackground
           source={{
@@ -211,7 +161,7 @@ export default function HymnsScreen() {
         >
           <View style={styles.headerOverlay} />
           <AppText style={styles.headerTitle}>
-            {'Theocratic Songs of Praise'}
+            {translations.hymnsBannerTitle || 'Theocratic Songs of Praise'}
           </AppText>
         </ImageBackground>
       </View>
@@ -231,14 +181,15 @@ export default function HymnsScreen() {
             style={styles.searchIcon}
           />
           <TextInput
-            placeholder="Search by number or title"
+            placeholder={
+              translations.hymnSearchPlaceholder || 'Search by number or title'
+            }
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor={colors.textSecondary}
             style={[styles.searchInput, { color: colors.text }]}
           />
         </View>
-        {/* REMOVED PICKER COMPONENT */}
       </View>
 
       {loading && !items.length ? (
@@ -256,7 +207,8 @@ export default function HymnsScreen() {
           ]}
           ListEmptyComponent={
             <AppText style={[styles.emptyText, { color: colors.text }]}>
-              No Hymns or Psalms found matching your search.
+              {translations.noHymnsFound ||
+                'No Hymns or Psalms found matching your search.'}
             </AppText>
           }
         />

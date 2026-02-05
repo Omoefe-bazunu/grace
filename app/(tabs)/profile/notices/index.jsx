@@ -155,12 +155,12 @@ const CollapsibleNoticeItem = ({
               </View>
               <View style={styles.pdfInfo}>
                 <AppText style={[styles.pdfTitle, { color: colors.text }]}>
-                  View Attached Document
+                  {translations.viewAttachedDoc || 'View Attached Document'}
                 </AppText>
                 <AppText
                   style={[styles.pdfSub, { color: colors.textSecondary }]}
                 >
-                  PDF File
+                  {translations.pdfFile || 'PDF File'}
                 </AppText>
               </View>
               <ExternalLink size={18} color={colors.primary} />
@@ -205,7 +205,10 @@ export default function NoticesScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} title="Notices" />
+      <TopNavigation
+        showBackButton={true}
+        title={translations.noticesNavTitle || 'Notices'}
+      />
 
       {/* Fullscreen Image Viewer Modal */}
       <Modal visible={!!selectedImage} transparent={true} animationType="fade">
@@ -244,7 +247,9 @@ export default function NoticesScreen() {
             !loading && (
               <View style={styles.emptyContainer}>
                 <Bell size={48} color={colors.textSecondary} />
-                <AppText style={styles.emptyText}>No Notices Yet</AppText>
+                <AppText style={styles.emptyText}>
+                  {translations.noNoticesYet || 'No Notices Yet'}
+                </AppText>
               </View>
             )
           }

@@ -72,7 +72,6 @@ export default function AnimationDetailScreen() {
   const { translations } = useLanguage();
   const { colors } = useTheme();
 
-  // Create the video player instance
   const player = useVideoPlayer();
 
   useEffect(() => {
@@ -91,7 +90,6 @@ export default function AnimationDetailScreen() {
   }, [id]);
 
   useEffect(() => {
-    // Correctly load the video source into the player instance
     if (video?.videoUrl) {
       player.replace({ uri: video.videoUrl });
     }
@@ -137,38 +135,26 @@ export default function AnimationDetailScreen() {
     <SafeAreaWrapper
       style={[styles.container, { backgroundColor: colors.background }]}
     >
-      {/* Header */}
       <TopNavigation showBackButton={true} />
 
-      {/* Video Player - with native controls */}
       <View style={styles.videoContainer}>
         <VideoView
           style={styles.videoPlayer}
           player={player}
-          // THIS IS THE KEY CHANGE
           nativeControls={true}
           contentFit="contain"
         />
       </View>
 
-      {/* Video Info */}
       <View style={[styles.videoInfo, { backgroundColor: colors.card }]}>
         <AppText style={[styles.title, { color: colors.text }]}>
           {video.title || translations.noTitle}
         </AppText>
         <View style={styles.metaInfo}>
-          {/* <AppText style={[styles.metaText, { color: colors.textSecondary }]}>
-            {translations.duration}:{' '}
-            {video.duration || translations.unknownDuration}
-          </AppText> */}
-          {/* <AppText style={[styles.metaText, { color: colors.textSecondary }]}>
-            {translations.language}:{' '}
-            {video.languageCategory || translations.unknownCategory}
-          </AppText> */}
+          {/* Metadata items can be added here using translations.duration or translations.language */}
         </View>
       </View>
 
-      {/* Controls */}
       <View style={[styles.controls, { backgroundColor: colors.card }]}>
         <TouchableOpacity style={styles.controlButton} onPress={handleShare}>
           <Share2 size={24} color={colors.primary} />
