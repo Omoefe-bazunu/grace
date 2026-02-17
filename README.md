@@ -3,7 +3,7 @@ GKS Mobile App: Towards God's Perfect Government
 The GKS Mobile App is the official digital platform for God's Kingdom Society (The Church of the Living God), designed to help members and believers worldwide read, listen, and grow in faith. Founded in 1934, the GKS is committed to preaching the pure truth of God's word and exposing false doctrines through a multilingual ministry.
 
 Key Features
- * Multilingual Support: Fully localized in English, Yoruba, Hausa, Igbo, Urhobo, Swahili, Twi, Zulu, French, and Chinese.
+ * Multilingual Support: Fully localized in English, Yoruba, Hausa, Igbo, Urhobo, Swahili, Isoko, Hausa, Itsekiri, French, and Chinese.
  * Edifying Sermons: Access sermons in text, audio, and video formats organized by volume, subject, and year.
  * Sacred Music: A vast collection of Theocratic Songs of Praise (Hymns and Psalms) and spiritual melodies.
  * Bible-Based Stories: Spiritual values brought to life through narrative animations and visual illustrations.
