@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   ScrollView,
@@ -9,262 +9,130 @@ import {
   Easing,
   Alert,
   Platform,
+  Image,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import {
   Play,
   Pause,
   FastForward,
   Rewind,
-  Calendar,
-  Mic,
   Repeat,
   Download,
+  Calendar,
 } from 'lucide-react-native';
 
 import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
-import { Audio } from 'expo-av';
 
 import { useLanguage } from '@/contexts/LanguageContext';
-import { AppText } from '../../../../components/ui/AppText';
 import { useTheme } from '@/contexts/ThemeContext';
+import { usePlayer } from '../../../../contexts/PlayListContext'; // ✅ Hook into global player
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
-import { getSermon } from '@/services/dataService';
-import { LinearGradient } from 'expo-linear-gradient';
 import { TopNavigation } from '../../../../components/TopNavigation';
-
-const SkeletonSermon = () => {
-  const { colors } = useTheme();
-  return (
-    <SafeAreaWrapper>
-      <View style={[styles.header, { backgroundColor: colors.surface }]}>
-        <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
-          style={styles.skeletonHeaderTitle}
-        />
-      </View>
-      <View style={[styles.content, { backgroundColor: colors.background }]}>
-        <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
-          style={styles.skeletonTitle}
-        />
-        <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
-          style={styles.skeletonDate}
-        />
-        <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
-          style={styles.skeletonVisual}
-        />
-        <LinearGradient
-          colors={[colors.skeleton, colors.skeletonHighlight]}
-          style={styles.skeletonAudio}
-        />
-      </View>
-    </SafeAreaWrapper>
-  );
-};
+import { AppText } from '../../../../components/ui/AppText';
+import { getSermon } from '@/services/dataService';
+import SermonImage from '../../../../assets/images/SERMONBG.png';
 
 export default function SermonAudioDetailScreen() {
   const { id } = useLocalSearchParams();
   const { translations } = useLanguage();
   const { colors } = useTheme();
 
-  const [sermon, setSermon] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // ✅ Access Global Player State (Exactly like MusicDetailScreen)
+  const {
+    currentSong,
+    isPlaying,
+    playSong,
+    togglePlayPause,
+    position,
+    duration,
+    seek,
+    isLooping,
+    toggleLoop,
+  } = usePlayer();
 
-  const [sound, setSound] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [position, setPosition] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [isLooping, setIsLooping] = useState(false);
+  const [localSermonData, setLocalSermonData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const pulse = useRef(new Animated.Value(1)).current;
-  const animationRef = useRef(null);
-  const isMounted = useRef(true);
 
+  // Pulse Animation Logic
   useEffect(() => {
-    const configureAudio = async () => {
-      try {
-        await Audio.setAudioModeAsync({
-          staysActiveInBackground: true,
-          playsInSilentModeIOS: true,
-          shouldDuckAndroid: true,
-          playThroughEarpieceAndroid: false,
-        });
-      } catch (error) {
-        console.error('Failed to configure audio session:', error);
-      }
-    };
-
-    configureAudio();
-  }, []);
-
-  const startPulse = useCallback(() => {
-    if (animationRef.current) animationRef.current.stop();
-    pulse.setValue(1);
-
-    animationRef.current = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 1.05,
-          duration: 1000,
-          easing: Easing.ease,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 1000,
-          easing: Easing.ease,
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
-  }, [pulse]);
-
-  const stopPulse = useCallback(() => {
-    if (animationRef.current) {
-      animationRef.current.stop();
-      animationRef.current = null;
+    if (isPlaying) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, {
+            toValue: 1.05,
+            duration: 1000,
+            easing: Easing.ease,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulse, {
+            toValue: 1,
+            duration: 1000,
+            easing: Easing.ease,
+            useNativeDriver: true,
+          }),
+        ]),
+      ).start();
+    } else {
+      pulse.stopAnimation();
       pulse.setValue(1);
     }
-  }, [pulse]);
+  }, [isPlaying]);
 
-  const onPlaybackStatusUpdate = useCallback(
-    (status) => {
-      if (!isMounted.current) return;
-
-      if (status.isLoaded) {
-        if (status.isPlaying !== isPlaying) {
-          status.isPlaying ? startPulse() : stopPulse();
-        }
-
-        setIsPlaying(status.isPlaying);
-        setPosition(status.positionMillis);
-        if (status.durationMillis) setDuration(status.durationMillis);
-
-        if (status.didJustFinish) {
-          if (!isLooping) {
-            setIsPlaying(false);
-            setPosition(0);
-            sound?.setPositionAsync(0);
-            stopPulse();
-          }
-        }
-      } else if (status.error) {
-        console.error('Audio load error:', status.error);
-        stopPulse();
-      }
-    },
-    [isPlaying, startPulse, stopPulse, sound, isLooping],
-  );
-
-  const loadAudio = async (url) => {
-    try {
-      if (sound) await sound.unloadAsync();
-
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: url },
-        { shouldPlay: false, isLooping: isLooping },
-        onPlaybackStatusUpdate,
-      );
-
-      if (isMounted.current) setSound(newSound);
-    } catch (error) {
-      console.error('Audio load error:', error);
-      if (isMounted.current)
-        Alert.alert(
-          translations.error || 'Error',
-          translations.audioLoadError || 'Failed to load audio source.',
-        );
-    }
-  };
-
+  // Load Sermon Data and Sync with Player
   useEffect(() => {
-    isMounted.current = true;
-    const fetchAndLoadSermon = async () => {
+    const init = async () => {
+      setLoading(true);
       try {
-        const sermonData = await getSermon(id);
-        if (isMounted.current) {
-          setSermon(sermonData);
-          if (sermonData?.audioUrl) {
-            await loadAudio(sermonData.audioUrl);
-          }
+        const data = await getSermon(id);
+        setLocalSermonData(data);
+
+        // ✅ If this sermon isn't already the global track, play it
+        // This triggers the floating controls across the app
+        if (data && (!currentSong || currentSong.id !== data.id)) {
+          await playSong(data);
         }
-      } catch (error) {
-        console.error('Error loading sermon:', error);
-        if (isMounted.current) setSermon(null);
+      } catch (e) {
+        console.error(e);
       } finally {
-        if (isMounted.current) setLoading(false);
+        setLoading(false);
       }
     };
+    init();
+  }, [id]);
 
-    fetchAndLoadSermon();
-
-    return () => {
-      isMounted.current = false;
-      if (sound) sound.unloadAsync();
-      stopPulse();
-    };
-  }, [id, stopPulse]);
-
-  const handlePlayPause = async () => {
-    if (sound) {
-      if (isPlaying) {
-        await sound.pauseAsync();
-        stopPulse();
-      } else {
-        await sound.playAsync();
-        startPulse();
-      }
-    }
-  };
-
-  const handleToggleLoop = async () => {
-    const nextState = !isLooping;
-    setIsLooping(nextState);
-    if (sound) {
-      await sound.setIsLoopingAsync(nextState);
-    }
-  };
-
-  const handleFastForward = async () => {
-    if (sound) {
-      const newPos = Math.min(duration, position + 10000);
-      await sound.setPositionAsync(newPos);
-    }
-  };
-
-  const handleRewind = async () => {
-    if (sound) {
-      const newPos = Math.max(0, position - 10000);
-      await sound.setPositionAsync(newPos);
+  const handleMainPlayPause = async () => {
+    if (currentSong && currentSong.id === id) {
+      togglePlayPause();
+    } else if (localSermonData) {
+      await playSong(localSermonData);
     }
   };
 
   const handleDownload = async () => {
-    if (!sermon?.audioUrl) return;
+    const itemToDownload = currentSong || localSermonData;
+    if (!itemToDownload?.audioUrl) return;
 
     const { status } = await MediaLibrary.requestPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
         translations.permissionRequired || 'Permission required',
         translations.saveSermonPermission ||
-          'Please allow access to save sermons to your device.',
+          'Please allow access to save sermons.',
       );
       return;
     }
 
     setIsDownloading(true);
     try {
-      const filename = `Sermon_${sermon.title.replace(/[^a-z0-9]/gi, '_')}.mp3`;
+      const filename = `Sermon_${itemToDownload.title.replace(/[^a-z0-9]/gi, '_')}.mp3`;
       const fileUri = FileSystem.documentDirectory + filename;
-
-      const { uri } = await FileSystem.downloadAsync(sermon.audioUrl, fileUri);
-
-      const asset = await MediaLibrary.createAssetAsync(uri);
+      await FileSystem.downloadAsync(itemToDownload.audioUrl, fileUri);
+      const asset = await MediaLibrary.createAssetAsync(fileUri);
 
       if (Platform.OS === 'android') {
         const album = await MediaLibrary.getAlbumAsync('GraceApp Sermons');
@@ -274,16 +142,14 @@ export default function SermonAudioDetailScreen() {
           await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
         }
       }
-
       Alert.alert(
         translations.success || 'Success',
-        translations.sermonSaved || 'Sermon saved to your device!',
+        translations.sermonSaved || 'Sermon saved!',
       );
     } catch (e) {
-      console.error(e);
       Alert.alert(
         translations.error || 'Error',
-        translations.fileSaveError || 'Could not save file.',
+        translations.fileSaveError || 'Save failed.',
       );
     } finally {
       setIsDownloading(false);
@@ -291,22 +157,20 @@ export default function SermonAudioDetailScreen() {
   };
 
   const formatTime = (millis) => {
-    if (!millis || isNaN(millis) || millis < 0) return '0:00';
-    const mins = Math.floor(millis / 60000);
-    const secs = Math.floor((millis % 60000) / 1000);
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    if (millis < 0) return '0:00';
+    const minutes = Math.floor(millis / 60000);
+    const seconds = ((millis % 60000) / 1000).toFixed(0);
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
-  if (loading) return <SkeletonSermon />;
-  if (!sermon || !sermon.audioUrl) {
-    return (
-      <SafeAreaWrapper>
-        <AppText style={[styles.error, { color: colors.error }]}>
-          {translations.errorSermonNotFound || 'Sermon not found or no audio.'}
-        </AppText>
-      </SafeAreaWrapper>
-    );
-  }
+  if (loading || !localSermonData)
+    return <ActivityIndicator style={{ flex: 1 }} color={colors.primary} />;
+
+  // Control calculations based on global player state
+  const isCurrentSermonLoaded = currentSong && currentSong.id === id;
+  const displayIsPlaying = isCurrentSermonLoaded ? isPlaying : false;
+  const displayPosition = isCurrentSermonLoaded ? position : 0;
+  const displayDuration = isCurrentSermonLoaded ? duration : 1;
 
   return (
     <SafeAreaWrapper>
@@ -314,72 +178,50 @@ export default function SermonAudioDetailScreen() {
         showBackButton={true}
         title={translations.audioPlayer || 'Audio Player'}
       />
-
-      <ScrollView
-        style={[styles.content, { backgroundColor: colors.background }]}
-      >
-        <View style={styles.audioVisualContainer}>
+      <ScrollView style={{ flex: 1, paddingHorizontal: 20 }}>
+        <View style={styles.visualContainer}>
           <Animated.View
-            style={[
-              styles.audioVisualDisc,
-              {
-                transform: [{ scale: pulse }],
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                elevation: 10,
-              },
-            ]}
+            style={{
+              transform: [{ scale: pulse }],
+              borderRadius: 125,
+              elevation: 10,
+            }}
           >
-            <View
-              style={[
-                styles.micIconContainer,
-                { backgroundColor: colors.primary },
-              ]}
-            >
-              <Mic size={60} color="#FFFFFF" />
-            </View>
+            <Image source={SermonImage} style={styles.albumArt} />
           </Animated.View>
         </View>
 
-        <View style={{ alignItems: 'center', marginBottom: 20 }}>
+        <View style={styles.infoContainer}>
           <AppText style={[styles.title, { color: colors.text }]}>
-            {sermon.title || translations.noTitle}
+            {localSermonData.title}
           </AppText>
-
           <View style={styles.dateRow}>
-            <Calendar size={16} color={colors.textSecondary} />
-            <AppText style={[styles.date, { color: colors.textSecondary }]}>
-              {sermon.date || translations.unknownDate}
+            <Calendar
+              size={16}
+              color={colors.textSecondary}
+              style={{ marginRight: 6 }}
+            />
+            <AppText style={{ fontSize: 16, color: colors.textSecondary }}>
+              {localSermonData.date || translations.unknownDate}
             </AppText>
           </View>
         </View>
 
-        <View style={{ marginBottom: 30 }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              marginBottom: 10,
-            }}
-          >
+        <View style={styles.progressContainer}>
+          <View style={styles.timeRow}>
             <AppText style={{ color: colors.textSecondary }}>
-              {formatTime(position)}
+              {formatTime(displayPosition)}
             </AppText>
             <AppText style={{ color: colors.textSecondary }}>
-              {formatTime(duration)}
+              {formatTime(displayDuration)}
             </AppText>
           </View>
           <View
-            style={{
-              height: 4,
-              backgroundColor: colors.border,
-              borderRadius: 2,
-              overflow: 'hidden',
-            }}
+            style={[styles.progressBarBase, { backgroundColor: colors.border }]}
           >
             <View
               style={{
-                width: duration ? `${(position / duration) * 100}%` : '0%',
+                width: `${(displayPosition / displayDuration) * 100}%`,
                 height: '100%',
                 backgroundColor: colors.primary,
               }}
@@ -387,52 +229,42 @@ export default function SermonAudioDetailScreen() {
           </View>
         </View>
 
-        <View style={styles.audioControls}>
-          <TouchableOpacity onPress={handleToggleLoop}>
+        <View style={styles.controlsRow}>
+          <TouchableOpacity onPress={toggleLoop}>
             <Repeat
               color={isLooping ? colors.primary : colors.textSecondary}
               size={24}
             />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={handleRewind}>
-            <Rewind size={32} color={colors.text} />
+          <TouchableOpacity
+            onPress={() => isCurrentSermonLoaded && seek(position - 10000)}
+          >
+            <Rewind color={colors.text} size={32} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={handlePlayPause}
-            style={[
-              styles.playPauseButton,
-              { backgroundColor: colors.primary },
-            ]}
+            onPress={handleMainPlayPause}
+            style={[styles.mainPlayBtn, { backgroundColor: colors.primary }]}
           >
-            {isPlaying ? (
-              <Pause size={32} color="#FFFFFF" />
+            {displayIsPlaying ? (
+              <Pause color="#fff" size={32} />
             ) : (
-              <Play size={32} color="#FFFFFF" />
+              <Play color="#fff" size={32} />
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={handleFastForward}>
-            <FastForward size={32} color={colors.text} />
+          <TouchableOpacity
+            onPress={() => isCurrentSermonLoaded && seek(position + 10000)}
+          >
+            <FastForward color={colors.text} size={32} />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={handleDownload}
-            disabled={isDownloading}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}
-          >
+          <TouchableOpacity onPress={handleDownload} disabled={isDownloading}>
             {isDownloading ? (
               <ActivityIndicator size="small" color={colors.primary} />
             ) : (
-              <Download
-                color={colors.textSecondary}
-                size={20}
-                style={{ marginRight: 8 }}
-              />
+              <Download color={colors.textSecondary} size={24} />
             )}
           </TouchableOpacity>
         </View>
@@ -442,57 +274,26 @@ export default function SermonAudioDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
+  visualContainer: { alignItems: 'center', marginVertical: 20 },
+  albumArt: { width: 250, height: 250, borderRadius: 125 },
+  infoContainer: { alignItems: 'center', marginBottom: 30 },
+  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center' },
+  dateRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  progressContainer: { marginBottom: 30 },
+  timeRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
-  content: { flex: 1, paddingHorizontal: 20, paddingTop: 10 },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  date: { fontSize: 14 },
-
-  // Visualizer Styles (Matched to Album Art dimensions)
-  audioVisualContainer: {
-    alignItems: 'center',
-    marginVertical: 30,
-  },
-  audioVisualDisc: {
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  micIconContainer: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Controls
-  audioControls: {
+  progressBarBase: { height: 4, borderRadius: 2, overflow: 'hidden' },
+  controlsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 40,
     paddingHorizontal: 10,
   },
-  playPauseButton: {
+  mainPlayBtn: {
     width: 70,
     height: 70,
     borderRadius: 35,
@@ -504,49 +305,4 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 3,
   },
-  downloadBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 25,
-    borderWidth: 1,
-    elevation: 2,
-  },
-
-  // Skeleton
-  skeletonHeaderTitle: {
-    height: 18,
-    width: '60%',
-    borderRadius: 4,
-    alignSelf: 'center',
-  },
-  skeletonTitle: {
-    height: 28,
-    width: '90%',
-    borderRadius: 4,
-    marginBottom: 8,
-    alignSelf: 'center',
-  },
-  skeletonDate: {
-    height: 16,
-    width: '50%',
-    borderRadius: 4,
-    marginBottom: 20,
-    alignSelf: 'center',
-  },
-  skeletonVisual: {
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    alignSelf: 'center',
-    marginVertical: 30,
-  },
-  skeletonAudio: {
-    height: 40,
-    width: '100%',
-    borderRadius: 4,
-    marginBottom: 20,
-  },
-  error: { fontSize: 18, textAlign: 'center', marginTop: 50 },
 });

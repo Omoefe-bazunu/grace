@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "275513381595",
+    "project_id": "southpark-11f5d",
+    "storage_bucket": "southpark-11f5d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:275513381595:android:55932779ac39a83453b2fe",
+        "android_client_info": {
+          "package_name": "com.omoefe01.grace"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBdC6SA4CVZrY_Cfu4zND1pMePOrzIWVNQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

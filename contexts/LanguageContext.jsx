@@ -93,11 +93,12 @@ const translations = {
     onboardingTitle4: 'MORE FEATURES',
     onboardingDesc4:
       "Learn God's word through animations, and gain access to pictures and videos in the church's archive.",
+    continue: 'Continue',
 
     // Home Screen
     homeNavTitle: 'Grace',
     heroLabel: "GOD'S KINGDOM SOCIETY",
-    heroTitle: "Towards God's Perfect Government",
+    heroTitle: "Declaring God's Perfect Government",
     heroDesc:
       'Read, listen, and grow in faith with the Church of the Living God.',
     exploreResources: 'Explore Resources',
@@ -467,7 +468,7 @@ const translations = {
     connectWithUs: 'Connect With Us',
     developedBy: 'Developed by HIGH-ER ENTERPRISES',
     allRightsReserved: 'All rights reserved.',
-    churchMotto: "Towards God's perfect government",
+    churchMotto: "Declaring God's perfect government",
 
     // Not Found Screen
     notFoundTitle: 'Oops!',
@@ -554,7 +555,7 @@ const translations = {
     skip: '跳过',
     startBtn: '开始',
     onboardingSubtitle1: '欢迎来到',
-    onboardingTitle1: '神国协会 (GKS)',
+    onboardingTitle1: '上帝王国协会 (Shàngdì Wángguó Xiéhuì)',
     onboardingDesc1: '一个宣扬并实践上帝话语真理，以追求上帝救恩的基督徒组织。',
     onboardingSubtitle2: '在上帝的话语中成长',
     onboardingTitle2: '造就心灵的讲道',
@@ -567,11 +568,12 @@ const translations = {
     onboardingSubtitle4: '探索更多',
     onboardingTitle4: '更多功能',
     onboardingDesc4: '通过动画学习上帝的话语，并访问教会存档中的图片和视频。',
+    continue: '继续 (Jìxù)',
 
     // Home Screen
     homeNavTitle: '恩典',
-    heroLabel: "神国协会 (GOD'S KINGDOM SOCIETY)",
-    heroTitle: '迈向神完美的统治',
+    heroLabel: '上帝王国协会 (Shàngdì Wángguó Xiéhuì)',
+    heroTitle: '宣告神完美的统治',
     heroDesc: '在永生上帝的教会中阅读、聆听并增长信心。',
     exploreResources: '探索资源',
     homeCardTitleSongs: '赞美诗歌',
@@ -1010,7 +1012,7 @@ const translations = {
     skip: 'Passer',
     startBtn: 'COMMENCER',
     onboardingSubtitle1: 'Bienvenue à la',
-    onboardingTitle1: "God's Kingdom Society",
+    onboardingTitle1: 'Société du Royaume de Dieu',
     onboardingDesc1:
       'Une organisation chrétienne où la vérité de la parole de Dieu est prêchée et pratiquée en vue du salut de Dieu.',
     onboardingSubtitle2: 'Grandissez dans la parole de Dieu avec',
@@ -1025,11 +1027,12 @@ const translations = {
     onboardingTitle4: 'PLUS DE FONCTIONNALITÉS',
     onboardingDesc4:
       "Apprenez la parole de Dieu à travers des animations, et accédez aux photos et vidéos des archives de l'église.",
+    continue: 'Continuer',
 
     // Home Screen
     homeNavTitle: 'Grâce',
-    heroLabel: "GOD'S KINGDOM SOCIETY",
-    heroTitle: 'Vers le gouvernement parfait de Dieu',
+    heroLabel: 'Société du Royaume de Dieu',
+    heroTitle: 'Déclarer le Gouvernement Parfait de Dieu',
     heroDesc:
       "Lisez, écoutez et grandissez dans la foi avec l'Église du Dieu Vivant.",
     exploreResources: 'Explorer les ressources',
@@ -1494,7 +1497,7 @@ const translations = {
     skip: 'Ruka',
     startBtn: 'ANZA',
     onboardingSubtitle1: 'Karibu kwenye',
-    onboardingTitle1: "God's Kingdom Society",
+    onboardingTitle1: 'Jumuiya ya Ufalme wa Mungu',
     onboardingDesc1:
       'Shirika la Kikristo ambapo ukweli wa neno la Mungu unahubiriwa na kutendwa kwa lengo la kupata wokovu wa Mungu.',
     onboardingSubtitle2: 'Kua katika neno la Mungu kwa',
@@ -1509,11 +1512,12 @@ const translations = {
     onboardingTitle4: 'VIPENGELE ZAIDI',
     onboardingDesc4:
       'Jifunze neno la Mungu kupitia vikaragosi, na upate ufikiaji wa picha na video katika kumbukumbu za kanisa.',
+    continue: 'Endelea',
 
     // Home Screen
     homeNavTitle: 'Neema',
-    heroLabel: "GOD'S KINGDOM SOCIETY",
-    heroTitle: 'Kuelekea Serikali Kamilifu ya Mungu',
+    heroLabel: 'Jumuiya ya Ufalme wa Mungu',
+    heroTitle: 'Kutangaza Serikali ya Mungu iliyo kamilifu',
     heroDesc:
       'Soma, sikiliza, na ukue katika imani na Kanisa la Mungu Aliye Hai.',
     exploreResources: 'Gundua Rasilimali',
@@ -1972,7 +1976,7 @@ const translations = {
     skip: 'Tsallake',
     startBtn: 'FARA',
     onboardingSubtitle1: 'Barka da zuwa',
-    onboardingTitle1: "God's Kingdom Society",
+    onboardingTitle1: 'Ƙungiyar Mulkin Allah',
     onboardingDesc1:
       'Kungiyar Kiristoci inda ake koyarwa da aikata gaskiyar maganar Allah don samun ceton Allah.',
     onboardingSubtitle2: 'Kara sani a maganar Allah da',
@@ -1987,11 +1991,12 @@ const translations = {
     onboardingTitle4: 'WASU SAURAN ABUBUWA',
     onboardingDesc4:
       'Koyi maganar Allah ta hanyar bidiyon kwaikwayo, sannan ka duba hotuna da bidiyo a cikin taskar cocin.',
+    continue: 'Ci gaba',
 
     // Home Screen
     homeNavTitle: 'Alheri',
-    heroLabel: "GOD'S KINGDOM SOCIETY",
-    heroTitle: 'Zuwa Ga Cikakkiyar Gwamnatin Allah',
+    heroLabel: 'Ƙungiyar Mulkin Allah',
+    heroTitle: 'Shelar da Cikakken Mulkin Allah',
     heroDesc:
       'Karanta, saurara, kuma ka kara girma a cikin imani tare da Cocin Allah Mai Rai.',
     exploreResources: 'Bincika Abubuwa',
@@ -2444,7 +2449,7 @@ const translations = {
     skip: 'Mafere',
     startBtn: 'BIDO',
     onboardingSubtitle1: 'Nnọọ na',
-    onboardingTitle1: "God's Kingdom Society",
+    onboardingTitle1: 'Otu Alaeze Chineke',
     onboardingDesc1:
       'Nzukọ Ndị Kraịst ebe a na-ekwusa ma na-eme eziokwu nke okwu Chineke maka nzọpụta nke Chineke.',
     onboardingSubtitle2: 'Toonụ n’okwu Chineke site na',
@@ -2459,11 +2464,12 @@ const translations = {
     onboardingTitle4: 'IHE NDỊ ỌZỌ DỊ N’IME',
     onboardingDesc4:
       'Mụta okwu Chineke site n’ihe nkiri atụmatụ, ma nweta foto na vidiyo dị n’ebe nchekwa ụka.',
+    continue: 'Gaba n’ihu',
 
     // Home Screen
     homeNavTitle: 'Amara',
-    heroLabel: "GOD'S KINGDOM SOCIETY",
-    heroTitle: 'Gaa n’Ọchịchị Chineke Zuru Okè',
+    heroLabel: 'Otu Alaeze Chineke',
+    heroTitle: 'Ikwupụta Ọchịchị Chineke zuru oke',
     heroDesc: 'Gụọ, gee ntị, ma too n’okwukwe na Ụka Chineke dị ndụ.',
     exploreResources: 'Chọpụta Ihe Ndị Dị n’Ime',
     homeCardTitleSongs: 'Abụ Otuto',
@@ -2915,7 +2921,7 @@ const translations = {
     skip: 'Rekọja',
     startBtn: 'BERE',
     onboardingSubtitle1: 'Kaabo si',
-    onboardingTitle1: "God's Kingdom Society",
+    onboardingTitle1: 'Ẹgbẹ́ Ìjọba Ọlọ́run',
     onboardingDesc1:
       'Eto Onigbagbo nibiti a ti n waasu ti a si n se otito oro Olorun fun igbala Olorun.',
     onboardingSubtitle2: 'Dagba ninu oro Olorun pelu',
@@ -2930,11 +2936,12 @@ const translations = {
     onboardingTitle4: 'ÀWỌN ÈTÒ MÍÌRÀN',
     onboardingDesc4:
       'Kọ ẹkọ ọrọ Ọlọrun nipasẹ awọn aworan alagbeeka, ki o si wo awọn fọto ati awọn fidio lati ile ifosoke ijọ.',
+    continue: 'Tẹ̀síwájú',
 
     // Home Screen
     homeNavTitle: 'Oore-ofẹ',
-    heroLabel: "GOD'S KINGDOM SOCIETY",
-    heroTitle: 'Si Ijoba Pipe ti Olorun',
+    heroLabel: 'Ẹgbẹ́ Ìjọba Ọlọ́run',
+    heroTitle: 'Kéde Ìjọba pípé Ọlọ́run',
     heroDesc: 'Ka, tẹtí sí, kí o sì dàgbà nínú ìgbàgbọ́ pẹ̀lú Ìjọ Ọlọ́run Alààyè.',
     exploreResources: 'Ṣawari Awọn Ohun Itọkasi',
     homeCardTitleSongs: 'Orin Iyin',
@@ -3382,7 +3389,7 @@ const translations = {
     skip: 'Vwrẹ',
     startBtn: 'TONRE',
     onboardingSubtitle1: 'Mavọ rhe',
-    onboardingTitle1: "God's Kingdom Society",
+    onboardingTitle1: 'Egbe rẹ Usu rẹ Ọghènè',
     onboardingDesc1:
       'Ẹga rẹ Iniọvo re rhuẹre ghwọghọ efele rẹ ota rẹ Ọghẹnẹ rere e mọ mrẹ usiwo rẹ Ọghẹnẹ.',
     onboardingSubtitle2: 'Rha mrẹ otọ rẹ ota rẹ Ọghẹnẹ vẹ',
@@ -3397,11 +3404,12 @@ const translations = {
     onboardingTitle4: 'EFELE RẸ EBUOBUO',
     onboardingDesc4:
       'Yono ota rẹ Ọghẹnẹ vẹ ighẹwẹ rẹ ibebe, ji mrẹ ifoto vẹ ighẹwẹ rọ hẹ asan rẹ ekpako rẹ ẹga na.',
+    continue: 'Yanran',
 
     // Home Screen
     homeNavTitle: 'Akpọfuwẹ',
-    heroLabel: "GOD'S KINGDOM SOCIETY",
-    heroTitle: 'Kpo Usuon rẹ Ọghẹnẹ rẹ Gba',
+    heroLabel: 'Egbe rẹ Usu rẹ Ọghènè',
+    heroTitle: 'Oghwoghwó Usu rẹ Ọghènè rẹ gba nwanwá',
     heroDesc:
       'Se obe, nyo uphio, ji rha vwẹ esegbuyota vẹ Ẹga rẹ Ọghẹnẹ rọ hẹ Akpọ.',
     exploreResources: 'Guọnọ Ebe',
@@ -3845,7 +3853,7 @@ const translations = {
     skip: 'Vwrẹ',
     startBtn: 'MUHỌ',
     onboardingSubtitle1: 'Dọọ',
-    onboardingTitle1: "God's Kingdom Society",
+    onboardingTitle1: 'Ẹgbe Usu Ọghọghọ',
     onboardingDesc1:
       'Ẹga rẹ Inievo nọ a gbe wuhrẹ uyota eme Ọghẹnẹ rọ kẹ usiwo Ọghẹnẹ.',
     onboardingSubtitle2: 'Ria vihọ evaọ eme Ọghẹnẹ vẹ',
@@ -3860,11 +3868,12 @@ const translations = {
     onboardingTitle4: 'EFELE EFA',
     onboardingDesc4:
       'Yono eme Ọghẹnẹ vẹ ighẹwẹ ebẹbe, je rri ifoto gbe ighẹwẹ nọ e rọ asan ekpako ẹga na.',
+    continue: 'Ruọ bẹ',
 
     // Home Screen
     homeNavTitle: 'Ofuon',
-    heroLabel: "GOD'S KINGDOM SOCIETY",
-    heroTitle: 'Kpo Usuon Ọghẹnẹ nọ o Gba',
+    heroLabel: 'Ẹgbe Usu Ọghọghọ',
+    heroTitle: 'Owhowho Usu Ọghọghọ nọ o gba nwanwá',
     heroDesc:
       'Se obe, yo uyo, je rria vihọ evaọ esegbuyota vẹ Ẹga Ọghẹnẹ rọ hẹ Akpọ.',
     exploreResources: 'Gwọlọ Ebe',
@@ -4231,6 +4240,319 @@ const translations = {
     adminPanel: 'Ofe Inunue',
   },
 
+  //SPANISH
+  es: {
+    // Navigation
+    home: 'Inicio',
+    hymns: 'Himnos',
+    sermons: 'Sermones',
+    songs: 'Cánticos',
+    animations: 'Animaciones',
+    profile: 'Perfil',
+    music: 'Música',
+    contact: 'Contacto',
+    about: 'Nosotros',
+    admin: 'Admin',
+    notices: 'Avisos',
+    quizresources: 'Recursos de Cuestionario',
+    live: 'En Vivo',
+    archive: 'Archivo',
+
+    // Common
+    search: 'Buscar',
+    play: 'Reproducir',
+    pause: 'Pausar',
+    loading: 'Cargando...',
+    error: 'Error',
+    save: 'Guardar',
+    cancel: 'Cancelar',
+    submit: 'Enviar',
+    login: 'Iniciar sesión',
+    signup: 'Registrarse',
+    logout: 'Cerrar sesión',
+    email: 'Correo electrónico',
+    password: 'Contraseña',
+    name: 'Nombre',
+    message: 'Mensaje',
+    noSermons: 'No hay sermones disponibles',
+    noSongs: 'No hay cánticos disponibles',
+    noVideos: 'No hay videos disponibles',
+    noContent: 'Sin contenido disponible',
+    unknownDuration: 'Duración desconocida',
+    unknownStyle: 'Estilo desconocido',
+
+    // Content
+    duration: 'Duración',
+    category: 'Categoría',
+    style: 'Estilo',
+
+    // Contact
+    contactUs: 'Contáctenos',
+    contactDesc:
+      'Nos encantaría saber de usted. Envíenos un mensaje y le responderemos lo antes posible.',
+    complaint: 'Queja',
+    suggestion: 'Sugerencia',
+    request: 'Solicitud',
+    selectCategory: 'Seleccionar Categoría',
+
+    // About
+    aboutUs: 'Sobre Nosotros',
+    version: 'Versión',
+    mission: 'Nuestra Misión',
+
+    // Admin
+    adminDashboard: 'Panel de Control',
+    uploadContent: 'Subir Contenido',
+    manageContent: 'Gestionar Contenido',
+    viewMessages: 'Ver Mensajes',
+    addHymn: 'Añadir Himno',
+    addSermon: 'Añadir Sermón',
+    uploadSong: 'Subir Cántico',
+    uploadVideo: 'Subir Video',
+
+    // Onboarding
+    skip: 'Omitir',
+    startBtn: 'COMENZAR',
+    onboardingSubtitle1: 'Bienvenido a',
+    onboardingTitle1: 'Sociedad del Reino de Dios',
+    onboardingDesc1:
+      'Una organización cristiana donde se predica y practica la verdad de la palabra de Dios para Su salvación.',
+    onboardingSubtitle2: 'Crece en la palabra de Dios con',
+    onboardingTitle2: 'Sermones Edificantes',
+    onboardingDesc2:
+      'Accede fácilmente a sermones de la GKS en texto, audio y video para aprender la palabra de Dios tal como está en la Biblia.',
+    onboardingSubtitle3: 'Adora a Dios con',
+    onboardingTitle3: 'Cánticos de Gracia',
+    onboardingDesc3:
+      'Únete a creyentes de todo el mundo para honrar a Dios y a Cristo a través de melodiosos himnos de alabanza.',
+    onboardingSubtitle4: 'EXPLORA MÁS',
+    onboardingTitle4: 'OTROS CONTENIDOS',
+    onboardingDesc4:
+      'Aprende la palabra de Dios mediante animaciones y accede a fotos y videos del archivo de la iglesia.',
+    continue: 'Continuar',
+
+    // Home Screen
+    homeNavTitle: 'Gracia',
+    heroLabel: 'Sociedad del Reino de Dios',
+    heroTitle: 'Hacia el Reino Perfecto de Dios',
+    heroDesc: 'Lee, escucha y crece en la fe con la Iglesia del Dios Vivo.',
+    exploreResources: 'Explorar Recursos',
+    homeCardTitleSongs: 'Himnos de Alabanza',
+    homeCardSubtitleSongs: 'Cánticos sagrados para la adoración y meditación.',
+    homeCardTitleSermons: 'Sermones Edificantes',
+    homeCardSubtitleSermons:
+      'Profundiza tu entendimiento con enseñanzas bíblicas sanas.',
+    homeCardTitleStories: 'Historias Bíblicas',
+    homeCardSubtitleStories:
+      'Valores espirituales a través de narraciones cautivadoras.',
+    homeCardTitleArchive: 'Archivo',
+    homeCardSubtitleArchive: 'Descubre registros históricos y eventos pasados.',
+    homeCardTitleGallery: 'Galería',
+    homeCardSubtitleGallery:
+      'Un viaje visual a través de nuestra comunidad y ministros.',
+    homeCardTitleQuiz: 'Recursos de Cuestionario',
+    homeCardSubtitleQuiz:
+      'Materiales de estudio para agudizar tu conocimiento.',
+    homeCardTitleGiving: 'Diezmos y Ofrendas',
+    homeCardSubtitleGiving: 'Apoya el trabajo de la GKS en todo el mundo.',
+    homeCardTitleLive: 'Transmisión en Vivo',
+    homeCardSubtitleLive:
+      'Únete a los servicios y eventos especiales en tiempo real.',
+
+    // Sermons Main Screen
+    sermonsBannerTitle: 'SERMONES EDIFICANTES',
+    sermonsBannerSubtitle:
+      'Accede a sermones inspiradores en varios idiomas, compartiendo la palabra de Dios.',
+    searchSermons: 'Buscar sermones, temas o categorías...',
+    textSermons: 'Sermones Escritos',
+    readSermons: 'Organizados por volumen y tema',
+    audioClips: 'Clips de Audio',
+    listenSermons: 'Escucha sermones edificantes en audio',
+    videoSermons: 'Sermones en Video',
+    watchSermons: 'Mira sesiones en vivo y grabadas',
+    dailyGuide: 'Guía Diaria',
+    dailyGuideSubtitle: 'Estudia la palabra de Dios cada día',
+
+    // Text Sermons Screen
+    textSermonsBannerTitle: 'SERMONES ESCRITOS',
+    textSermonsBannerSubtitle:
+      'Lee y estudia la palabra de Dios con sermones detallados.',
+    searchPlaceholder: 'Buscar sermones...',
+    subjectsCountLabel: 'temas',
+
+    // Sermon Categories
+    'Weekly Sermon Volume 1': 'Sermón Semanal Volumen 1',
+    'Weekly Sermon Volume 2': 'Sermón Semanal Volumen 2',
+    "God's Kingdom Advocate Volume 1": 'Defensor del Reino de Dios Volumen 1',
+    'The Ten Fundamental Truths': 'Las Diez Verdades Fundamentales',
+    "GKS President's Feast Message":
+      'Mensaje de Fiesta del Presidente de la GKS',
+    'Sermon Summaries': 'Resúmenes de Sermones',
+    'Questions and Answers': 'Preguntas y Respuestas',
+
+    // Sermon Detail Screen
+    sermonDetail: 'Detalle del Sermón',
+    sermonNotFound: 'Sermón no encontrado',
+    untitled: 'Sin título',
+    gksSermon: 'Sermón GKS',
+    audioAssistant: 'Asistente de Audio',
+    success: 'Éxito',
+    copiedToClipboard: 'Copiado al portapapeles',
+    audioError: 'Error de Audio',
+    audioPlayError: 'No se pudo reproducir el audio. Reintente.',
+    part: 'Parte',
+    of: 'de',
+
+    // Audio Sermons Screen
+    audioSermonsTitle: 'Sermones en Audio',
+    audioSermonsBannerTitle: 'SERMONES EN AUDIO',
+    audioSermonsBannerSubtitle:
+      'Aprende la palabra de Dios con sermones de audio, organizados por año.',
+    noAudioSermons: 'No hay sermones de audio disponibles',
+    unknownYear: 'Año desconocido',
+    sermonsCountPlural: 'sermones',
+    sermonCountSingular: 'sermón',
+    sermonsLabel: 'Sermones',
+
+    // Audio Player/Details Screen
+    audioPlayer: 'Reproductor de Audio',
+    audioLoadError: 'No se pudo cargar el audio.',
+    permissionRequired: 'Permiso Requerido',
+    saveSermonPermission: 'Permita guardar el sermón en su dispositivo.',
+    sermonSaved: '¡Sermón guardado en su dispositivo!',
+    fileSaveError: 'No se pudo guardar el archivo.',
+
+    // Sermon Videos Screen
+    videoSermonsTitle: 'Sermones en Video',
+    loadingVideos: 'Cargando videos...',
+    noVideosInCategory: 'No se encontraron videos en esta categoría',
+    sermonVideosBannerTitle: 'VIDEOS DE SERMONES',
+    sermonVideosBannerSubtitle:
+      'Mira versiones en video de sermones organizadas por categorías.',
+    searchSermonVideosPlaceholder: 'Buscar videos de sermones...',
+    watchNow: 'Ver Ahora',
+    watch: 'Ver',
+
+    // Video/Animation Detail
+    linkCopied: '¡Enlace copiado!',
+    shareSermonVideoLabel: 'Video del Sermón',
+    noCategory: 'Sin categoría',
+    shareVideoTitle: 'Compartir Video',
+    languageLabel: 'Idioma',
+    share: 'Compartir',
+
+    // Daily Guide Screen
+    dailyGuideTitle: 'Guía Diaria',
+    dailyDevotionalBanner: 'Devocional Diario',
+    dailyDevotionalBannerSubtitle: 'Nutre tu alma con la guía diaria.',
+    today: 'Hoy',
+    yesterday: 'Ayer',
+    tomorrow: 'Mañana',
+    loadingDevotional: 'Cargando devocional...',
+    noDevotionalAvailable: 'Devocional no disponible',
+    recentDevotionals: 'Devocionales Recientes',
+
+    // Songs Screen
+    songsNavTitle: 'Cánticos',
+    songsBannerTitle: 'HIMNOS DE ALABANZA',
+    songsBannerSubtitle:
+      'Adora con una colección de cánticos espirituales que elevan el alma.',
+    featuredSongsTitle: 'Himnos de Alabanza a Dios',
+    featuredSongsSubtitle: '(Salmos e Himnos)',
+    songsCountLabel: 'cánticos',
+    seePlaylist: 'Ver Lista de Reproducción',
+
+    // Music Player Screen
+    musicPlayerTitle: 'Reproductor de Música',
+    unknownCategory: 'Categoría desconocida',
+    songSavedSuccess: '¡Cántico guardado en su dispositivo!',
+
+    // Hymns/Psalms Screen
+    hymnsNavTitle: 'Himnos',
+    hymnsBannerTitle: 'Himnos de Alabanza a Dios',
+    hymnSearchPlaceholder: 'Buscar por número o título',
+    noHymnsFound: 'No se encontraron himnos o salmos.',
+    tspPrefix: 'TSP',
+    psalmPrefix: 'Salmo',
+
+    // Animations Screen
+    animationsBannerTitle: 'HISTORIAS BÍBLICAS',
+    animationsBannerSubtitle:
+      'Aprende la palabra de Dios mediante animaciones que dan vida a las historias.',
+    searchAnimationsPlaceholder: 'Buscar animaciones...',
+
+    // Live Stream Screen
+    liveStreamLoading: 'Cargando transmisión...',
+    streamUnavailable: 'Transmisión no disponible',
+    openInYouTube: 'Abrir en YouTube',
+    external: 'EXTERNO',
+    streamLabel: 'Transmisión',
+    watchInBrowser: 'Ver en el Navegador',
+    liveLabel: 'EN VIVO',
+    offlineLabel: 'FUERA DE LÍNEA',
+    noActiveStreams: 'No hay transmisiones activas',
+    refresh: 'Refrescar',
+
+    // Archive Screen
+    archiveBannerTitle: 'ARCHIVO',
+    archiveBannerSubtitle:
+      'Aquí encontrarás fotos y videos de eventos históricos de la iglesia.',
+    pictures: 'Fotos',
+    videos: 'Videos',
+
+    // Gallery Screen
+    galleryNavTitle: 'Galería',
+    galleryBannerTitle: 'GALERÍA',
+    galleryBannerSubtitle:
+      'Aquí encontrarás perfiles de ministros y medios de eventos regionales.',
+    ministers: 'Ministros',
+
+    // Quiz Resources Screen
+    quizNavTitle: 'Recursos de Cuestionario',
+    quizSearchPlaceholder: 'Buscar por título, año o categoría...',
+    downloadPdf: 'Descargar PDF',
+    details: 'Detalles',
+
+    // Quiz Help Screen
+    askHelpNavTitle: 'Pedir Ayuda',
+    yourNameLabel: 'Su Nombre',
+    whatsappNumberLabel: 'Número de WhatsApp',
+    yourQuestionLabel: 'Su Pregunta',
+    submitQuestion: 'Enviar Pregunta',
+    ok: 'OK',
+
+    // Notices Screen
+    noticesNavTitle: 'Avisos',
+    noMessage: 'No hay contenido en el aviso.',
+    pdfFile: 'Archivo PDF',
+
+    // Contact Screen
+    contactTitle: 'Contáctenos',
+    getInTouch: 'Póngase en contacto',
+    namePlaceholder: 'Ingrese su nombre',
+    emailPlaceholder: 'Ingrese su correo',
+    messagePlaceholder: 'Escriba su mensaje aquí...',
+    sendMessage: 'Enviar Mensaje',
+    thankYou: '¡Gracias!',
+
+    // About Screen
+    aboutUsNav: 'Sobre Nosotros',
+    churchName: "God's Kingdom Society",
+    churchSlogan: '(La Iglesia del Dios Vivo)',
+    ourMission: 'Nuestra Misión',
+    allRightsReserved: 'Todos los derechos reservados.',
+    churchMotto: 'Hacia el reino perfecto de Dios',
+
+    // Not Found Screen
+    notFoundTitle: '¡Vaya!',
+    screenNotExist: 'Esta pantalla no existe.',
+    goHome: '¡Ir al inicio!',
+
+    // Navigation / Global Menu
+    options: 'Opciones',
+    adminPanel: 'Panel de Administración',
+  },
+
   //ITSEKIRI TRANSLATIONS
   its: {
     // Navigation
@@ -4526,6 +4848,301 @@ const translations = {
     options: 'Awọn aṣayan',
     adminPanel: 'Igbimọ Olori',
   },
+
+  //IJAW
+  ij: {
+    // Navigation
+    home: 'Wari',
+    hymns: 'Ebi Ine',
+    sermons: 'Ọghẹnẹ Ẹmẹ',
+    songs: 'Ine',
+    animations: 'Ibebe Iworan',
+    profile: 'Iyo-emi',
+    music: 'Ine-ebẹbe',
+    contact: 'Wọ Duo Se',
+    about: 'Wọ Kpaa',
+    admin: 'Olori',
+    notices: 'Ifilo',
+    quizresources: 'Eko Onọ',
+    live: 'Ofun-ẹmẹ',
+    archive: 'Ile-atọjọ',
+
+    // Common
+    search: 'Guọmọ',
+    play: 'Tẹ',
+    pause: 'Mudia',
+    loading: 'O bi ziọ...',
+    error: 'Aṣiṣe',
+    save: 'Tọju',
+    cancel: 'Fagile',
+    submit: 'Firanṣẹ',
+    login: 'Wọle',
+    signup: 'Forukọsilẹ',
+    logout: 'Jade',
+    email: 'Imeeli',
+    password: 'Ọrọ-aṣiri',
+    name: 'Orukọ',
+    message: 'Iṣẹ',
+    noSermons: 'Ọghẹnẹ ẹmẹ kankan ko si',
+    noSongs: 'Ine kankan ko si',
+    noVideos: 'Iworan kankan ko si',
+    noContent: 'Kofo ni',
+    unknownDuration: 'Akoko aimọ',
+    unknownStyle: 'Iru aimọ',
+
+    // Content
+    duration: 'Akoko',
+    category: 'Isọri',
+    style: 'Iru rẹ',
+
+    // Contact
+    contactUs: 'Wọ Duo Se',
+    contactDesc:
+      'Wọ ma jọ wa loju lati gbọ lati ọdọ rẹ. Firanṣẹ si wa, a o si dahun ni kete.',
+    complaint: 'Ẹsun',
+    suggestion: 'Iroro',
+    request: 'Ibere',
+    selectCategory: 'Yan Isọri',
+
+    // About
+    aboutUs: 'Wọ Kpaa',
+    version: 'Iru',
+    mission: 'Iṣẹ Wa',
+
+    // Admin
+    adminDashboard: 'Oju-ewe Olori',
+    uploadContent: 'Gbe Nkan Soke',
+    manageContent: 'Se Atọju Nkan',
+    viewMessages: 'Wo Iṣẹ',
+    addHymn: 'Fi Ebi Ine Kun',
+    addSermon: 'Fi Ọghẹnẹ Ẹmẹ Kun',
+    uploadSong: 'Gbe Ine Soke',
+    uploadVideo: 'Gbe Iworan Soke',
+
+    // Onboarding
+    skip: 'Rekọja',
+    startBtn: 'BẸRẸ',
+    onboardingSubtitle1: 'Kabọ si',
+    onboardingTitle1: 'Tamuno-Bara Wari-Otu',
+    onboardingDesc1:
+      'Ẹgbẹ Onigbagbọ nibiti a ti n kọ otitọ ọrọ Ọlọrun fun igbala Ọlọrun.',
+    onboardingSubtitle2: 'Dagba ninu ọrọ Ọlọrun pẹlu',
+    onboardingTitle2: 'Ọghẹnẹ Ẹmẹ Mimọ',
+    onboardingDesc2:
+      'Wọle si eko GKS ni irọrun ninu iwe, ohun ati iworan lati kọ ẹkọ ọrọ Ọlọrun bi o ti wa ninu Bibeli.',
+    onboardingSubtitle3: 'Sin Ọlọrun pẹlu',
+    onboardingTitle3: 'Ine Ore-ọfẹ',
+    onboardingDesc3:
+      'Darapọ mọ awọn onigbagbọ ni agbaye lati bọla fun Ọlọrun ati Kristi pẹlu ogun iyin.',
+    onboardingSubtitle4: 'GUỌMỌ SIWAJU',
+    onboardingTitle4: 'NKAN MIIRAN',
+    onboardingDesc4:
+      'Kọ ẹkọ ọrọ Ọlọrun pẹlu iworan-ebẹbe, ki o si wo aworan ati iworan lati ile-atọjọ ijọ.',
+    continue: 'Mo déí',
+
+    // Home Screen
+    homeNavTitle: 'Ore-ọfẹ',
+    heroLabel: 'Tamuno-Bara Wari-Otu',
+    heroTitle: 'Si Ijọba Pipe ti Ọlọrun',
+    heroDesc: 'Ka, gbọ ohun, ki o si dagba ninu igbagbọ pẹlu Ijọ Ọlọrun Alaye.',
+    exploreResources: 'Guọmọ Nkan Eko',
+    homeCardTitleSongs: 'Ebi Ine',
+    homeCardSubtitleSongs: 'Ine mimọ fun ijọsin ati iṣaro.',
+    homeCardTitleSermons: 'Ọghẹnẹ Ẹmẹ Mimọ',
+    homeCardSubtitleSermons: 'Jinlẹ ninu oye pẹlu ẹkọ Bibeli.',
+    homeCardTitleStories: 'Itan Bibeli',
+    homeCardSubtitleStories: 'Iwa giga ti ẹmi pẹlu itan aladun.',
+    homeCardTitleArchive: 'Ile-atọjọ',
+    homeCardSubtitleArchive: 'Ṣawari awọn igbasilẹ itan ati iṣẹlẹ ti o kọja.',
+    homeCardTitleGallery: 'Aworan',
+    homeCardSubtitleGallery: 'Irin-ajo aworan pẹlu awọn iranṣẹ Ọlọrun.',
+    homeCardTitleQuiz: 'Eko rẹ Onọ',
+    homeCardSubtitleQuiz: 'Nkan ikẹkọ lati mu imọ rẹ pọ si.',
+    homeCardTitleGiving: 'Idameji ati Ọrẹ',
+    homeCardSubtitleGiving: 'Se atilẹhin fun iṣẹ GKS ni agbaye.',
+    homeCardTitleLive: 'Ofun-ẹmẹ',
+    homeCardSubtitleLive: 'Darapọ mọ ijọsin ni akoko gidi.',
+
+    // Sermons Main Screen
+    sermonsBannerTitle: 'ỌGHẸNẸ ẸMẸ MIMỌ',
+    sermonsBannerSubtitle:
+      'Wọle si awọn eko iwuri ni ede oriṣiriṣi fun ọrọ Ọlọrun.',
+    searchSermons: 'Wa olukọ, koko-ọrọ, tabi isọri...',
+    textSermons: 'Iwe Ọghẹnẹ Ẹmẹ',
+    readSermons: 'Ti a ṣeto nipasẹ iwọn ati koko-ọrọ',
+    audioClips: 'Ohun rẹ Ọghẹnẹ Ẹmẹ',
+    listenSermons: 'Gbọ ohun olukọ mimọ',
+    videoSermons: 'Iworan rẹ Ọghẹnẹ Ẹmẹ',
+    watchSermons: 'Wo awọn akoko lori afẹfẹ',
+    dailyGuide: 'Atọka Ojoojumọ',
+    dailyGuideSubtitle: 'Se iwadi ọrọ Ọlọrun lojoojumọ',
+
+    // Text Sermons Screen
+    textSermonsBannerTitle: 'IWE ỌGHẸNẸ ẸMẸ',
+    textSermonsBannerSubtitle: 'Ka ki o si kẹkọọ ọrọ Ọlọrun pẹlu eko kikun.',
+    searchPlaceholder: 'Wa eko...',
+    subjectsCountLabel: 'koko-ọrọ',
+
+    // Sermon Categories
+    'Weekly Sermon Volume 1': 'Ẹmẹ Ọsẹ Iwọn 1',
+    'Weekly Sermon Volume 2': 'Ẹmẹ Ọsẹ Iwọn 2',
+    'The Ten Fundamental Truths': 'Otitọ Ipilẹ Mẹwa',
+
+    // Sermon Detail Screen
+    sermonDetail: 'Ekunrere Eko',
+    sermonNotFound: 'A ko ri eko naa',
+    untitled: 'Ko ni akọle',
+    gksSermon: 'Eko GKS',
+    audioAssistant: 'Oluranlowo Ohun',
+    success: 'Aṣeyọri',
+    copiedToClipboard: 'A ti daakọ rẹ',
+    audioError: 'Aṣiṣe Ohun',
+    part: 'Apa',
+    of: 'ninu',
+
+    // Audio Sermons Screen
+    audioSermonsTitle: 'Ohun rẹ Eko',
+    audioSermonsBannerTitle: 'OHUN RẸ EKO',
+    audioSermonsBannerSubtitle:
+      'Kọ ẹkọ ọrọ Ọlọrun pẹlu ohun, ti a ṣeto nipasẹ ọdun.',
+    noAudioSermons: 'Ko si ohun kankan ninu rẹ',
+    unknownYear: 'Aimọ',
+    sermonsCountPlural: 'eko',
+    sermonsLabel: 'Eko',
+
+    // Audio Player/Details Screen
+    audioPlayer: 'Ẹrọ Ohun',
+    audioLoadError: 'Asise gbigbe ohun jade.',
+    errorSermonNotFound: 'A ko ri ohun naa.',
+    permissionRequired: 'Aaye nilo',
+    sermonSaved: 'A ti tọju eko sori phone rẹ!',
+    noTitle: 'Ko ni Akọle',
+
+    // Sermon Videos Screen
+    videoSermonsTitle: 'Iworan rẹ Eko',
+    loadingVideos: 'O n gbe iworan jade...',
+    noVideosInCategory: 'A ko ri iworan kankan ni isọri yi',
+    sermonVideosBannerTitle: 'IWORAN RẸ EKO',
+    sermonVideosBannerSubtitle: 'Wo awọn iworan eko ti a ṣeto nipasẹ isọri.',
+    searchSermonVideosPlaceholder: 'Wa iworan olukọ...',
+    watchNow: 'Wo Nisisiyi',
+    watch: 'Wo',
+
+    // Video/Animation Detail
+    linkCopied: 'A ti daakọ rẹ!',
+    shareSermonVideoLabel: 'Iworan rẹ Eko',
+    noCategory: 'Ko si isọri',
+    shareVideoTitle: 'Pin Iworan',
+    languageLabel: 'Ede',
+    share: 'Pin',
+
+    // Daily Guide Screen
+    dailyGuideTitle: 'Atọka Ojoojumọ',
+    dailyDevotionalBanner: 'Ẹsin Ojoojumọ',
+    dailyDevotionalBannerSubtitle: 'Mú ọkàn rẹ sọjí lojoojúmọ́.',
+    today: 'Oni',
+    yesterday: 'Aná',
+    tomorrow: 'Ọ̀la',
+    noDevotionalAvailable: 'Ko si Ẹsin lọwọ',
+    recentDevotionals: 'Ẹsin To Nẹẹti',
+
+    // Songs Screen
+    songsNavTitle: 'Ine',
+    songsBannerTitle: 'EBI INE',
+    songsBannerSubtitle: 'Sin pẹlu ogun ẹmi ti o n gbe ọkan soke.',
+    featuredSongsTitle: 'Ine Iyin ti Ọlọrun',
+    featuredSongsSubtitle: '(Zabura ati Ine Iyin)',
+    songsCountLabel: 'ine',
+    seePlaylist: 'Wo Atẹle Ine',
+
+    // Music Player Screen
+    musicPlayerTitle: 'Ẹrọ Ine',
+    unknownCategory: 'Isọri aimọ',
+    songSavedSuccess: 'A ti tọju ine sori phone rẹ!',
+
+    // Hymns/Psalms Screen
+    hymnsNavTitle: 'Ebi Ine',
+    hymnsBannerTitle: 'Ine Iyin ti Ọlọrun',
+    hymnSearchPlaceholder: 'Wa pẹlu nọmba tabi akọle',
+    noHymnsFound: 'A ko ri Ine tabi Zabura kankan.',
+    tspPrefix: 'TSP',
+    psalmPrefix: 'Zabura',
+
+    // Animations Screen
+    animationsBannerTitle: 'ITAN BIBELI',
+    animationsBannerSubtitle: 'Kọ ẹkọ pẹlu iworan ti o mu itan Bibeli sọjí.',
+    searchAnimationsPlaceholder: 'Wa iworan-ebẹbe...',
+
+    // Live Stream Screen
+    liveStreamLoading: 'O n gbe jade...',
+    streamUnavailable: 'Iṣẹlẹ ko si lọwọ',
+    openInYouTube: 'Ṣii ni YouTube',
+    external: 'LODE',
+    streamLabel: 'Iṣẹlẹ',
+    watchInBrowser: 'Wo ninu Browser',
+    liveLabel: 'OFUN-ẸMẸ',
+    offlineLabel: 'KO SI NI AFẸFẸ',
+    noActiveStreams: 'Ko si nkan lọwọ',
+    refresh: 'Tun sọji',
+
+    // Archive Screen
+    archiveBannerTitle: 'ILE-ATỌJỌ',
+    archiveBannerSubtitle:
+      'Nibi ni iwọ yoo ti ri aworan ati iworan ti iṣẹlẹ atijọ.',
+    pictures: 'Aworan',
+    videos: 'Iworan',
+
+    // Gallery Screen
+    galleryNavTitle: 'Aworan',
+    galleryBannerTitle: 'AWORAN',
+    galleryBannerSubtitle: 'Nibi ni iwọ yoo ti ri profaili awọn iranṣẹ Ọlọrun.',
+    ministers: 'Awọn Iranṣẹ',
+
+    // Quiz Resources Screen
+    quizNavTitle: 'Eko rẹ Onọ',
+    quizSearchPlaceholder: 'Wa pẹlu akọle tabi ọdun...',
+    downloadPdf: 'Gba PDF',
+    details: 'Ekunrere',
+
+    // Quiz Help Screen
+    askHelpNavTitle: 'Beere fun Iranlọwọ',
+    yourNameLabel: 'Orukọ Rẹ',
+    whatsappNumberLabel: 'Lamba WhatsApp',
+    yourQuestionLabel: 'Ibeere Rẹ',
+    submitQuestion: 'Firanṣẹ Ibeere',
+    ok: 'O DARA',
+
+    // Notices Screen
+    noticesNavTitle: 'Ifilo',
+    noMessage: 'Ko si ifilo kankan.',
+    pdfFile: 'Iwe PDF',
+
+    // Contact Screen
+    contactTitle: 'Wọ Duo Se',
+    getInTouch: 'Ba Wa Sọrọ',
+    namePlaceholder: 'Tẹ orukọ rẹ',
+    emailPlaceholder: 'Tẹ imeeli rẹ',
+    messagePlaceholder: 'Kọ sako rẹ si ibi...',
+    sendMessage: 'Firanṣẹ Sako',
+    thankYou: 'E ṣeun!',
+
+    // About Screen
+    aboutUsNav: 'Wọ Kpaa',
+    churchName: "God's Kingdom Society",
+    churchSlogan: '(Ijọ Ọlọrun Alaye)',
+    ourMission: 'Iṣẹ Wa',
+    allRightsReserved: 'Gbogbo ẹtọ wa ni ipamọ.',
+    churchMotto: 'Si ijọba pipe ti Ọlọrun',
+
+    // Not Found Screen
+    notFoundTitle: 'Ewo!',
+    screenNotExist: 'Oju-ewe yi ko si.',
+    goHome: 'Pada si wari!',
+
+    // Navigation / Global Menu
+    options: 'Awọn aṣayan',
+    adminPanel: 'Igbimọ Olori',
+  },
 };
 
 const AboutUsInfo = {
@@ -4767,6 +5384,286 @@ Kusukela ekuqaleni okuncane eLagos, i-GKS isikhule yaba umphakathi ophilayo wobu
       'Ukubaluleka kokudalula izimfundiso ezingamanga',
       'Ukukhonza nokuhlonipha uJehova uNkulunkulu',
       'Ubunye bobuKristu kuzo zonke izizwe nezizinda',
+    ],
+  },
+  ha: {
+    version: '1.0.0',
+    content: `Kungiyar God's Kingdom Society (GKS) kungiya ce ta Kiristoci wadda Ubangiji Jehobah ya kafa ta hannun bawanSa, Saint Gideon Meriodere Urhobo. 
+
+An kafa GKS a shekarar 1934, sakamakon kiran Allah ne sa’ad da St. G.M. Urhobo ya sami wahayi daga wurin Yesu Kristi yana ba shi umurnin ya yi shelar bisharar Mulkin Allah kuma ya tona asirin koyaswar karya.
+
+Abin da ya sa GKS ta zama ta musamman:
+• An kafa ta ne bisa wahayin Littafi Mai Tsarki kai tsaye da kiran Allah.
+• Ta himmatu wajen koyarwar Littafi Mai Tsarki tsantsa ba tare da al’adun darika ba.
+• Ma’aikatar tana yin wa’azi da harsuna daban-daban don isa ga mutane na kowane fanni.
+• Ta mayar da hankali kan Mulkin Allah a matsayin mafita ga wahalar bil’adama.
+
+Daga kankanin farawa a Legas, GKS ta girma zuwa wata kyakkyawar al'ummar Kirista a duk fadin Najeriya da ma bayanta, tana cika annabcin Littafi Mai Tsarki: "Karamin zai zama dubu" (Isaya 60:22).`,
+
+    mission: `
+      1. Yin wa’azin bisharar mulkin Allah ga duniya a matsayin tabbataccen fata ga bil’adama masu wahala. 
+      2. Tona asirin dukkan karairayi da Shaidan yake amfani da su don ya sa mutane da yawa su kasance cikin bautar ruhaniya. 
+      3. Yin shelar hukuncin Allah da aka rubuta a kan miyagu.`,
+
+    contactInfo: {
+      headquarters: 'Salem City, P.O. Box 424, Warri, Delta State, Nigeria',
+      phones: ['+234-810 098 7661', '+234-802 329 5127'],
+      emails: [
+        'gkssecretariat@mountaingks.org',
+        'publicitysecretary@mountaingks.org',
+      ],
+      socialMedia: {
+        facebook: 'www.facebook.com/mountaingks',
+        twitter: 'www.twitter.com/mountaingks',
+      },
+    },
+
+    keyBeliefs: [
+      'Littafi Mai Tsarki a matsayin littafin doka daya tilo da Allah ya amince da shi',
+      'Mulkin Allah a matsayin magani daya tilo ga wahalar bil’adama',
+      'Muhimmancin tona asirin koyaswar karya',
+      'Bauta da girmamawa ga Ubangiji Jehobah',
+      'Hadin kan Kiristoci a dukan kasashe da kabilu',
+    ],
+  },
+  ig: {
+    version: '1.0.0',
+    content: `God's Kingdom Society (GKS) bụ nzukọ Ndị Kraịst nke Jehova Chineke guzobere site n'aka nwa agbọghọ ya, Saint Gideon Meriodere Urhobo.
+
+N'afọ 1934 ka e guzobere GKS, mgbe St. G.M. Urhobo nwetara ọkpụkpọ oku si n'eluigwe n'ọhụụ site n'aka Jisọs Kraịst, na-enye ya ọrụ ikwusa Oziọma nke Alaeze Chineke na ikpughe ozizi ụgha dị iche iche.
+
+Ihe mere GKS jiri pụọ iche:
+• Ejiri mkpughe si na Baịbụl nakwa ọkpụkpọ oku nke Chineke guzobe ya.
+• Nzipụta ozizi Baịbụl dị ọcha na-enweghị nsonye omenala òtù dị iche iche.
+• Ozi na-erute mmadụ niile n'asụsụ dị iche iche n'agbanyeghị ebe ha sị pụta.
+• Ilekwasi anya n'Alaeze Chineke dị ka naanị ihe ngwọta nye ahụhụ ụmụ mmadụ.
+
+Site na mmalite dị mfe na Lagos, GKS etoola bụrụ nzukọ Ndị Kraịst dị egwu n'akụkụ niile nke Naịjirịa nakwa n'ofesi, na-emezu amụma Baịbụl sịrị: "Onye dị nta ga-aghọ otu puku" (Aịzaya 60:22).`,
+
+    mission: `
+      1. Ikwusa oziọma nke Alaeze Chineke n'ụwa niile dị ka naanị olileanya nye ụmụ mmadụ nọ n'ahụhụ.
+      2. Ikpughe ụgha niile Setan na-eji ejide ọtụtụ mmadụ n'agbụ ime mmụọ.
+      3. Ikpọsa ikpe Chineke e dere ede megide ndị ajọ omume.`,
+
+    contactInfo: {
+      headquarters: 'Salem City, P.O. Box 424, Warri, Delta State, Nigeria',
+      phones: ['+234-810 098 7661', '+234-802 329 5127'],
+      emails: [
+        'gkssecretariat@mountaingks.org',
+        'publicitysecretary@mountaingks.org',
+      ],
+      socialMedia: {
+        facebook: 'www.facebook.com/mountaingks',
+        twitter: 'www.twitter.com/mountaingks',
+      },
+    },
+
+    keyBeliefs: [
+      'Baịbụl dị ka naanị akwụkwọ iwu Chineke nyere ikike',
+      'Alaeze Chineke dị ka naanị ọgwụgwọ nye ahụhụ ụmụ mmadụ',
+      'Mkpa ọ dị ikpughe ozizi ụgha dị iche iche',
+      'Ifè na ịsọpụrụ Jehova Chineke',
+      'Ịdị otu Ndị Kraịst ofe mba na ebe dị iche iche mmadụ sị pụta',
+    ],
+  },
+  ur: {
+    version: '1.0.0',
+    content: `Ẹga rẹ God's Kingdom Society (GKS) na, ọye nene ẹga rẹ Ilele-Kristi rọ hẹ otọ rẹ akpọ na, rọ hẹ obọ rẹ Ọghẹnẹ rọ kpahen odẹ rẹ Jehova rọ wan obọ rẹ odibo rọye, Saint Gideon Meriodere Urhobo. 
+
+E vwo mu ẹga na hẹ otọ vwẹ ukpe rẹ 1934, GKS nẹ evun rẹ eyẹ rẹ Ọghẹnẹ rhe sa’da rẹ St. G.M. Urhobo mrẹ eyẹ nẹ obọ rẹ Jesu Kristi rhe, rọ vwẹ iruo kẹ rọ vwo ghwọghọ Ota rẹ Ọghẹnẹ rẹ Usuon Ọghẹnẹ ji tona asan rẹ ota rẹ efian hẹ.
+
+Obo rọ wan nẹ GKS fuanfon:
+• E vwo mu ọye hẹ otọ wan obọ rẹ eyẹ rẹ Baibol vẹ eyẹ rẹ Ọghẹnẹ.
+• O vwo ota rẹ Baibol rẹ emuẹfuon rọ wan obọ rẹ uruemu rẹ ẹga rẹ akpọ na-a.
+• O vwo ephẹrẹ rẹ ebuobuo rọ wan nyo nẹ obọ rẹ ihwo rẹ rassan ebuobuo.
+• O sẹro rẹ Usuon Ọghẹnẹ kerẹ asan rẹ ọtiọyẹ rẹ ebẹbẹ rẹ ihworakpọ eje cha nẹ rhe.
+
+Nẹ ọtonre rẹ kashiekpẹ vwẹ Lagos, GKS rha rho re kerẹ ẹga rẹ Ilele-Kristi rọ gangan vwẹ Nigeria eje vẹ obefe, rọ gba ota rẹ eyẹ rẹ Baibol na: "O rọ kashiekpẹ na cha rho re te uririn" (Aizaya 60:22).`,
+
+    mission: `
+      1. Vwọ ghwọghọ ota rẹ omarira rẹ usuon Ọghẹnẹ kẹ akpọeje kerẹ asan rẹ iphiẹrophiyọ kẹ ihworakpọ rọ hẹ evun rẹ uye. 
+      2. Vwọ tona efian eje rọ hẹ obọ rẹ Eṣu rọ vwẹ ihwo ebuobuo phiẹ evun rẹ igere rẹ ẹga. 
+      3. Vwọ ghwọghọ ota rẹ oghwẹrẹ rẹ Ọghẹnẹ rọ hẹ evun rẹ obe kẹ ihwo rẹ imuemu.`,
+
+    contactInfo: {
+      headquarters: 'Salem City, P.O. Box 424, Warri, Delta State, Nigeria',
+      phones: ['+234-810 098 7661', '+234-802 329 5127'],
+      emails: [
+        'gkssecretariat@mountaingks.org',
+        'publicitysecretary@mountaingks.org',
+      ],
+      socialMedia: {
+        facebook: 'www.facebook.com/mountaingks',
+        twitter: 'www.twitter.com/mountaingks',
+      },
+    },
+
+    keyBeliefs: [
+      'Baibol na ọye obe rẹ uphiẹvwe rẹ Ọghẹnẹ ọvo rọ hẹ otọ',
+      'Usuon Ọghẹnẹ ọye asan rẹ usivwin rẹ uye rẹ ihworakpọ ọvo',
+      'O gba nẹ e tona asan rẹ ota rẹ efian hẹ',
+      'Iruo vẹ ẹvwọfuon kẹ Jehova Ọghẹnẹ',
+      'Oruẹme rẹ Ilele-Kristi rọ gba vwẹ akpọeje vẹ rassan ebuobuo',
+    ],
+  },
+  is: {
+    version: '1.0.0',
+    content: `Ẹga rẹ God's Kingdom Society (GKS) na, ọye nene ẹga rẹ Ilele-Kristi nọ o hẹ otọ rẹ akpọ na, nọ o hẹ obọ rẹ Ọghẹnẹ nọ o kpahe odẹ rẹ Jehova nọ o wan obọ rẹ odibo riẹ, Saint Gideon Meriodere Urhobo. 
+
+A vwo mu ẹga na họ otọ evaọ ukpe rẹ 1934, GKS nọ o nọ evun rẹ eyẹ rẹ Ọghẹnẹ rhe oke nọ St. G.M. Urhobo o mrẹ eyẹ nọ obọ rẹ Jesu Kristi rhe, nọ o kẹ riẹ iruo re o vwo whowho Eme-Utọ Ọghẹnẹ rẹ Usuon Ọghẹnẹ je tona asan nọ eme efue e rọ.
+
+Obe nọ o wan nẹ GKS o fuon:
+• A vwo mu ọye họ otọ wan obọ rẹ eyẹ rẹ Baibol gbe eyẹ rẹ Ọghẹnẹ.
+• O vwo eme rẹ Baibol nọ o fuon nọ o wan obọ rẹ uruemu rẹ ẹga rẹ akpọ na-a.
+• O vwo ephẹrẹ sa-sa nọ o wan nyo nọ obọ rẹ ahwo rẹ rassan sa-sa.
+• O sẹro rẹ Usuon Ọghẹnẹ wẹhẹ asan nọ ebẹbẹ rẹ ahwo-akpọ soso i re nọ rhe.
+
+Nọ o muhọ kẹkpẹ evaọ Lagos, GKS o rha rho no wẹhẹ ẹga rẹ Ilele-Kristi nọ o gangan evaọ Nigeria soso gbe obefe, nọ o gba eme rẹ eyẹ rẹ Baibol na: "O nọ o kẹkpẹ na o te rho te uririn" (Aizaya 60:22).`,
+
+    mission: `
+      1. Re a whowho eme-utọ rẹ usuon Ọghẹnẹ kẹ akpọ na soso wẹhẹ ọvo nọ o kẹ ahwo-akpọ nọ i bi kpokpo ẹro. 
+      2. Re a tona efue soso nọ Eṣu o bi ro ru iruo re o vwo kru ahwo buobu họ evaọ igere rẹ ẹga. 
+      3. Re a whowho ota rẹ oghwẹrẹ rẹ Ọghẹnẹ nọ a kere họ obe kẹ ahwo imuemu.`,
+
+    contactInfo: {
+      headquarters: 'Salem City, P.O. Box 424, Warri, Delta State, Nigeria',
+      phones: ['+234-810 098 7661', '+234-802 329 5127'],
+      emails: [
+        'gkssecretariat@mountaingks.org',
+        'publicitysecretary@mountaingks.org',
+      ],
+      socialMedia: {
+        facebook: 'www.facebook.com/mountaingks',
+        twitter: 'www.twitter.com/mountaingks',
+      },
+    },
+
+    keyBeliefs: [
+      'Baibol na ọye obe uphiẹvwe Ọghẹnẹ ọvo nọ o hẹ otọ',
+      'Usuon Ọghẹnẹ ọye asan usivwin rẹ uye ahwo-akpọ ọvo',
+      'O gba nẹ a tona asan nọ eme efue e rọ',
+      'Iruo gbe ẹvwọfuon kẹ Jehova Ọghẹnẹ',
+      'Uruẹme rẹ Ilele-Kristi nọ o gba evaọ akpọ na soso gbe rassan sa-sa',
+    ],
+  },
+  its: {
+    version: '1.0.0',
+    content: `Ẹgbẹ God's Kingdom Society (GKS) jẹ ẹgbẹ Onigbagbọ ti Jihofa Ọlọrun fi ọwọ iranṣẹ rẹ, Saint Gideon Meriodere Urhobo, mu sọlẹ.
+
+A mu GKS sọlẹ ni ọdun 1934, lẹhin igba ti St. G.M. Urhobo rí iran lati ọwọ Jesu Kristi ti o ran ni iṣẹ lati kede Orukọ Rere ti Ijọba Ọlọrun ati lati tu aṣiri ẹkọ eke gbogbo.
+
+Nkan ti o mu GKS yato:
+• Itumọ ti o wa ninu Bibeli ati ipe lati ọdọ Ọlọrun ni a fi mu sọlẹ.
+• Ifọkansin si ẹkọ Bibeli ti o mọ, laisi aṣa ẹgbẹ kankan.
+• Iṣẹ iranṣẹ ti o n lo ede pupọ lati de ọdọ eniyan lati ibi gbogbo.
+• Idojukọ lori Ijọba Ọlọrun gẹgẹbi ojutu kanṣoṣo si iṣoro ọmọ eniyan.
+
+Lati ibẹrẹ kekere ni ilu Eko, GKS ti dagba di ẹgbẹ Onigbagbọ ti o ni agbara ni gbogbo ilẹ Naijiria ati ni okeere, ti o n mu ọrọ asọtẹlẹ Bibeli ṣẹ pe: "Ẹni ti o kere yoo di ẹgbẹrun" (Aisaya 60:22).`,
+
+    mission: `
+      1. Lati kede iroyin ayọ ti ijọba Ọlọrun si gbogbo agbaye gẹgẹbi ireti kanṣoṣo fun aráyé ti o n jiya. 
+      2. Lati tu gbogbo eke ti Satani n lo lati mu ọpọlọpọ eniyan duro ninu igbekun ẹmi. 
+      3. Lati kede idajọ Ọlọrun ti a kọ silẹ si awọn eniyan buburu.`,
+
+    contactInfo: {
+      headquarters: 'Salem City, P.O. Box 424, Warri, Delta State, Nigeria',
+      phones: ['+234-810 098 7661', '+234-802 329 5127'],
+      emails: [
+        'gkssecretariat@mountaingks.org',
+        'publicitysecretary@mountaingks.org',
+      ],
+      socialMedia: {
+        facebook: 'www.facebook.com/mountaingks',
+        twitter: 'www.twitter.com/mountaingks',
+      },
+    },
+
+    keyBeliefs: [
+      'Bibeli gẹgẹbi iwe ofin kanṣoṣo ti Ọlọrun fọwọsi',
+      'Ijọba Ọlọrun gẹgẹbi ojutu kanṣoṣo fun iṣoro ọmọ eniyan',
+      'Pataki ti títu aṣiri ẹkọ eke',
+      'Isin ati ọwọ fun Jihofa Ọlọrun',
+      'Isọkan Onigbagbọ ni gbogbo orilẹ-ede ati laarin gbogbo eniyan',
+    ],
+  },
+  ij: {
+    version: '1.0.0',
+    content: `God's Kingdom Society (GKS) kẹ mọne gba mọ kẹ dọu emi kẹ, Jihova Ọghẹnẹ kẹ dọu emi Saint Gideon Meriodere Urhobo gba kẹ.
+
+1934 ukpe kẹ dọu emi GKS na, St. G.M. Urhobo kẹ Ọghẹnẹ duo se emi sa’da rẹ Jesu Kristi duo mrẹ eyẹ, nọ kẹ iruo nọ e vwo ghwọghọ Ọghẹnẹ Ẹmẹ rẹ Usuon Ọghẹnẹ gbe tona asan nọ efie-ẹmẹ e rọ.
+
+Ibebe nọ o wan nẹ GKS o fuon:
+• Bibili duo se emi gbe Ọghẹnẹ duo se emi kẹ dọu emi.
+• Bibili ẹmẹ nọ o fuon kẹ a gba emi, ẹga rẹ akpọ na uruemu kankan o rọ-ọ.
+• Ephẹrẹ sa-sa duo se emi nọ o wan nyo nọ obọ rẹ ahwo rẹ rassan sa-sa.
+• Usuon Ọghẹnẹ duo se emi kẹ ahwo-akpọ ebẹbẹ soso i re nọ rhe.
+
+Lagos duo muhọ kẹkpẹ, GKS o rha rho no wẹhẹ ẹga rẹ Ilele-Kristi nọ o gangan Nigeria soso gbe obefe, nọ o gba Bibili ẹmẹ na: "O nọ o kẹkpẹ na o te rho te uririn" (Aizaya 60:22).`,
+
+    mission: `
+      1. Usuon Ọghẹnẹ ebi-ẹmẹ e vwo ghwọghọ kẹ akpọ na soso wẹhẹ ọvo nọ o kẹ ahwo-akpọ nọ i bi kpokpo ẹro. 
+      2. Efie-ẹmẹ soso nọ Eṣu o bi ro ru iruo re o vwo kru ahwo buobu họ evaọ igere rẹ ẹga e vwo tona. 
+      3. Ọghẹnẹ oghwẹrẹ ẹmẹ nọ a kere họ obe e vwo ghwọghọ kẹ ahwo imuemu.`,
+
+    contactInfo: {
+      headquarters: 'Salem City, P.O. Box 424, Warri, Delta State, Nigeria',
+      phones: ['+234-810 098 7661', '+234-802 329 5127'],
+      emails: [
+        'gkssecretariat@mountaingks.org',
+        'publicitysecretary@mountaingks.org',
+      ],
+      socialMedia: {
+        facebook: 'www.facebook.com/mountaingks',
+        twitter: 'www.twitter.com/mountaingks',
+      },
+    },
+
+    keyBeliefs: [
+      'Bibili na ọye Ọghẹnẹ obe uphiẹvwe ọvo nọ o hẹ otọ',
+      'Usuon Ọghẹnẹ ọye asan usivwin rẹ uye ahwo-akpọ ọvo',
+      'Efie-ẹmẹ soso e vwo tona',
+      'Iruo gbe ẹvwọfuon kẹ Jihova Ọghẹnẹ',
+      'Ilele-Kristi uruẹme nọ o gba akpọ na soso gbe rassan sa-sa',
+    ],
+  },
+  es: {
+    version: '1.0.0',
+    content: `La Sociedad del Reino de Dios (GKS, por sus siglas en inglés) es una organización cristiana fundada por Jehová Dios a través de Su siervo, San Gideon Meriodere Urhobo. 
+
+Establecida en 1934, la GKS surgió de un llamado divino cuando San G.M. Urhobo recibió una visión de Jesucristo, comisionándolo para proclamar el Evangelio del Reino de Dios y exponer las falsas doctrinas.
+
+Lo que hace única a la GKS:
+• Fundada en la revelación bíblica directa y el llamado divino.
+• Comprometida con las enseñanzas puras de la Biblia sin tradiciones denominacionales.
+• Ministerio multilingüe que llega a personas de todos los orígenes.
+• Centrada en el Reino de Dios como la solución al sufrimiento humano.
+
+Desde sus pequeños comienzos en Lagos, la GKS ha crecido hasta convertirse en una vibrante comunidad cristiana en toda Nigeria y más allá, cumpliendo la profecía bíblica: "El pequeño vendrá a ser mil" (Isaías 60:22).`,
+
+    mission: `
+      1. Predicar las buenas nuevas del reino de Dios al mundo como la única esperanza de la humanidad sufriente. 
+      2. Exponer todas las falsedades que Satanás ha estado usando para mantener a muchas personas en cautiverio espiritual. 
+      3. Proclamar el juicio escrito de Dios contra los impíos.`,
+
+    contactInfo: {
+      headquarters: 'Salem City, P.O. Box 424, Warri, Delta State, Nigeria',
+      phones: ['+234-810 098 7661', '+234-802 329 5127'],
+      emails: [
+        'gkssecretariat@mountaingks.org',
+        'publicitysecretary@mountaingks.org',
+      ],
+      socialMedia: {
+        facebook: 'www.facebook.com/mountaingks',
+        twitter: 'www.twitter.com/mountaingks',
+      },
+    },
+
+    keyBeliefs: [
+      'La Biblia como el único libro de leyes autorizado de Dios',
+      'El Reino de Dios como el único remedio para el sufrimiento humano',
+      'La importancia de exponer las doctrinas falsas',
+      'Servicio y reverencia a Jehová Dios',
+      'Unidad cristiana en todas las naciones y orígenes',
     ],
   },
   sw: {

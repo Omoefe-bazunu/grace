@@ -169,7 +169,7 @@ export default function HomeScreen() {
         style={[styles.fixedBackground, { opacity: isDark ? 0.05 : 0.03 }]}
       />
 
-      <TopNavigation title={translations.homeNavTitle || 'Grace'} />
+      <TopNavigation title="GKS-APP" />
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.heroSection}>
@@ -188,7 +188,7 @@ export default function HomeScreen() {
               {translations.heroLabel || "GOD'S KINGDOM SOCIETY"}
             </AppText>
             <AppText style={styles.heroTitle}>
-              {translations.heroTitle || "Towards God's Perfect Government"}
+              {translations.heroTitle || "Declaring God's Perfect Government"}
             </AppText>
             <AppText style={styles.heroDesc}>
               {translations.heroDesc ||

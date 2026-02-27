@@ -18,7 +18,53 @@ import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
 import { AppText } from '../../../../components/ui/AppText';
 
-// ... hymnData and psalmData imports remain the same ...
+// Import language-specific data
+const hymnData = {
+  en: require('../../../../assets/data/hymns_en.json'),
+  fr: require('../../../../assets/data/hymns_fr.json'),
+};
+
+const psalmData = {
+  en: require('../../../../assets/data/psalms_en.json'),
+  fr: require('../../../../assets/data/psalms_fr.json'),
+  yo: require('../../../../assets/data/psalms_yo.json'),
+  zh: require('../../../../assets/data/psalms_zh.json'),
+  tw: require('../../../../assets/data/psalms_tw.json'),
+  zu: require('../../../../assets/data/psalms_zu.json'),
+  sw: require('../../../../assets/data/psalms_sw.json'),
+  ig: require('../../../../assets/data/psalms_ig.json'),
+  ha: require('../../../../assets/data/psalms_ha.json'),
+  ur: require('../../../../assets/data/psalms_ur.json'),
+};
+
+// Single combined cache
+const combinedCache = {
+  data: null,
+  timestamp: 0,
+  get: function () {
+    // Cache expiry of 5 minutes (300000ms)
+    return Date.now() - this.timestamp < 300000 ? this.data : null;
+  },
+  set: function (hymnList, psalmList) {
+    // 1. Tag hymns and create unique IDs
+    const taggedHymns = hymnList.map((item, index) => ({
+      ...item,
+      type: 'tsps', // Added type
+      uniqueId: `tsps_${item.tsp_number}_${index}`,
+    }));
+
+    // 2. Tag psalms and create unique IDs
+    const taggedPsalms = psalmList.map((item, index) => ({
+      ...item,
+      type: 'psalms', // Added type
+      uniqueId: `psalms_${item.psalm_number}_${index}`,
+    }));
+
+    // 3. Combine them: HYMNS FIRST, then PSALMS
+    this.data = [...taggedHymns, ...taggedPsalms];
+    this.timestamp = Date.now();
+  },
+};
 
 export default function HymnsScreen() {
   const [searchQuery, setSearchQuery] = useState('');

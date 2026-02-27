@@ -200,10 +200,7 @@ export default function MusicDetailScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation
-        showBackButton={true}
-        title={translations.musicPlayerTitle || 'Music Player'}
-      />
+      <TopNavigation showBackButton={true} />
       <ScrollView style={{ flex: 1, paddingHorizontal: 20 }}>
         <View style={{ alignItems: 'center', marginVertical: 20 }}>
           <Animated.View

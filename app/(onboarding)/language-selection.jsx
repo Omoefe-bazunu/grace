@@ -13,15 +13,16 @@ import { LANGUAGES } from '../../constants/languages';
 import { Button } from '../../components/ui/Button';
 
 export default function LanguageSelectionScreen() {
-  const { currentLanguage, setLanguage } = useLanguage();
+  // ✅ Access 'translations' to get the dynamic 'Continue' text
+  const { currentLanguage, setLanguage, translations } = useLanguage();
 
   const handleLanguageSelect = async (languageCode) => {
     await setLanguage(languageCode);
   };
 
   const handleContinue = () => {
-    // ✅ Change: Navigate to Onboarding FIRST so they see the beauty in their language!
-    router.replace('/(onboarding)'); // This will lead to the onboarding flow where they can see the app in their chosen language.
+    // Navigate to Onboarding flow where they see the app in their chosen language.
+    router.replace('/(onboarding)');
   };
 
   const sortedLanguages = useMemo(() => {
@@ -65,6 +66,7 @@ export default function LanguageSelectionScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        {/* Note: You can also translate these headers if you add keys to your context */}
         <Text style={styles.title}>Choose Your Language</Text>
         <Text style={styles.subtitle}>
           Select your preferred language for the best worship experience
@@ -81,7 +83,7 @@ export default function LanguageSelectionScreen() {
 
       <View style={styles.footer}>
         <Button
-          title="Continue"
+          title={translations.continue || translations.submit || 'Continue'}
           onPress={handleContinue}
           variant="primary"
           size="large"

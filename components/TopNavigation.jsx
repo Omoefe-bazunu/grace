@@ -21,18 +21,20 @@ import {
   Image as ImageIcon,
   MoreVertical,
 } from 'lucide-react-native';
+import * as SecureStore from 'expo-secure-store';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useLanguage } from '../contexts/LanguageContext'; // ✅ Added Language Hook
+import { useLanguage } from '../contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { subscribeToNotices } from '../services/dataService';
 
 export function TopNavigation({ title, showBackButton = false, onPress }) {
   const { colors, isDark, toggleTheme } = useTheme();
   const { isAdmin } = useAuth();
-  const { translations } = useLanguage(); // ✅ Access translations
+  const { translations } = useLanguage();
   const [showMenu, setShowMenu] = useState(false);
   const [notices, setNotices] = useState([]);
+  const [hasUnread, setHasUnread] = useState(false);
 
   const handleBackPress = () => {
     if (onPress && typeof onPress === 'function') {
@@ -43,8 +45,22 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
   };
 
   useEffect(() => {
-    const unsubscribeNotices = subscribeToNotices((newNotices) => {
+    const unsubscribeNotices = subscribeToNotices(async (newNotices) => {
       setNotices(newNotices);
+
+      if (newNotices.length === 0) {
+        setHasUnread(false);
+        return;
+      }
+
+      try {
+        const lastSeen = await SecureStore.getItemAsync('lastSeenNoticeId');
+        const latestId = newNotices[0]?.id;
+        setHasUnread(lastSeen !== latestId);
+      } catch (_) {
+        // If SecureStore fails, default to showing badge
+        setHasUnread(true);
+      }
     });
 
     return () => {
@@ -69,19 +85,14 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
         router.push('/profile/contact');
       },
     },
-    // Only show Admin Panel if user has rights
-    ...(isAdmin
-      ? [
-          {
-            icon: <Settings size={20} color={colors.primary} />,
-            title: translations.adminPanel || 'Admin Panel',
-            onPress: () => {
-              setShowMenu(false);
-              router.push('/profile/admin');
-            },
-          },
-        ]
-      : []),
+    {
+      icon: <Settings size={20} color={colors.primary} />,
+      title: translations.adminPanel || 'Admin Panel',
+      onPress: () => {
+        setShowMenu(false);
+        router.push('/profile/admin');
+      },
+    },
   ];
 
   return (
@@ -125,7 +136,7 @@ export function TopNavigation({ title, showBackButton = false, onPress }) {
             onPress={() => router.push('/profile/notices')}
           >
             <Bell size={22} color={colors.text} strokeWidth={1.5} />
-            {notices.length > 0 && (
+            {hasUnread && (
               <View
                 style={[
                   styles.badge,

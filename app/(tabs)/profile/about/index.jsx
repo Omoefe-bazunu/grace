@@ -229,23 +229,18 @@ export default function AboutScreen() {
           </View>
 
           <View style={styles.footer}>
-            <AppText
-              style={[styles.footerMain, { color: colors.textSecondary }]}
-            >
-              {translations.developedBy || 'Developed by HIGH-ER ENTERPRISES'}
+            <AppText style={[styles.footerMotto, { color: colors.primary }]}>
+              {translations.churchMotto || "Declaring God's perfect government"}
             </AppText>
+            <View
+              style={[styles.footerDivider, { backgroundColor: colors.border }]}
+            />
             <AppText
               style={[styles.footerCopy, { color: colors.textSecondary }]}
             >
               © {new Date().getFullYear()}{' '}
               {translations.churchName || "God's Kingdom Society"}.{' '}
               {translations.allRightsReserved || 'All rights reserved.'}
-            </AppText>
-            <View
-              style={[styles.footerDivider, { backgroundColor: colors.border }]}
-            />
-            <AppText style={[styles.footerMotto, { color: colors.primary }]}>
-              {translations.churchMotto || "Towards God's perfect government"}
             </AppText>
           </View>
         </View>
