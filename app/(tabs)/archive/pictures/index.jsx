@@ -20,7 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { X, Maximize2 } from 'lucide-react-native';
 import { AppText } from '../../../../components/ui/AppText';
 import { useTheme } from '../../../../contexts/ThemeContext';
-import { useLanguage } from '../../../../contexts/LanguageContext'; // ✅ Added Language Hook
+import { useLanguage } from '../../../../contexts/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 

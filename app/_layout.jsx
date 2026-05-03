@@ -17,16 +17,13 @@ import {
   registerForPushNotifications,
   registerBackgroundHandler,
 } from '../services/notificationService';
-import { API_BASE_URL, prefetchCommonRoutes } from '../utils/api';
+import { API_BASE_URL } from '../utils/api';
 import Constants from 'expo-constants';
 
 function RootLayoutContent() {
   const { isDark } = useTheme();
 
   useEffect(() => {
-    // Kick off data prefetch immediately — warms cache before any screen loads
-    prefetchCommonRoutes();
-
     // Push notifications — skip in Expo Go
     const isExpoGo = Constants.appOwnership === 'expo';
     if (!isExpoGo) {

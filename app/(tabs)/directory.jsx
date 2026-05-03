@@ -16,7 +16,7 @@ import {
   Linking,
   RefreshControl,
 } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 import {
   MapPin,
   Navigation,
@@ -26,6 +26,7 @@ import {
   Map,
   RefreshCw,
 } from 'lucide-react-native';
+import * as Location from 'expo-location';
 
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -35,6 +36,43 @@ import { AppText } from '@/components/ui/AppText';
 import { getDirectories } from '../../services/dataService';
 
 const ZONES_ALL = 'All';
+
+const getDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
+};
+
+// const formatDistance = (km) => {
+//   if (km < 1) return `${Math.round(km * 1000)}m away`;
+//   return `${km}km away`;
+// };
+
+const formatDistance = (km) => {
+  const dist = km < 1 ? `${Math.round(km * 1000)}m` : `${km}km`;
+
+  const hours = km / 40;
+  let drive;
+  if (hours < 1 / 40) {
+    drive = '<1 min drive';
+  } else if (hours < 1) {
+    const mins = Math.round(hours * 40);
+    drive = `~${mins} min drive`;
+  } else {
+    const h = Math.floor(hours);
+    const mins = Math.round((hours - h) * 40);
+    drive = mins > 0 ? `~${h}h ${mins}m drive` : `~${h}h drive`;
+  }
+
+  return `${dist} away · ${drive}`;
+};
 
 export default function DirectoryScreen() {
   const { colors } = useTheme();
@@ -48,6 +86,7 @@ export default function DirectoryScreen() {
   const [selectedZone] = useState(ZONES_ALL);
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [viewMode, setViewMode] = useState('list');
+  const [userLocation, setUserLocation] = useState(null);
   const [region, setRegion] = useState({
     latitude: 5.5167,
     longitude: 5.75,
@@ -57,7 +96,22 @@ export default function DirectoryScreen() {
 
   useEffect(() => {
     fetchData();
+    requestLocation();
   }, []);
+
+  const requestLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        setUserLocation(loc.coords);
+      }
+    } catch {
+      // Location unavailable — distance badges simply won't show
+    }
+  };
 
   const fetchData = async (isRefresh = false) => {
     if (!isRefresh) setLoading(true);
@@ -106,6 +160,32 @@ export default function DirectoryScreen() {
     });
   }, [searchQuery, selectedZone, directories]);
 
+  // Sort by distance if user location is available
+  const sortedBranches = useMemo(() => {
+    if (!userLocation) return filteredBranches;
+    return [...filteredBranches].sort((a, b) => {
+      if (!a.latitude) return 1;
+      if (!b.latitude) return -1;
+      const distA = parseFloat(
+        getDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          a.latitude,
+          a.longitude,
+        ),
+      );
+      const distB = parseFloat(
+        getDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          b.latitude,
+          b.longitude,
+        ),
+      );
+      return distA - distB;
+    });
+  }, [filteredBranches, userLocation]);
+
   const handleSelectBranch = (item) => {
     setSelectedBranch(item);
     if (item.latitude && mapRef.current) {
@@ -140,6 +220,16 @@ export default function DirectoryScreen() {
 
   const renderBranchItem = ({ item }) => {
     const isSelected = selectedBranch?.id === item.id;
+    const distance =
+      userLocation && item.latitude
+        ? getDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            item.latitude,
+            item.longitude,
+          )
+        : null;
+
     return (
       <TouchableOpacity
         style={[
@@ -152,9 +242,29 @@ export default function DirectoryScreen() {
       >
         <View style={styles.cardHeader}>
           <View style={{ flex: 1 }}>
-            <AppText style={[styles.zoneText, { color: colors.primary }]}>
-              {item.zone?.toUpperCase()}
-            </AppText>
+            <View style={styles.zoneBadgeRow}>
+              <AppText style={[styles.zoneText, { color: colors.primary }]}>
+                {item.zone?.toUpperCase()}
+              </AppText>
+              {distance !== null && (
+                <View
+                  style={[
+                    styles.distanceBadge,
+                    {
+                      backgroundColor: colors.primary + '15',
+                      borderColor: colors.primary + '40',
+                    },
+                  ]}
+                >
+                  <Navigation size={10} color={colors.primary} />
+                  <AppText
+                    style={[styles.distanceText, { color: colors.primary }]}
+                  >
+                    {formatDistance(distance)}
+                  </AppText>
+                </View>
+              )}
+            </View>
             <AppText style={[styles.branchTitle, { color: colors.text }]}>
               {item.name}
             </AppText>
@@ -303,6 +413,7 @@ export default function DirectoryScreen() {
             <AppText style={{ fontSize: 12, color: colors.textSecondary }}>
               {filteredBranches.length} branch
               {filteredBranches.length !== 1 ? 'es' : ''}
+              {userLocation ? ' · sorted by distance' : ''}
             </AppText>
           </View>
         )}
@@ -332,24 +443,51 @@ export default function DirectoryScreen() {
                         latitude: marker.latitude,
                         longitude: marker.longitude,
                       }}
-                      title={marker.name}
-                      description={marker.address}
                       pinColor={
                         selectedBranch?.id === marker.id
                           ? '#e74c3c'
                           : colors.primary
                       }
                       onPress={() => setSelectedBranch(marker)}
-                    />
+                    >
+                      <Callout tooltip={false}>
+                        <View style={styles.callout}>
+                          <AppText style={styles.calloutTitle}>
+                            {marker.name}
+                          </AppText>
+                          <AppText style={styles.calloutAddress}>
+                            {marker.address}
+                          </AppText>
+                          {userLocation && (
+                            <AppText
+                              style={[
+                                styles.calloutDistance,
+                                { color: colors.primary },
+                              ]}
+                            >
+                              📍{' '}
+                              {formatDistance(
+                                getDistance(
+                                  userLocation.latitude,
+                                  userLocation.longitude,
+                                  marker.latitude,
+                                  marker.longitude,
+                                ),
+                              )}
+                            </AppText>
+                          )}
+                        </View>
+                      </Callout>
+                    </Marker>
                   ) : null,
                 )}
               </MapView>
             </View>
           )}
 
-          {/* Branch list */}
+          {/* Branch list — sorted by distance when location is available */}
           <FlatList
-            data={filteredBranches}
+            data={sortedBranches}
             renderItem={renderBranchItem}
             keyExtractor={(item) => item.id}
             contentContainerStyle={[
@@ -447,12 +585,23 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 8,
   },
-  zoneText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
+  zoneBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     marginBottom: 3,
   },
+  zoneText: { fontSize: 11, fontWeight: '700', letterSpacing: 1 },
+  distanceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  distanceText: { fontSize: 11, fontWeight: '600' },
   branchTitle: { fontSize: 17, fontWeight: 'bold' },
   navCircle: {
     width: 38,
@@ -473,4 +622,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
   },
+  callout: { padding: 10, minWidth: 180, maxWidth: 240 },
+  calloutTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 3 },
+  calloutAddress: { fontSize: 12, color: '#666', marginBottom: 4 },
+  calloutDistance: { fontSize: 12, fontWeight: '600' },
 });

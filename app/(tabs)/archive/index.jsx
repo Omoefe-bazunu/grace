@@ -30,6 +30,11 @@ export default function ArchiveScreen() {
       icon: <Video size={30} color={colors.primary} />,
       route: 'videos',
     },
+    {
+      title: translations.documents || 'Documents',
+      icon: <Video size={30} color={colors.primary} />,
+      route: 'documents',
+    },
   ];
 
   return (

@@ -6,6 +6,7 @@ export default function GalleryLayout() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="pictures" options={{ headerShown: false }} />
       <Stack.Screen name="videos" options={{ headerShown: false }} />
+      <Stack.Screen name="documents" options={{ headerShown: false }} />
     </Stack>
   );
 }

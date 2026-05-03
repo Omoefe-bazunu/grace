@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,8 +9,19 @@ import {
   Alert,
   ScrollView,
   Switch,
+  Platform,
+  KeyboardAvoidingView,
+  RefreshControl,
 } from 'react-native';
-import { MapPin, Plus, Trash2, Edit2, X, Check } from 'lucide-react-native';
+import {
+  MapPin,
+  Plus,
+  Trash2,
+  Edit2,
+  X,
+  Check,
+  RefreshCw,
+} from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
 import { TopNavigation } from '@/components/TopNavigation';
@@ -33,8 +44,13 @@ const EMPTY_FORM = {
 
 export default function DirectoryManagerScreen() {
   const { colors } = useTheme();
+  const scrollRef = useRef(null);
+  const latInputRef = useRef(null);
+  const lngInputRef = useRef(null);
+
   const [directories, setDirectories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -45,12 +61,23 @@ export default function DirectoryManagerScreen() {
     load();
   }, []);
 
-  const load = async () => {
-    setLoading(true);
-    const data = await getDirectories();
-    setDirectories(data);
-    setLoading(false);
+  const load = async (isRefresh = false) => {
+    if (!isRefresh) setLoading(true);
+    try {
+      const data = await getDirectories();
+      setDirectories(data);
+    } catch (err) {
+      console.error('Directory load error:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    load(true);
+  }, []);
 
   const openAdd = () => {
     setForm(EMPTY_FORM);
@@ -71,6 +98,15 @@ export default function DirectoryManagerScreen() {
     setHasCoords(!!(item.latitude && item.longitude));
     setEditingId(item.id);
     setShowForm(true);
+  };
+
+  const handleToggleCoords = (val) => {
+    setHasCoords(val);
+    if (val) {
+      setTimeout(() => {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      }, 200);
+    }
   };
 
   const handleSave = async () => {
@@ -97,7 +133,6 @@ export default function DirectoryManagerScreen() {
       }),
     };
 
-    // Strip coords if toggled off during edit
     if (!hasCoords && editingId) {
       payload.latitude = null;
       payload.longitude = null;
@@ -111,8 +146,12 @@ export default function DirectoryManagerScreen() {
         await addDirectoryEntry(payload);
       }
       setShowForm(false);
+      setForm(EMPTY_FORM);
+      setHasCoords(false);
+      setEditingId(null);
       await load();
-    } catch {
+    } catch (err) {
+      console.error('Save error:', err);
       Alert.alert('Error', 'Could not save entry. Try again.');
     } finally {
       setSaving(false);
@@ -126,8 +165,13 @@ export default function DirectoryManagerScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          await deleteDirectoryEntry(item.id);
-          await load();
+          try {
+            await deleteDirectoryEntry(item.id);
+            await load();
+          } catch (err) {
+            console.error('Delete error:', err);
+            Alert.alert('Error', 'Could not delete entry. Try again.');
+          }
         },
       },
     ]);
@@ -142,123 +186,179 @@ export default function DirectoryManagerScreen() {
           showBackButton
           title={editingId ? 'Edit Branch' : 'Add Branch'}
         />
-        <ScrollView
-          contentContainerStyle={s.formScroll}
-          keyboardShouldPersistTaps="handled"
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <AppText style={s.label}>Branch Name *</AppText>
-          <TextInput
-            style={s.input}
-            value={form.name}
-            onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
-            placeholder="e.g. GKS Warri Central"
-            placeholderTextColor={colors.textSecondary}
-          />
-
-          <AppText style={s.label}>Zone *</AppText>
-          <TextInput
-            style={s.input}
-            value={form.zone}
-            onChangeText={(v) => setForm((f) => ({ ...f, zone: v }))}
-            placeholder="e.g. Warri"
-            placeholderTextColor={colors.textSecondary}
-          />
-
-          <AppText style={s.label}>Address *</AppText>
-          <TextInput
-            style={[s.input, { height: 80, textAlignVertical: 'top' }]}
-            value={form.address}
-            multiline
-            onChangeText={(v) => setForm((f) => ({ ...f, address: v }))}
-            placeholder="Full address"
-            placeholderTextColor={colors.textSecondary}
-          />
-
-          <AppText style={s.label}>Phone (optional)</AppText>
-          <TextInput
-            style={s.input}
-            value={form.phone}
-            keyboardType="phone-pad"
-            onChangeText={(v) => setForm((f) => ({ ...f, phone: v }))}
-            placeholder="+234..."
-            placeholderTextColor={colors.textSecondary}
-          />
-
-          <View style={s.toggleRow}>
-            <AppText style={s.label}>Add GPS Coordinates</AppText>
-            <Switch
-              value={hasCoords}
-              onValueChange={setHasCoords}
-              trackColor={{ true: colors.primary }}
+          <ScrollView
+            ref={scrollRef}
+            contentContainerStyle={s.formScroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <AppText style={s.label}>Branch Name *</AppText>
+            <TextInput
+              style={s.input}
+              value={form.name}
+              onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
+              placeholder="e.g. GKS Warri Central"
+              placeholderTextColor={colors.textSecondary}
+              returnKeyType="next"
             />
-          </View>
-          <AppText style={[s.hint, { color: colors.textSecondary }]}>
-            Coordinates enable the map view. Get them from Google Maps → long
-            press a location → copy the numbers shown.
-          </AppText>
 
-          {hasCoords && (
-            <View style={s.coordRow}>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <AppText style={s.label}>Latitude</AppText>
-                <TextInput
-                  style={s.input}
-                  value={form.latitude}
-                  keyboardType="decimal-pad"
-                  onChangeText={(v) => setForm((f) => ({ ...f, latitude: v }))}
-                  placeholder="e.g. 5.5167"
-                  placeholderTextColor={colors.textSecondary}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <AppText style={s.label}>Longitude</AppText>
-                <TextInput
-                  style={s.input}
-                  value={form.longitude}
-                  keyboardType="decimal-pad"
-                  onChangeText={(v) => setForm((f) => ({ ...f, longitude: v }))}
-                  placeholder="e.g. 5.7500"
-                  placeholderTextColor={colors.textSecondary}
-                />
-              </View>
+            <AppText style={s.label}>Zone *</AppText>
+            <TextInput
+              style={s.input}
+              value={form.zone}
+              onChangeText={(v) => setForm((f) => ({ ...f, zone: v }))}
+              placeholder="e.g. Warri"
+              placeholderTextColor={colors.textSecondary}
+              returnKeyType="next"
+            />
+
+            <AppText style={s.label}>Address *</AppText>
+            <TextInput
+              style={[s.input, { height: 80, textAlignVertical: 'top' }]}
+              value={form.address}
+              multiline
+              onChangeText={(v) => setForm((f) => ({ ...f, address: v }))}
+              placeholder="Full address"
+              placeholderTextColor={colors.textSecondary}
+            />
+
+            <AppText style={s.label}>Phone (optional)</AppText>
+            <TextInput
+              style={s.input}
+              value={form.phone}
+              keyboardType="phone-pad"
+              onChangeText={(v) => setForm((f) => ({ ...f, phone: v }))}
+              placeholder="+234..."
+              placeholderTextColor={colors.textSecondary}
+              returnKeyType="next"
+            />
+
+            <View style={s.toggleRow}>
+              <AppText style={s.label}>Add GPS Coordinates</AppText>
+              <Switch
+                value={hasCoords}
+                onValueChange={handleToggleCoords}
+                trackColor={{ true: colors.primary }}
+              />
             </View>
-          )}
+            <AppText style={[s.hint, { color: colors.textSecondary }]}>
+              Coordinates enable the map view. Get them from Google Maps → long
+              press a location → copy the numbers shown.
+            </AppText>
 
-          <View style={s.formActions}>
-            <TouchableOpacity
-              style={[s.btn, { backgroundColor: colors.border }]}
-              onPress={() => setShowForm(false)}
-            >
-              <X size={18} color={colors.text} />
-              <AppText style={{ color: colors.text, marginLeft: 6 }}>
-                Cancel
-              </AppText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[s.btn, { backgroundColor: colors.primary }]}
-              onPress={handleSave}
-              disabled={saving}
-            >
-              {saving ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <>
-                  <Check size={18} color="#fff" />
-                  <AppText style={{ color: '#fff', marginLeft: 6 }}>
-                    Save
-                  </AppText>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+            {hasCoords && (
+              <View style={s.coordRow}>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <AppText style={s.label}>Latitude</AppText>
+                  <TextInput
+                    ref={latInputRef}
+                    style={s.input}
+                    value={form.latitude}
+                    keyboardType="decimal-pad"
+                    onChangeText={(v) =>
+                      setForm((f) => ({ ...f, latitude: v }))
+                    }
+                    placeholder="e.g. 5.5167"
+                    placeholderTextColor={colors.textSecondary}
+                    returnKeyType="next"
+                    onSubmitEditing={() => lngInputRef.current?.focus()}
+                    onFocus={() =>
+                      setTimeout(
+                        () =>
+                          scrollRef.current?.scrollToEnd({ animated: true }),
+                        150,
+                      )
+                    }
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <AppText style={s.label}>Longitude</AppText>
+                  <TextInput
+                    ref={lngInputRef}
+                    style={s.input}
+                    value={form.longitude}
+                    keyboardType="decimal-pad"
+                    onChangeText={(v) =>
+                      setForm((f) => ({ ...f, longitude: v }))
+                    }
+                    placeholder="e.g. 5.7500"
+                    placeholderTextColor={colors.textSecondary}
+                    returnKeyType="done"
+                    onFocus={() =>
+                      setTimeout(
+                        () =>
+                          scrollRef.current?.scrollToEnd({ animated: true }),
+                        150,
+                      )
+                    }
+                  />
+                </View>
+              </View>
+            )}
+
+            {/* Spacer so Save button is never hidden behind keyboard */}
+            <View style={{ height: 100 }} />
+
+            <View style={s.formActions}>
+              <TouchableOpacity
+                style={[s.btn, { backgroundColor: colors.border }]}
+                onPress={() => {
+                  setShowForm(false);
+                  setForm(EMPTY_FORM);
+                  setHasCoords(false);
+                  setEditingId(null);
+                }}
+              >
+                <X size={18} color={colors.text} />
+                <AppText style={{ color: colors.text, marginLeft: 6 }}>
+                  Cancel
+                </AppText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.btn, { backgroundColor: colors.primary }]}
+                onPress={handleSave}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <>
+                    <Check size={18} color="#fff" />
+                    <AppText style={{ color: '#fff', marginLeft: 6 }}>
+                      Save
+                    </AppText>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaWrapper>
     );
   }
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton title="Directories" />
+      <TopNavigation
+        showBackButton
+        title="Directories"
+        rightComponent={
+          <TouchableOpacity
+            onPress={onRefresh}
+            disabled={refreshing}
+            style={{ padding: 8 }}
+          >
+            <RefreshCw
+              size={20}
+              color={refreshing ? colors.textSecondary : colors.primary}
+            />
+          </TouchableOpacity>
+        }
+      />
       <View style={s.headerRow}>
         <AppText style={{ color: colors.textSecondary, fontSize: 13 }}>
           {directories.length} branch{directories.length !== 1 ? 'es' : ''}
@@ -281,6 +381,15 @@ export default function DirectoryManagerScreen() {
           data={directories}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 15, paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
+          }
           renderItem={({ item }) => (
             <View
               style={[
@@ -345,7 +454,7 @@ export default function DirectoryManagerScreen() {
 
 const styles = (colors) =>
   StyleSheet.create({
-    formScroll: { padding: 20, paddingBottom: 60 },
+    formScroll: { padding: 20, paddingBottom: 20 },
     label: {
       fontSize: 13,
       fontWeight: '600',
@@ -370,7 +479,7 @@ const styles = (colors) =>
       marginTop: 16,
     },
     coordRow: { flexDirection: 'row' },
-    formActions: { flexDirection: 'row', gap: 12, marginTop: 28 },
+    formActions: { flexDirection: 'row', gap: 12, marginTop: 12 },
     btn: {
       flex: 1,
       flexDirection: 'row',

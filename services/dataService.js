@@ -507,6 +507,16 @@ export const updateArchiveEntry = async (collection, id, data) => {
   }
 };
 
+export const getArchiveDocuments = async () => {
+  try {
+    const response = await apiClient.get('archive/documents');
+    return response.data.archiveDocuments || [];
+  } catch (err) {
+    console.error('Error fetching archive documents:', err);
+    return [];
+  }
+};
+
 /**
  * Hits: DELETE /api/archive/:collection/:id [cite: 561]
  */
@@ -732,6 +742,7 @@ export const getDirectories = async () => {
 export const addDirectoryEntry = async (directoryData) => {
   try {
     const response = await apiClient.post('directories', directoryData);
+
     return response.data;
   } catch (err) {
     console.error('Error adding directory entry:', err);
@@ -742,6 +753,7 @@ export const addDirectoryEntry = async (directoryData) => {
 export const updateDirectoryEntry = async (id, data) => {
   try {
     const response = await apiClient.put(`directories/${id}`, data);
+
     return response.data;
   } catch (err) {
     console.error('Error updating directory entry:', err);
@@ -752,6 +764,7 @@ export const updateDirectoryEntry = async (id, data) => {
 export const deleteDirectoryEntry = async (id) => {
   try {
     const response = await apiClient.delete(`directories/${id}`);
+
     return response.data;
   } catch (err) {
     console.error('Error deleting directory entry:', err);

@@ -1,6 +1,5 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { cache } from './cache';
 
 export const API_BASE_URL = 'https://grace-backend-tp3h.onrender.com';
 
@@ -46,32 +45,8 @@ const clean = (path) => {
   return p;
 };
 
-// Cached GET — skips cache for auth/admin-style routes
-const cachedGet = async (path, params = {}) => {
-  const shouldCache =
-    !path.includes('auth') &&
-    !path.includes('contact') &&
-    !path.includes('push-tokens');
-  !path.includes('directories');
-
-  const cacheKey = `${path}:${JSON.stringify(params)}`;
-
-  if (shouldCache) {
-    const cached = await cache.get(cacheKey);
-    if (cached) return cached;
-  }
-
-  const response = await api.get(`/${clean(path)}`, { params });
-
-  if (shouldCache) {
-    cache.set(cacheKey, response);
-  }
-
-  return response;
-};
-
 export const apiClient = {
-  get: cachedGet,
+  get: (path, params = {}) => api.get(`/${clean(path)}`, { params }),
   post: (path, data) => api.post(`/${clean(path)}`, data),
   put: (pathOrCollection, idOrData, data) => {
     const p = clean(pathOrCollection);
@@ -100,22 +75,6 @@ export const apiClient = {
       languageCode,
       voiceName,
     }),
-};
-
-// Prefetch routes hit on every app open — fires and forgets
-export const prefetchCommonRoutes = () => {
-  const routes = [
-    {
-      path: 'sermons',
-      params: { limit: 15, sort: 'createdAt', order: 'desc' },
-    },
-    { path: 'devotionals', params: { limit: 10, sort: 'date', order: 'desc' } },
-    { path: 'notices', params: {} },
-  ];
-
-  routes.forEach(({ path, params }) => {
-    cachedGet(path, params).catch(() => {});
-  });
 };
 
 export default apiClient;
