@@ -24,11 +24,13 @@ import {
   Image as ImageIcon,
   LogOut,
   Send,
+  Map,
 } from 'lucide-react-native';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { TopNavigation } from '../../../../components/TopNavigation';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { SendIcon } from 'lucide-react';
+import { MapMarker } from 'react-native-maps';
 
 export default function AdminDashboardScreen() {
   const { user, isLoading, logout } = useAuth();
@@ -125,6 +127,13 @@ export default function AdminDashboardScreen() {
       description: 'Manage live streaming services',
       icon: <Podcast size={32} color="#1E3A8A" />,
       onPress: () => router.push('/(tabs)/profile/admin/livestreammanager'),
+    },
+    {
+      id: 'manage-directories',
+      title: 'Manage Directories',
+      description: 'Manage church directory entries',
+      icon: <Map size={32} color="#1E3A8A" />,
+      onPress: () => router.push('/(tabs)/profile/admin/directory'),
     },
     {
       id: 'gallery-management',

@@ -19,6 +19,7 @@ const translations = {
     admin: 'Admin',
     notices: 'Notices',
     quizresources: 'QuizResources',
+    directory: 'Directory',
     live: 'Live',
     archive: 'Archive',
 

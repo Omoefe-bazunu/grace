@@ -12,6 +12,9 @@
       "supportsTablet": true,
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.omoefe01.grace",
+      "config": {
+        "googleMapsApiKey": "AIzaSyC35u_eRBjWAol1sSDPdJnQQdGtStWAVBI"
+      },
       "infoPlist": {
         "UIBackgroundModes": ["audio", "fetch", "remote-notification"]
       }
@@ -21,6 +24,11 @@
       "package": "com.omoefe01.grace",
       "googleServicesFile": "./google-services.json",
       "edgeToEdgeEnabled": true,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDWxmCWai0ciZVPURn0IoCCquW9kn31n54"
+        }
+      },
       "adaptiveIcon": {
         "backgroundColor": "#010e5a",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -88,3 +96,94 @@
     }
   }
 }
+
+// {
+//   "expo": {
+//     "name": "GKS-APP",
+//     "slug": "grace",
+//     "version": "1.0.0",
+//     "orientation": "portrait",
+//     "icon": "./assets/images/icon.png",
+//     "scheme": "grace",
+//     "userInterfaceStyle": "automatic",
+//     "newArchEnabled": true,
+//     "ios": {
+//       "supportsTablet": true,
+//       "icon": "./assets/images/icon.png",
+//       "bundleIdentifier": "com.omoefe01.grace",
+//       "infoPlist": {
+//         "UIBackgroundModes": ["audio", "fetch", "remote-notification"]
+//       }
+//     },
+//     "android": {
+//       "permissions": ["android.permission.WAKE_LOCK"],
+//       "package": "com.omoefe01.grace",
+//       "googleServicesFile": "./google-services.json",
+//       "edgeToEdgeEnabled": true,
+//       "adaptiveIcon": {
+//         "backgroundColor": "#010e5a",
+//         "foregroundImage": "./assets/images/android-icon-foreground.png",
+//         "backgroundImage": "./assets/images/android-icon-background.png",
+//         "monochromeImage": "./assets/images/android-icon-monochrome.png"
+//       },
+//       "gradleProperties": {
+//         "android.enableR8.fullMode": "true",
+//         "android.r8.optimizedResourceShrinking": "true"
+//       }
+//     },
+//     "web": {
+//       "bundler": "metro",
+//       "output": "single",
+//       "favicon": "./assets/images/favicon.png"
+//     },
+//     "plugins": [
+//       "expo-router",
+//       "./plugins/withIosModularHeaders",
+//       [
+//         "expo-splash-screen",
+//         {
+//           "image": "./assets/images/splash-icon.png",
+//           "imageWidth": 200,
+//           "resizeMode": "native",
+//           "backgroundColor": "#4F46E5",
+//           "dark": {
+//             "image": "./assets/images/splash-icon.png",
+//             "backgroundColor": "#4F46E5"
+//           }
+//         }
+//       ],
+//       [
+//         "expo-build-properties",
+//         {
+//           "android": {
+//             "enableProguardInReleaseBuilds": true,
+//             "enableShrinkResourcesInReleaseBuilds": true,
+//             "proguardRuleSets": ["./proguard-rules.pro"],
+//             "compileSdkVersion": 35,
+//             "targetSdkVersion": 35,
+//             "buildToolsVersion": "35.0.0"
+//           },
+//           "ios": {
+//             "useFrameworks": "static",
+//             "buildReactNativeFromSource": true
+//           }
+//         }
+//       ],
+//       "@react-native-firebase/app",
+//       "expo-font",
+//       "expo-web-browser",
+//       "expo-video",
+//       "expo-secure-store",
+//       "react-native-compressor"
+//     ],
+//     "experiments": {
+//       "typedRoutes": true
+//     },
+//     "extra": {
+//       "router": {},
+//       "eas": {
+//         "projectId": "72f789af-4e65-4302-a0a3-cd8b15a67c27"
+//       }
+//     }
+//   }
+// }

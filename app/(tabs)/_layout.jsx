@@ -8,9 +8,11 @@ import {
   User,
   Podcast,
   Archive,
+  MapIcon,
 } from 'lucide-react-native';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { MapMarker } from 'react-native-maps';
 
 export default function TabLayout() {
   const { translations } = useLanguage();
@@ -87,6 +89,15 @@ export default function TabLayout() {
           title: translations.live,
           tabBarIcon: ({ color }) => (
             <Podcast size={24} color={color} strokeWidth={2.2} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="directory"
+        options={{
+          title: translations.directory,
+          tabBarIcon: ({ color }) => (
+            <MapIcon size={24} color={color} strokeWidth={2.2} />
           ),
         }}
       />

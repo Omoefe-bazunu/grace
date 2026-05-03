@@ -71,6 +71,7 @@ export default function HymnsScreen() {
   const [expandedId, setExpandedId] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fontSize, setFontSize] = useState(16);
 
   const { translations, currentLanguage } = useLanguage(); // ✅ Context accessed
   const { colors } = useTheme();
@@ -148,19 +149,54 @@ export default function HymnsScreen() {
             <View
               style={[styles.hymnContent, { backgroundColor: colors.surface }]}
             >
-              <AppText style={[styles.hymnName, { color: colors.text }]}>
+              {/* Font size controls */}
+              <View style={styles.fontControls}>
+                <TouchableOpacity
+                  onPress={() => setFontSize((s) => Math.max(12, s - 2))}
+                  style={[styles.fontBtn, { backgroundColor: colors.card }]}
+                >
+                  <AppText
+                    style={[styles.fontBtnText, { color: colors.primary }]}
+                  >
+                    A−
+                  </AppText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setFontSize((s) => Math.min(28, s + 2))}
+                  style={[styles.fontBtn, { backgroundColor: colors.card }]}
+                >
+                  <AppText
+                    style={[styles.fontBtnText, { color: colors.primary }]}
+                  >
+                    A+
+                  </AppText>
+                </TouchableOpacity>
+              </View>
+
+              <AppText
+                style={[
+                  styles.hymnName,
+                  { color: colors.text, fontSize: fontSize + 1 },
+                ]}
+              >
                 {item.title}
               </AppText>
               {item.subtitle && (
                 <AppText
-                  style={[styles.hymnSubtitle, { color: colors.textSecondary }]}
+                  style={[
+                    styles.hymnSubtitle,
+                    { color: colors.textSecondary, fontSize: fontSize - 2 },
+                  ]}
                 >
                   {item.subtitle}
                 </AppText>
               )}
               {item.meter && (
                 <AppText
-                  style={[styles.hymnMeter, { color: colors.textSecondary }]}
+                  style={[
+                    styles.hymnMeter,
+                    { color: colors.textSecondary, fontSize: fontSize - 2 },
+                  ]}
                 >
                   {item.meter}
                 </AppText>
@@ -171,12 +207,15 @@ export default function HymnsScreen() {
                   style={styles.stanzaContainer}
                 >
                   <AppText
-                    style={[styles.stanzaNumber, { color: colors.primary }]}
+                    style={[
+                      styles.stanzaNumber,
+                      { color: colors.primary, fontSize: fontSize - 2 },
+                    ]}
                   >
                     {stanza.number}
                   </AppText>
                   <AppText
-                    style={[styles.hymnBody, { color: colors.text }]}
+                    style={[styles.hymnBody, { color: colors.text, fontSize }]}
                     selectable
                   >
                     {stanza.text}
@@ -188,7 +227,7 @@ export default function HymnsScreen() {
         </View>
       );
     },
-    [expandedId, colors, translations],
+    [expandedId, colors, translations, fontSize],
   );
 
   return (
@@ -374,5 +413,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     fontSize: 16,
+  },
+  fontControls: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginBottom: 12,
+  },
+  fontBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  fontBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

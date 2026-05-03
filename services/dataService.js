@@ -711,6 +711,54 @@ export const getContactMessages = async (limit = 20, after = null) => {
   }
 };
 
+//DIRECTORIES
+
+/**
+ * Fetches the list of all church branches for the user directory.
+ */
+export const getDirectories = async () => {
+  try {
+    const response = await apiClient.get('directories');
+    return response.data.directories || [];
+  } catch (err) {
+    console.error('Error fetching directory:', err);
+    return [];
+  }
+};
+
+/**
+ * Adds a new church branch (Admin only).
+ */
+export const addDirectoryEntry = async (directoryData) => {
+  try {
+    const response = await apiClient.post('directories', directoryData);
+    return response.data;
+  } catch (err) {
+    console.error('Error adding directory entry:', err);
+    throw err;
+  }
+};
+
+export const updateDirectoryEntry = async (id, data) => {
+  try {
+    const response = await apiClient.put(`directories/${id}`, data);
+    return response.data;
+  } catch (err) {
+    console.error('Error updating directory entry:', err);
+    throw err;
+  }
+};
+
+export const deleteDirectoryEntry = async (id) => {
+  try {
+    const response = await apiClient.delete(`directories/${id}`);
+    return response.data;
+  } catch (err) {
+    console.error('Error deleting directory entry:', err);
+    throw err;
+  }
+};
+
 /**
  * Periodically polls for new contact messages.
  */
