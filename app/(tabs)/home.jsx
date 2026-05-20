@@ -18,8 +18,8 @@ import {
   Mic,
   Music,
   Film,
-  HandCoins,
-  Video,
+  // HandCoins,
+  // Video,
   ImageDownIcon,
   ImageIcon,
   Brain,
@@ -43,7 +43,7 @@ export default function HomeScreen() {
       title: translations.homeCardTitleSermons,
       subtitle: translations.homeCardSubtitleSermons,
       image:
-        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSERMON.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2Fsermonsection.jpeg?alt=media&token=2d1920ff-0d52-49d8-853c-1bbb65ec5902',
       path: '/sermons',
       icon: Mic,
       accent: '#10B981',
@@ -52,7 +52,7 @@ export default function HomeScreen() {
       title: translations.homeCardTitleSongs,
       subtitle: translations.homeCardSubtitleSongs,
       image:
-        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FCHOIR.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FHome%2FCHOIR.jpeg?alt=media&token=b1985ef3-3d07-4d9a-897a-a1c33951d175',
       path: '/songs',
       icon: Music,
       accent: '#3B82F6',
@@ -61,7 +61,7 @@ export default function HomeScreen() {
       title: translations.homeCardTitleStories,
       subtitle: translations.homeCardSubtitleStories,
       image:
-        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FANIMATION.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FHome%2FBIBLESTORIES.jpeg?alt=media&token=904ed9a8-7f7d-458e-a415-2c7183471a6d',
       path: '/animations',
       icon: Film,
       accent: '#F59E0B',
@@ -70,7 +70,7 @@ export default function HomeScreen() {
       title: translations.homeCardTitleArchive,
       subtitle: translations.homeCardSubtitleArchive,
       image:
-        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FARCHIVE.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FHome%2FCHURCHARCHIVE.jpeg?alt=media&token=8a847186-124a-4603-93fe-4da0f740f15e',
       path: '/archive',
       icon: ImageDownIcon,
       accent: '#6366F1',
@@ -88,29 +88,29 @@ export default function HomeScreen() {
       title: translations.homeCardTitleQuiz,
       subtitle: translations.homeCardSubtitleQuiz,
       image:
-        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FQUIZ.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FHome%2FBIBLEQUIZ.jpeg?alt=media&token=e8f30362-c3a5-43cf-8e84-e441d63a2b1b',
       path: '/profile/quizresources',
       icon: Brain,
       accent: '#14B8A6',
     },
-    {
-      title: translations.homeCardTitleGiving,
-      subtitle: translations.homeCardSubtitleGiving,
-      image:
-        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FPAYMENTS.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
-      path: '',
-      icon: HandCoins,
-      accent: '#EF4444',
-    },
-    {
-      title: translations.homeCardTitleLive,
-      subtitle: translations.homeCardSubtitleLive,
-      image:
-        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSTREAM.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
-      path: '/live',
-      icon: Video,
-      accent: '#8B5CF6',
-    },
+    // {
+    //   title: translations.homeCardTitleGiving,
+    //   subtitle: translations.homeCardSubtitleGiving,
+    //   image:
+    //     'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FPAYMENTS.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+    //   path: '',
+    //   icon: HandCoins,
+    //   accent: '#EF4444',
+    // },
+    // {
+    //   title: translations.homeCardTitleLive,
+    //   subtitle: translations.homeCardSubtitleLive,
+    //   image:
+    //     'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSTREAM.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+    //   path: '/live',
+    //   icon: Video,
+    //   accent: '#8B5CF6',
+    // },
   ];
 
   const renderCard = (card, index) => {
@@ -139,7 +139,7 @@ export default function HomeScreen() {
           <Image source={{ uri: card.image }} style={styles.cardImage} />
 
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.7)']}
+            colors={['transparent', 'rgba(0,0,0,0.9)']}
             style={styles.cardGradient}
           />
 
@@ -164,7 +164,7 @@ export default function HomeScreen() {
     <SafeAreaWrapper>
       <Image
         source={{
-          uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FHERO.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+          uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2Fparadise.png?alt=media&token=97fbdfa4-b117-43a4-a17b-d5b7cced4a6f',
         }}
         style={[styles.fixedBackground, { opacity: isDark ? 0.05 : 0.03 }]}
       />
@@ -175,7 +175,7 @@ export default function HomeScreen() {
         <View style={styles.heroSection}>
           <Image
             source={{
-              uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FHERO.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+              uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2Fparadise.png?alt=media&token=97fbdfa4-b117-43a4-a17b-d5b7cced4a6f',
             }}
             style={styles.heroImage}
           />

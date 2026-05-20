@@ -19,12 +19,13 @@ import { useLanguage } from '@/contexts/LanguageContext';
 // --- Local Image Imports ---
 import logoscreen from '../../assets/images/LOGO.png';
 import cloudBG from '../../assets/images/CLOUD.png';
-import sermonBG from '../../assets/images/SERMONBG.png';
+import sermonBG from '../../assets/images/sermononboard.png';
 import micIcon from '../../assets/images/MIC.png';
 import micBG from '../../assets/images/MICBG.png';
 import musicIcon from '../../assets/images/MUSIC.png';
 import moreBG from '../../assets/images/MOREBG.png';
 import moreIcon from '../../assets/images/MORE.png';
+// import seromnBG2 from '../../assets/images/sermononboard.png';
 
 const { width, height } = Dimensions.get('window');
 
@@ -39,6 +40,7 @@ export default function OnboardingScreen() {
       id: '1',
       subtitle: translations.onboardingSubtitle1,
       title: translations.onboardingTitle1,
+      tagline: translations.onboardingTagline,
       description: translations.onboardingDesc1,
       colors: ['#113c83', '#022e68'],
       bgImage: cloudBG,
@@ -173,6 +175,7 @@ export default function OnboardingScreen() {
           <Animated.View style={{ opacity, alignItems: 'center' }}>
             <Text style={styles.subtitle}>{item.subtitle?.toUpperCase()}</Text>
             <Text style={styles.title}>{item.title}</Text>
+            <Text style={styles.subtitle}>{item.tagline}</Text>
             <Text style={styles.description}>{item.description}</Text>
           </Animated.View>
         </View>
@@ -322,12 +325,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: 'center',
   },
+  tagline: {
+    fontSize: 10,
+    marginBottom: 16,
+  },
   title: {
     fontSize: 26,
     fontWeight: '800',
     color: '#ffffff',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 2,
     lineHeight: 32,
   },
   description: {

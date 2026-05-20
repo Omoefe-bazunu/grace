@@ -86,6 +86,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="live"
         options={{
+          href: null,
           title: translations.live,
           tabBarIcon: ({ color }) => (
             <Podcast size={24} color={color} strokeWidth={2.2} />

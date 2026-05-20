@@ -30,15 +30,26 @@ import { AppText } from '../../../../components/ui/AppText';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import * as Clipboard from 'expo-clipboard';
 
+const LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'fr', label: 'French' },
+  { code: 'es', label: 'Spanish' },
+  { code: 'pt', label: 'Portuguese' },
+  { code: 'yo', label: 'Yoruba' },
+  { code: 'ig', label: 'Igbo' },
+  { code: 'ha', label: 'Hausa' },
+];
+
 const MAX_CHARS_PER_CHUNK = 4000;
 const SENTENCE_ENDINGS = /[.!?]+/;
 
 export default function SermonDetailScreen() {
   const { id } = useLocalSearchParams();
-  const { currentLanguage, translations } = useLanguage(); // ✅ Added translations
+  const { currentLanguage, translations } = useLanguage();
   const { colors } = useTheme();
 
   const [sermon, setSermon] = useState(null);
+  const [selectedLang, setSelectedLang] = useState('en'); // ✅ moved inside component
   const [loading, setLoading] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -46,7 +57,6 @@ export default function SermonDetailScreen() {
   const [generating, setGenerating] = useState(false);
   const [playbackPosition, setPlaybackPosition] = useState(0);
   const [playbackDuration, setPlaybackDuration] = useState(0);
-
   const [currentChunk, setCurrentChunk] = useState(0);
   const [audioChunks, setAudioChunks] = useState([]);
   const [totalChunks, setTotalChunks] = useState(0);
@@ -98,15 +108,16 @@ export default function SermonDetailScreen() {
         const sermonData = await getSermon(id);
         if (sermonData) {
           setSermon(sermonData);
-          const contentObj =
-            sermonData.translations?.[currentLanguage] ||
-            sermonData.translations?.en ||
-            sermonData;
-          if (contentObj?.content) {
-            const chunks = splitTextIntoChunks(contentObj.content);
+          // Audio chunks always use English content
+          const englishContent = sermonData.translations?.en || sermonData;
+          if (englishContent?.content) {
+            const chunks = splitTextIntoChunks(englishContent.content);
             setAudioChunks(chunks);
             setTotalChunks(chunks.length);
           }
+          // ✅ Initialize selectedLang to the sermon's own language or currentLanguage
+          const sermonLang = sermonData.language || 'en';
+          setSelectedLang(sermonLang);
         } else {
           setSermon(null);
         }
@@ -125,7 +136,7 @@ export default function SermonDetailScreen() {
         sound.unloadAsync().catch(console.error);
       }
     };
-  }, [id, currentLanguage]);
+  }, [id]);
 
   const playChunk = async (chunkIndex) => {
     if (chunkIndex >= audioChunks.length) {
@@ -139,17 +150,10 @@ export default function SermonDetailScreen() {
       setCurrentChunk(chunkIndex);
       setGenerating(true);
 
-      const config =
-        currentLanguage === 'es'
-          ? { languageCode: 'es-ES', name: 'es-ES-Neural2-B' }
-          : currentLanguage === 'fr'
-            ? { languageCode: 'fr-FR', name: 'fr-FR-Neural2-B' }
-            : { languageCode: 'en-US', name: 'en-US-Neural2-F' };
-
       const response = await apiClient.post('tts/synthesize', {
         text: audioChunks[chunkIndex],
-        languageCode: config.languageCode,
-        name: config.name,
+        languageCode: 'en-US',
+        name: 'en-US-Neural2-F',
       });
 
       if (!response.data?.audioContent) {
@@ -316,7 +320,7 @@ export default function SermonDetailScreen() {
 
   const handleCopyToClipboard = async () => {
     const contentObj =
-      sermon?.translations?.[currentLanguage] ||
+      sermon?.translations?.[selectedLang] ||
       sermon?.translations?.en ||
       sermon;
     if (!contentObj?.content) return;
@@ -353,8 +357,16 @@ export default function SermonDetailScreen() {
     );
   }
 
+  // Resolve display content: prefer selectedLang translation, fall back to English, then root
   const contentObj =
-    sermon.translations?.[currentLanguage] || sermon.translations?.en || sermon;
+    sermon.translations?.[selectedLang] || sermon.translations?.en || sermon;
+
+  // Which languages actually have content on this sermon
+  const availableLanguages = LANGUAGES.filter(
+    (l) => sermon.translations?.[l.code]?.content,
+  );
+
+  const isEnglish = selectedLang === 'en';
   const progress =
     playbackDuration > 0 ? playbackPosition / playbackDuration : 0;
   const overallProgress =
@@ -362,124 +374,182 @@ export default function SermonDetailScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation
-        showBackButton={true}
-        title={translations.sermonDetail || 'Sermon'}
-      />
+      <TopNavigation showBackButton={true} />
       <ScrollView
         style={[styles.container, { backgroundColor: colors.background }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
+          {/* Title */}
           <AppText style={[styles.title, { color: colors.text }]}>
             {contentObj.title || translations.untitled || 'Untitled'}
           </AppText>
-          <View style={styles.metaRow}>
-            <View style={styles.metaItem}>
-              <Calendar size={14} color={colors.textSecondary} />
-              <AppText
-                style={[styles.metaText, { color: colors.textSecondary }]}
-              >
-                {sermon.date || translations.gksSermon || 'GKS Sermon'}
-              </AppText>
-            </View>
-          </View>
-        </View>
 
-        <View
-          style={[
-            styles.playerCard,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
-        >
-          <View style={styles.playerHeader}>
-            <View style={styles.playerInfo}>
-              <Volume2 size={18} color={colors.primary} />
-              <AppText style={[styles.playerLabel, { color: colors.text }]}>
-                {translations.audioAssistant || 'Audio Assistant'}
-              </AppText>
-            </View>
-            <TouchableOpacity
-              onPress={handleCopyToClipboard}
-              style={[styles.copyIcon, { backgroundColor: colors.background }]}
+          {/* ✅ Single date row — no duplicate */}
+          <View style={styles.metaItem}>
+            <Calendar size={14} color={colors.textSecondary} />
+            <AppText style={[styles.metaText, { color: colors.textSecondary }]}>
+              {sermon.date || translations.gksSermon || 'GKS Sermon'}
+            </AppText>
+          </View>
+
+          {/* Language chips — only if multiple translations exist */}
+          {availableLanguages.length > 1 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.langRow}
             >
-              <Copy size={16} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
+              {availableLanguages.map((lang) => (
+                <TouchableOpacity
+                  key={lang.code}
+                  onPress={() => {
+                    setSelectedLang(lang.code);
+                    if (isSpeaking) handleStop();
+                  }}
+                  style={[
+                    styles.langChip,
+                    { borderColor: colors.border },
+                    selectedLang === lang.code && {
+                      backgroundColor: colors.primary,
+                      borderColor: colors.primary,
+                    },
+                  ]}
+                >
+                  <AppText
+                    style={[
+                      styles.langChipText,
+                      {
+                        color:
+                          selectedLang === lang.code
+                            ? '#fff'
+                            : colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {lang.label}
+                  </AppText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
 
-          <View style={styles.progressContainer}>
+          {/* Audio player — English only */}
+          {isEnglish && audioChunks.length > 0 && (
             <View
               style={[
-                styles.progressBarBase,
-                { backgroundColor: colors.border },
+                styles.playerCard,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
               ]}
             >
-              <View
-                style={[
-                  styles.progressBarFill,
-                  {
-                    backgroundColor: colors.primary,
-                    width: `${overallProgress * 100}%`,
-                  },
-                ]}
-              />
-            </View>
-            <View style={styles.progressLabels}>
-              <AppText
-                style={[styles.progressText, { color: colors.textSecondary }]}
-              >
-                {translations.part || 'Part'} {currentChunk + 1}{' '}
-                {translations.of || 'of'} {totalChunks}
-              </AppText>
-              <AppText
-                style={[styles.progressText, { color: colors.textSecondary }]}
-              >
-                {Math.round(overallProgress * 100)}%
-              </AppText>
-            </View>
-          </View>
+              <View style={styles.playerHeader}>
+                <View style={styles.playerInfo}>
+                  <Volume2 size={18} color={colors.primary} />
+                  <AppText style={[styles.playerLabel, { color: colors.text }]}>
+                    {translations.audioAssistant || 'Audio Assistant'}
+                  </AppText>
+                </View>
+                <TouchableOpacity
+                  onPress={handleCopyToClipboard}
+                  style={[
+                    styles.copyIcon,
+                    { backgroundColor: colors.background },
+                  ]}
+                >
+                  <Copy size={16} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
 
-          <View style={styles.controls}>
-            <TouchableOpacity
-              onPress={handleSkipBack}
-              disabled={currentChunk <= 0 || generating}
-              style={{ opacity: currentChunk > 0 && !generating ? 1 : 0.3 }}
-            >
-              <SkipBack size={24} color={colors.text} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleStop}
-              disabled={!isSpeaking}
-              style={{ opacity: isSpeaking ? 1 : 0.3 }}
-            >
-              <Square size={22} color={colors.error} fill={colors.error} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleSpeak}
-              style={[styles.mainPlayBtn, { backgroundColor: colors.primary }]}
-              disabled={generating}
-            >
-              {generating ? (
-                <ActivityIndicator color="#fff" />
-              ) : isSpeaking && !isPaused ? (
-                <Pause size={28} color="#fff" />
-              ) : (
-                <Play size={28} color="#fff" fill="#fff" />
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleSkipForward}
-              disabled={currentChunk >= totalChunks - 1 || generating}
-              style={{
-                opacity:
-                  currentChunk < totalChunks - 1 && !generating ? 1 : 0.3,
-              }}
-            >
-              <SkipForward size={24} color={colors.text} />
-            </TouchableOpacity>
-          </View>
+              <View style={styles.progressContainer}>
+                <View
+                  style={[
+                    styles.progressBarBase,
+                    { backgroundColor: colors.border },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      {
+                        backgroundColor: colors.primary,
+                        width: `${overallProgress * 100}%`,
+                      },
+                    ]}
+                  />
+                </View>
+                <View style={styles.progressLabels}>
+                  <AppText
+                    style={[
+                      styles.progressText,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    {translations.part || 'Part'} {currentChunk + 1}{' '}
+                    {translations.of || 'of'} {totalChunks}
+                  </AppText>
+                  <AppText
+                    style={[
+                      styles.progressText,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    {Math.round(overallProgress * 100)}%
+                  </AppText>
+                </View>
+              </View>
+
+              <View style={styles.controls}>
+                <TouchableOpacity
+                  onPress={handleSkipBack}
+                  disabled={currentChunk <= 0 || generating}
+                  style={{
+                    opacity: currentChunk > 0 && !generating ? 1 : 0.3,
+                  }}
+                >
+                  <SkipBack size={24} color={colors.text} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleStop}
+                  disabled={!isSpeaking}
+                  style={{ opacity: isSpeaking ? 1 : 0.3 }}
+                >
+                  <Square size={22} color={colors.error} fill={colors.error} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleSpeak}
+                  style={[
+                    styles.mainPlayBtn,
+                    { backgroundColor: colors.primary },
+                  ]}
+                  disabled={generating}
+                >
+                  {generating ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : isSpeaking && !isPaused ? (
+                    <Pause size={28} color="#fff" />
+                  ) : (
+                    <Play size={28} color="#fff" fill="#fff" />
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleSkipForward}
+                  disabled={currentChunk >= totalChunks - 1 || generating}
+                  style={{
+                    opacity:
+                      currentChunk < totalChunks - 1 && !generating ? 1 : 0.3,
+                  }}
+                >
+                  <SkipForward size={24} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </View>
 
+        {/* Sermon content */}
         <View style={styles.contentSection}>
           {contentObj.content
             ?.split('\n')
@@ -511,14 +581,36 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 12,
   },
-  metaRow: { flexDirection: 'row', justifyContent: 'center', gap: 16 },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginBottom: 16,
+  },
   metaText: { fontSize: 13, fontWeight: '600' },
+  langRow: {
+    paddingBottom: 16,
+    gap: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  langChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  langChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
   playerCard: {
-    marginHorizontal: 24,
     borderRadius: 24,
     padding: 20,
     borderWidth: 1,
+    marginTop: 8,
     ...Platform.select({
       ios: {
         shadowColor: '#000',

@@ -58,16 +58,16 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
 const formatDistance = (km) => {
   const dist = km < 1 ? `${Math.round(km * 1000)}m` : `${km}km`;
 
-  const hours = km / 40;
+  const hours = km / 60;
   let drive;
-  if (hours < 1 / 40) {
+  if (hours < 1 / 60) {
     drive = '<1 min drive';
   } else if (hours < 1) {
-    const mins = Math.round(hours * 40);
+    const mins = Math.round(hours * 60);
     drive = `~${mins} min drive`;
   } else {
     const h = Math.floor(hours);
-    const mins = Math.round((hours - h) * 40);
+    const mins = Math.round((hours - h) * 60);
     drive = mins > 0 ? `~${h}h ${mins}m drive` : `~${h}h drive`;
   }
 

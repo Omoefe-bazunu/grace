@@ -19,6 +19,7 @@ import {
 } from '../services/notificationService';
 import { API_BASE_URL } from '../utils/api';
 import Constants from 'expo-constants';
+import LiveFAB from '../components/LiveFAB';
 
 function RootLayoutContent() {
   const { isDark } = useTheme();
@@ -54,6 +55,7 @@ function RootLayoutContent() {
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false }} />
       <MiniPlayer />
+      <LiveFAB />
     </SafeAreaWrapper>
   );
 }

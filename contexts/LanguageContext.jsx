@@ -78,10 +78,11 @@ const translations = {
     //onboarding
     skip: 'Skip',
     startBtn: 'START',
-    onboardingSubtitle1: 'Welcome to the',
-    onboardingTitle1: "God's Kingdom Society",
+    onboardingSubtitle1: 'WELCOME TO',
+    onboardingTitle1: "GOD'S KINGDOM SOCIETY",
+    onboardingTagline: '(The Church of The Living God)',
     onboardingDesc1:
-      "A Christian Organization where the truth of God's word is preached and practiced in pursuance of the salvation of God.",
+      "A Christian Organization Where The Truth of God's Word Is Preached Without Adulteration.",
     onboardingSubtitle2: "Grow in God's word with",
     onboardingTitle2: 'Edifying Sermons',
     onboardingDesc2:
@@ -89,7 +90,7 @@ const translations = {
     onboardingSubtitle3: 'Worship God with',
     onboardingTitle3: 'Graceful Songs',
     onboardingDesc3:
-      'Join fellow believers around the world to give honour to God and Christ through melodious songs of praise.',
+      'Join us in Melodious Songs of Praise as we Worship God through Music in GKS Large library of Songs.',
     onboardingSubtitle4: 'EXPLORE MORE',
     onboardingTitle4: 'MORE FEATURES',
     onboardingDesc4:

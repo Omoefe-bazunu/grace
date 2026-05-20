@@ -12,7 +12,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Search, BookOpen, ChevronRight, X } from 'lucide-react-native';
+import { Search, ChevronRight, X } from 'lucide-react-native';
 import { useLanguage } from '../../../../contexts/LanguageContext';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
@@ -42,6 +42,18 @@ const SERMON_CATEGORIES = [
   'Questions and Answers',
 ];
 
+// ✅ Infers a sermon's language even if the `language` field wasn't written at upload time.
+// Covers: new uploads (explicit `language` field), translated-only docs (infer from translations
+// keys), and old flat-content docs (no language field, no translations wrapper → English).
+const getSermonLanguage = (sermon) => {
+  if (sermon.language) return sermon.language;
+  if (sermon.translations) {
+    const langs = Object.keys(sermon.translations);
+    if (langs.length === 1) return langs[0];
+  }
+  return 'en';
+};
+
 export default function TextSermonsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categorizedSermons, setCategorizedSermons] = useState({});
@@ -54,10 +66,9 @@ export default function TextSermonsScreen() {
   const [modalHasMore, setModalHasMore] = useState(true);
   const [modalNextCursor, setModalNextCursor] = useState(null);
 
-  const { translations } = useLanguage();
+  const { translations, currentLanguage } = useLanguage();
   const { colors } = useTheme();
 
-  // ✅ Optimized: Parallel Loading
   const loadSermons = async (isRefresh = false) => {
     try {
       if (isRefresh) setRefreshing(true);
@@ -70,7 +81,11 @@ export default function TextSermonsScreen() {
 
       const result = {};
       SERMON_CATEGORIES.forEach((cat, index) => {
-        result[cat] = resultsArray[index].sermons || [];
+        const all = resultsArray[index].sermons || [];
+        // ✅ Use helper so old docs (no language field) still filter correctly
+        result[cat] = all.filter(
+          (s) => getSermonLanguage(s) === currentLanguage,
+        );
       });
 
       setCategorizedSermons(result);
@@ -84,7 +99,7 @@ export default function TextSermonsScreen() {
 
   useEffect(() => {
     loadSermons();
-  }, []);
+  }, [currentLanguage]);
 
   const debouncedSearch = useCallback(
     debounce(async (query) => {
@@ -105,9 +120,11 @@ export default function TextSermonsScreen() {
           (acc, cat) => ({ ...acc, [cat]: [] }),
           {},
         );
-        sermons.forEach((s) => {
-          if (grouped[s.category]) grouped[s.category].push(s);
-        });
+        sermons
+          .filter((s) => getSermonLanguage(s) === currentLanguage)
+          .forEach((s) => {
+            if (grouped[s.category]) grouped[s.category].push(s);
+          });
         setCategorizedSermons(grouped);
       } catch (err) {
         console.error('Search error:', err);
@@ -115,7 +132,7 @@ export default function TextSermonsScreen() {
         setRefreshing(false);
       }
     }, 400),
-    [],
+    [currentLanguage],
   );
 
   useEffect(() => {
@@ -144,9 +161,14 @@ export default function TextSermonsScreen() {
         modalNextCursor,
       );
 
+      // Filter additional pages by language too
+      const filtered = (res.sermons || []).filter(
+        (s) => getSermonLanguage(s) === currentLanguage,
+      );
+
       setCategorizedSermons((prev) => ({
         ...prev,
-        [expandedCategory]: [...prev[expandedCategory], ...res.sermons],
+        [expandedCategory]: [...prev[expandedCategory], ...filtered],
       }));
 
       setModalNextCursor(res.nextCursor);
@@ -256,7 +278,7 @@ export default function TextSermonsScreen() {
         />
       )}
 
-      {/* MODAL – Infinite Scroll Enabled */}
+      {/* MODAL – Infinite Scroll */}
       <Modal visible={!!expandedCategory} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
@@ -301,8 +323,7 @@ export default function TextSermonsScreen() {
                     style={[styles.sermonTitleText, { color: colors.text }]}
                     numberOfLines={2}
                   >
-                    {sermon.translations?.[translations.currentLanguage]
-                      ?.title ||
+                    {sermon.translations?.[currentLanguage]?.title ||
                       sermon.title ||
                       'Untitled'}
                   </AppText>

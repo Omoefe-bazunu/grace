@@ -107,7 +107,7 @@ export default function MiniPlayer() {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 60, // Sits above the Tab Bar (adjust if your tabs are taller)
+    bottom: 120, // Sits above the Tab Bar (adjust if your tabs are taller)
     left: 0,
     right: 0,
     height: 64,
