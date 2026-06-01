@@ -19,10 +19,11 @@ import {
   Music,
   Film,
   // HandCoins,
-  // Video,
+  Video,
   ImageDownIcon,
   ImageIcon,
   Brain,
+  MapPin,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -43,7 +44,7 @@ export default function HomeScreen() {
       title: translations.homeCardTitleSermons,
       subtitle: translations.homeCardSubtitleSermons,
       image:
-        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2Fsermonsection.jpeg?alt=media&token=2d1920ff-0d52-49d8-853c-1bbb65ec5902',
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2Fsermonsection.jpeg?alt=media&token=4ed2e960-ac18-401a-a9f6-e15dc5e30d16',
       path: '/sermons',
       icon: Mic,
       accent: '#10B981',
@@ -61,7 +62,7 @@ export default function HomeScreen() {
       title: translations.homeCardTitleStories,
       subtitle: translations.homeCardSubtitleStories,
       image:
-        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FHome%2FBIBLESTORIES.jpeg?alt=media&token=904ed9a8-7f7d-458e-a415-2c7183471a6d',
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FBIBLEBASEDSTORIES.jpeg?alt=media&token=27b0644c-ab46-49fd-8f61-a97e97fcf584',
       path: '/animations',
       icon: Film,
       accent: '#F59E0B',
@@ -79,7 +80,7 @@ export default function HomeScreen() {
       title: translations.homeCardTitleGallery,
       subtitle: translations.homeCardSubtitleGallery,
       image:
-        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FGALLERY.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FHome%2FIMG-20260520-WA0239-01.jpeg?alt=media&token=cd857f08-86b0-4138-9e6f-a80307af5048',
       path: '/profile/gallery',
       icon: ImageIcon,
       accent: '#EC4899',
@@ -102,15 +103,24 @@ export default function HomeScreen() {
     //   icon: HandCoins,
     //   accent: '#EF4444',
     // },
-    // {
-    //   title: translations.homeCardTitleLive,
-    //   subtitle: translations.homeCardSubtitleLive,
-    //   image:
-    //     'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSTREAM.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
-    //   path: '/live',
-    //   icon: Video,
-    //   accent: '#8B5CF6',
-    // },
+    {
+      title: translations.homeCardTitleDirectory,
+      subtitle: translations.homeCardSubtitleDirectory,
+      image:
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FHome%2FMAP.jpeg?alt=media&token=afe984de-79a2-401a-81bc-7ce95c6e3312',
+      path: '/directory',
+      icon: MapPin,
+      accent: '#8B5CF6',
+    },
+    {
+      title: translations.homeCardTitleLive,
+      subtitle: translations.homeCardSubtitleLive,
+      image:
+        'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FHome%2FLIVE.jpeg?alt=media&token=c1cda644-5b4b-4b22-88dc-99a840118255',
+      path: '/live',
+      icon: Video,
+      accent: '#8B5CF6',
+    },
   ];
 
   const renderCard = (card, index) => {

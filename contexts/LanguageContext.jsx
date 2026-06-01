@@ -116,8 +116,7 @@ const translations = {
     homeCardSubtitleArchive:
       'Explore historical records and past events of the society.',
     homeCardTitleGallery: 'Gallery',
-    homeCardSubtitleGallery:
-      'A visual journey through our community and ministers.',
+    homeCardSubtitleGallery: 'A visual collection of activities of the church.',
     homeCardTitleQuiz: 'Quiz Resources',
     homeCardSubtitleQuiz:
       'Study materials and resources to sharpen your knowledge.',
@@ -125,6 +124,9 @@ const translations = {
     homeCardSubtitleGiving: 'Contribute to the global mission of the GKS.',
     homeCardTitleLive: 'Live Events',
     homeCardSubtitleLive: 'Stream services and special events in real-time.',
+    homeCardTitleDirectory: 'Directory',
+    homeCardSubtitleDirectory:
+      'Find and connect with units and branches of the GKS near you.',
 
     // Sermons Main Screen
     sermonsBannerTitle: 'EDIFYING SERMONS',

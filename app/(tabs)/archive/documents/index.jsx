@@ -124,7 +124,7 @@ export default function ArchiveDocuments() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton title="Documents" />
+      <TopNavigation showBackButton />
 
       <View
         style={[styles.searchContainer, { backgroundColor: colors.background }]}

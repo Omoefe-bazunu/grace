@@ -33,7 +33,7 @@ import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
 import { getSong } from '../../../../services/dataService';
 import { AppText } from '../../../../components/ui/AppText';
-import ChoirImage from '../../../../assets/images/CHOIR.png';
+import ChoirImage from '../../../../assets/images/musicicon.png';
 
 export default function MusicDetailScreen() {
   const { id } = useLocalSearchParams();

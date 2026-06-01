@@ -592,6 +592,8 @@ export const getLiveStreams = async () => {
   }
 };
 
+//MAIN
+
 /**
  * GET only active streams (Public/Home view)
  */
@@ -647,6 +649,83 @@ export const deleteLiveStream = async (id) => {
   } catch (error) {
     console.error('DataService deleteLiveStream error:', error);
     throw error;
+  }
+};
+
+// === LIVE STREAM COMMENTS & REACTIONS ===
+
+export const getLiveStreamComments = async (streamId) => {
+  try {
+    const response = await apiClient.get(`livestreams/${streamId}/comments`);
+    return response.data.comments || [];
+  } catch (err) {
+    console.error('Error fetching comments:', err);
+    return [];
+  }
+};
+
+export const addLiveStreamComment = async (streamId, text, userId) => {
+  try {
+    const response = await apiClient.post(`livestreams/${streamId}/comments`, {
+      text,
+      userId,
+    });
+    return response.data;
+  } catch (err) {
+    console.error('Error posting comment:', err);
+    throw err;
+  }
+};
+
+export const getLiveStreamReactions = async (streamId) => {
+  try {
+    const response = await apiClient.get(`livestreams/${streamId}/reactions`);
+    return response.data.reactions || {};
+  } catch (err) {
+    console.error('Error fetching reactions:', err);
+    return {};
+  }
+};
+
+export const toggleLiveStreamReaction = async (streamId, emoji, userId) => {
+  try {
+    const response = await apiClient.post(`livestreams/${streamId}/reactions`, {
+      emoji,
+      userId,
+    });
+    return response.data;
+  } catch (err) {
+    console.error('Error toggling reaction:', err);
+    throw err;
+  }
+};
+
+export const getLiveStreamLog = async (limit = 10, after = null) => {
+  try {
+    const params = { limit };
+    if (after) params.after = after;
+    const response = await apiClient.get('livestreams/log', params);
+    return {
+      streams: response.data.liveStreams || [],
+      hasMore: response.data.pagination?.hasMore || false,
+      nextCursor: response.data.pagination?.nextCursor || null,
+    };
+  } catch (err) {
+    console.error('Error fetching stream log:', err);
+    return { streams: [], hasMore: false, nextCursor: null };
+  }
+};
+
+export const getLiveStreamDetails = async (streamId) => {
+  try {
+    const response = await apiClient.get(`livestreams/${streamId}/details`);
+    return {
+      comments: response.data.comments || [],
+      reactions: response.data.reactions || {},
+    };
+  } catch (err) {
+    console.error('Error fetching stream details:', err);
+    return { comments: [], reactions: {} };
   }
 };
 
@@ -791,12 +870,16 @@ export const subscribeToContactMessages = (callback) => {
 };
 
 // === UTILS ===
-export const getYouTubeVideoId = (url) => {
+export function getYouTubeVideoId(url) {
   if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
-  return match && match[2].length === 11 ? match[2] : null;
-};
+  // Already a bare 11-char video ID
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
+  // Full URL — extract ID
+  const match = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+  );
+  return match?.[1] || null;
+}
 
 // Regular Helpers
 export const post = (path, data) => apiClient.post(path, data);

@@ -132,10 +132,7 @@ export default function QuizResourcesScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation
-        showBackButton
-        title={translations.quizNavTitle || 'Quiz Resources'}
-      />
+      <TopNavigation showBackButton />
 
       <View style={styles.container}>
         <View style={[styles.searchBar, { backgroundColor: colors.surface }]}>

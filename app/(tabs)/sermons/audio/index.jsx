@@ -87,15 +87,12 @@ export default function AudioSermonsScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation
-        showBackButton={true}
-        title={translations.audioSermonsTitle || 'Audio Sermons'}
-      />
+      <TopNavigation showBackButton={true} />
 
       <View style={styles.bannerContainer}>
         <ImageBackground
           source={{
-            uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSERMON.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+            uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2Fsermonsection.jpeg?alt=media&token=4ed2e960-ac18-401a-a9f6-e15dc5e30d16',
           }}
           style={styles.bannerImage}
         >

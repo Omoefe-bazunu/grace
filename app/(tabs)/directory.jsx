@@ -58,7 +58,7 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
 const formatDistance = (km) => {
   const dist = km < 1 ? `${Math.round(km * 1000)}m` : `${km}km`;
 
-  const hours = km / 60;
+  const hours = km / 100; // Assuming average speed of 100 km/h
   let drive;
   if (hours < 1 / 60) {
     drive = '<1 min drive';

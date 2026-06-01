@@ -19,8 +19,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
 
-// ... SkeletonVideo remains unchanged ...
-
 export default function AnimationDetailScreen() {
   const { id } = useLocalSearchParams();
   const [video, setVideo] = useState(null);

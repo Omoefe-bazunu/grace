@@ -20,34 +20,30 @@ import {
 import { API_BASE_URL } from '../utils/api';
 import Constants from 'expo-constants';
 import LiveFAB from '../components/LiveFAB';
+import { LiveStreamProvider } from '../contexts/LiveStreamContexts';
 
 function RootLayoutContent() {
   const { isDark } = useTheme();
+  console.log('🔵 RootLayoutContent rendering');
 
   useEffect(() => {
-    // Push notifications — skip in Expo Go
-    const isExpoGo = Constants.appOwnership === 'expo';
-    if (!isExpoGo) {
-      registerBackgroundHandler();
+    registerBackgroundHandler();
 
-      (async () => {
-        const pushToken = await registerForPushNotifications();
-        if (pushToken) {
-          try {
-            await fetch(`${API_BASE_URL}/api/push-tokens/register`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ token: pushToken }),
-            });
-            console.log('Push token registered with backend');
-          } catch (error) {
-            console.error('Failed to register push token:', error);
-          }
+    (async () => {
+      const pushToken = await registerForPushNotifications();
+      if (pushToken) {
+        try {
+          await fetch(`${API_BASE_URL}/api/push-tokens/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: pushToken }),
+          });
+          console.log('Push token registered with backend');
+        } catch (error) {
+          console.error('Failed to register push token:', error);
         }
-      })();
-    } else {
-      console.log('Push notifications disabled in Expo Go');
-    }
+      }
+    })();
   }, []);
 
   return (
@@ -88,8 +84,10 @@ export default function RootLayout() {
         <LanguageProvider>
           <AuthProvider>
             <PlayProvider>
-              <AudioSetup />
-              <RootLayoutContent />
+              <LiveStreamProvider>
+                <AudioSetup />
+                <RootLayoutContent />
+              </LiveStreamProvider>
             </PlayProvider>
           </AuthProvider>
         </LanguageProvider>

@@ -1,52 +1,25 @@
-// components/LiveFAB.jsx
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { TouchableOpacity, StyleSheet, Animated, AppState } from 'react-native';
 import { Video } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { AppText } from './ui/AppText';
 import { usePlayer } from '../contexts/PlayListContext';
-import { getActiveLiveStreams } from '../services/dataService';
-
-const POLL_INTERVAL = 60_000;
+import { useLiveStream } from '../contexts/LiveStreamContexts';
 
 export default function LiveFAB() {
   const { miniPlayerVisible } = usePlayer();
-  const [isLive, setIsLive] = useState(false);
+  const { liveStream } = useLiveStream();
+  const isLive = !!liveStream;
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const intervalRef = useRef(null);
   const appStateRef = useRef(AppState.currentState);
 
-  const checkLive = async () => {
-    try {
-      const streams = await getActiveLiveStreams();
-      setIsLive(streams.some((s) => s.isActive));
-    } catch {
-      // silently fail
-    }
-  };
-
-  // Poll on mount + every 60s
-  useEffect(() => {
-    checkLive();
-    intervalRef.current = setInterval(checkLive, POLL_INTERVAL);
-    return () => clearInterval(intervalRef.current);
-  }, []);
-
-  // Re-check when app comes back to foreground
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
-      if (
-        appStateRef.current.match(/inactive|background/) &&
-        nextState === 'active'
-      ) {
-        checkLive();
-      }
       appStateRef.current = nextState;
     });
     return () => subscription.remove();
   }, []);
 
-  // Pulse animation when live
   useEffect(() => {
     if (!isLive) return;
     const pulse = Animated.loop(
@@ -75,10 +48,7 @@ export default function LiveFAB() {
     <Animated.View
       style={[
         styles.fab,
-        {
-          bottom: bottomOffset,
-          transform: [{ scale: pulseAnim }],
-        },
+        { bottom: bottomOffset, transform: [{ scale: pulseAnim }] },
       ]}
     >
       <TouchableOpacity

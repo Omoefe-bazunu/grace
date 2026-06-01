@@ -24,6 +24,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import debounce from 'lodash.debounce';
 import { AppText } from '../../../../components/ui/AppText';
+import SERMONIMAGE from '../../../../assets/images/textsermons.jpg';
 
 const { height } = Dimensions.get('window');
 
@@ -196,12 +197,7 @@ export default function TextSermonsScreen() {
         title={translations.sermons || 'Sermons'}
       />
 
-      <ImageBackground
-        source={{
-          uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FSERMON.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
-        }}
-        style={styles.bannerImage}
-      >
+      <ImageBackground source={SERMONIMAGE} style={styles.bannerImage}>
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.8)']}
           style={styles.bannerGradient}
@@ -345,7 +341,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingBottom: 40,
   },
-  bannerGradient: { ...StyleSheet.absoluteFillObject },
+  bannerGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 150,
+  },
   bannerText: { alignItems: 'center', zIndex: 1, paddingHorizontal: 20 },
   bannerTitle: {
     color: '#fff',

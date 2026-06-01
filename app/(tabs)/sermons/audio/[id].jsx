@@ -174,10 +174,7 @@ export default function SermonAudioDetailScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation
-        showBackButton={true}
-        title={translations.audioPlayer || 'Audio Player'}
-      />
+      <TopNavigation showBackButton={true} />
       <ScrollView style={{ flex: 1, paddingHorizontal: 20 }}>
         <View style={styles.visualContainer}>
           <Animated.View

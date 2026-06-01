@@ -279,7 +279,7 @@ export default function AnimationsScreen() {
       <View style={styles.bannerContainer}>
         <ImageBackground
           source={{
-            uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FANIMATION.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+            uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FBIBLEBASEDSTORIES.jpeg?alt=media&token=27b0644c-ab46-49fd-8f61-a97e97fcf584',
           }}
           style={styles.bannerImage}
         >
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     marginTop: 8,
-    marginBottom: 10,
+    marginBottom: 16,
   },
   searchContainer: {
     marginHorizontal: 20,

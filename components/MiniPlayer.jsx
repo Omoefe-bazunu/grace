@@ -12,9 +12,8 @@ import { Play, Pause, X } from 'lucide-react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useRouter } from 'expo-router';
 
-// Placeholder image if none provided
 const DEFAULT_ART =
-  'https://firebasestorage.googleapis.com/v0/b/grace-cc555.firebasestorage.app/o/CHOIR.png?alt=media&token=92dd7301-75bd-4ea8-a042-371e94649186';
+  'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FHome%2Fmusicicon.png?alt=media&token=cbcf357b-f1d8-48dd-a2b2-df3454d32b34';
 
 export default function MiniPlayer() {
   const {

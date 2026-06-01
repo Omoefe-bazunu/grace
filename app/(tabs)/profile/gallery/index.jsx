@@ -56,7 +56,7 @@ export default function GalleryScreen() {
         <View style={styles.bannerContainer}>
           <ImageBackground
             source={{
-              uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FGALLERY.png?alt=media&token=9e197db6-1ed1-43d9-91af-8a1307b6ee2b',
+              uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2FHome%2FIMG-20260520-WA0239-01.jpeg?alt=media&token=cd857f08-86b0-4138-9e6f-a80307af5048',
             }}
             style={styles.bannerImage}
           >
