@@ -11,6 +11,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import {
@@ -22,6 +23,7 @@ import {
   ChevronUp,
   Search,
   X,
+  Calendar,
 } from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
@@ -31,9 +33,193 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useLiveStream } from '../../contexts/LiveStreamContexts';
 import { getYouTubeVideoId } from '../../services/dataService';
 import { AppText } from '../../components/ui/AppText';
-import DateTimePicker from '@react-native-community/datetimepicker';
 
 const REACTION_EMOJIS = ['❤️', '😂', '😮', '😢', '👏', '🔥'];
+
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+// ─── Pure JS Date Picker Modal ────────────────────────────────────────────────
+function DatePickerModal({ visible, onClose, onSelect, selectedDate, colors }) {
+  const today = new Date();
+  const initDate = selectedDate || today;
+
+  const [year, setYear] = useState(initDate.getFullYear());
+  const [month, setMonth] = useState(initDate.getMonth());
+  const [day, setDay] = useState(initDate.getDate());
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  const years = [];
+  for (let y = today.getFullYear(); y >= 2020; y--) years.push(y);
+
+  const handleConfirm = () => {
+    const safeDay = Math.min(day, daysInMonth);
+    onSelect(new Date(year, month, safeDay));
+    onClose();
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <TouchableOpacity
+        style={styles.modalBackdrop}
+        activeOpacity={1}
+        onPress={onClose}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          style={[styles.pickerModal, { backgroundColor: colors.background }]}
+        >
+          <View
+            style={[styles.pickerHeader, { borderBottomColor: colors.border }]}
+          >
+            <AppText style={[styles.pickerTitle, { color: colors.text }]}>
+              Select Date
+            </AppText>
+            <TouchableOpacity onPress={onClose}>
+              <X size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Month / Day / Year columns */}
+          <View style={styles.pickerColumns}>
+            {/* Month */}
+            <View style={styles.pickerColumn}>
+              <AppText
+                style={[styles.pickerColLabel, { color: colors.textSecondary }]}
+              >
+                Month
+              </AppText>
+              <ScrollView
+                style={styles.pickerScroll}
+                showsVerticalScrollIndicator={false}
+              >
+                {MONTHS.map((m, i) => (
+                  <TouchableOpacity
+                    key={m}
+                    style={[
+                      styles.pickerItem,
+                      month === i && { backgroundColor: colors.primary + '20' },
+                    ]}
+                    onPress={() => setMonth(i)}
+                  >
+                    <AppText
+                      style={[
+                        styles.pickerItemText,
+                        { color: month === i ? colors.primary : colors.text },
+                        month === i && { fontWeight: '700' },
+                      ]}
+                    >
+                      {m.slice(0, 3)}
+                    </AppText>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Day */}
+            <View style={styles.pickerColumn}>
+              <AppText
+                style={[styles.pickerColLabel, { color: colors.textSecondary }]}
+              >
+                Day
+              </AppText>
+              <ScrollView
+                style={styles.pickerScroll}
+                showsVerticalScrollIndicator={false}
+              >
+                {days.map((d) => (
+                  <TouchableOpacity
+                    key={d}
+                    style={[
+                      styles.pickerItem,
+                      day === d && { backgroundColor: colors.primary + '20' },
+                    ]}
+                    onPress={() => setDay(d)}
+                  >
+                    <AppText
+                      style={[
+                        styles.pickerItemText,
+                        { color: day === d ? colors.primary : colors.text },
+                        day === d && { fontWeight: '700' },
+                      ]}
+                    >
+                      {d}
+                    </AppText>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Year */}
+            <View style={styles.pickerColumn}>
+              <AppText
+                style={[styles.pickerColLabel, { color: colors.textSecondary }]}
+              >
+                Year
+              </AppText>
+              <ScrollView
+                style={styles.pickerScroll}
+                showsVerticalScrollIndicator={false}
+              >
+                {years.map((y) => (
+                  <TouchableOpacity
+                    key={y}
+                    style={[
+                      styles.pickerItem,
+                      year === y && { backgroundColor: colors.primary + '20' },
+                    ]}
+                    onPress={() => setYear(y)}
+                  >
+                    <AppText
+                      style={[
+                        styles.pickerItemText,
+                        { color: year === y ? colors.primary : colors.text },
+                        year === y && { fontWeight: '700' },
+                      ]}
+                    >
+                      {y}
+                    </AppText>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.pickerConfirmBtn,
+              { backgroundColor: colors.primary },
+            ]}
+            onPress={handleConfirm}
+          >
+            <AppText style={styles.pickerConfirmText}>Confirm</AppText>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function LiveStreamScreen() {
   const { colors } = useTheme();
@@ -64,7 +250,7 @@ export default function LiveStreamScreen() {
   const [logDetails, setLogDetails] = useState({});
   const [logDetailsLoading, setLogDetailsLoading] = useState({});
 
-  // ── Filter state (past streams only) ──────────────────────────────────────
+  // ── Filter state ───────────────────────────────────────────────────────────
   const [searchTitle, setSearchTitle] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -376,8 +562,7 @@ export default function LiveStreamScreen() {
     <View style={styles.logSection}>
       {renderSectionDivider('PAST STREAMS')}
 
-      {/* ── Filter bar — scoped to past streams only ── */}
-
+      {/* ── Filter bar ── */}
       <View style={styles.filterRow}>
         <View
           style={[styles.filterInputWrap, { backgroundColor: colors.card }]}
@@ -398,18 +583,21 @@ export default function LiveStreamScreen() {
           )}
         </View>
 
-        {/* Date picker trigger */}
         <TouchableOpacity
           style={[
             styles.datePickerBtn,
             {
               backgroundColor: colors.card,
               borderColor: selectedDate ? colors.primary : 'transparent',
-              borderWidth: selectedDate ? 1 : 0,
+              borderWidth: 1,
             },
           ]}
           onPress={() => setShowDatePicker(true)}
         >
+          <Calendar
+            size={13}
+            color={selectedDate ? colors.primary : colors.textSecondary}
+          />
           <AppText
             style={[
               styles.datePickerText,
@@ -422,7 +610,7 @@ export default function LiveStreamScreen() {
                   month: 'short',
                   year: 'numeric',
                 })
-              : '📅 Date'}
+              : 'Date'}
           </AppText>
           {selectedDate && (
             <TouchableOpacity
@@ -449,26 +637,7 @@ export default function LiveStreamScreen() {
         )}
       </View>
 
-      {/* Date picker modal */}
-      {showDatePicker && (
-        <DateTimePicker
-          value={selectedDate || new Date()}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'inline' : 'default'}
-          maximumDate={new Date()}
-          onChange={(event, date) => {
-            setShowDatePicker(Platform.OS === 'ios');
-            if (event.type === 'set' && date) {
-              setSelectedDate(date);
-            }
-            if (Platform.OS !== 'ios') {
-              setShowDatePicker(false);
-            }
-          }}
-        />
-      )}
-
-      {/* ── Result count when filtering ── */}
+      {/* ── Result count ── */}
       {hasActiveFilter && (
         <AppText style={[styles.filterResult, { color: colors.textSecondary }]}>
           {filteredStreamLog.length} result
@@ -476,7 +645,7 @@ export default function LiveStreamScreen() {
         </AppText>
       )}
 
-      {/* ── Empty states ── */}
+      {/* ── Empty state ── */}
       {filteredStreamLog.length === 0 && !logLoading && (
         <AppText style={[styles.emptyLogText, { color: colors.textSecondary }]}>
           {hasActiveFilter
@@ -627,7 +796,6 @@ export default function LiveStreamScreen() {
         );
       })}
 
-      {/* Load more — only show when not filtering */}
       {!hasActiveFilter && logHasMore && (
         <TouchableOpacity
           style={[styles.loadMoreBtn, { backgroundColor: colors.card }]}
@@ -672,6 +840,16 @@ export default function LiveStreamScreen() {
   return (
     <SafeAreaWrapper>
       <TopNavigation showBackButton title={translations.live || 'Live'} />
+
+      {/* Pure JS date picker — no native modules */}
+      <DatePickerModal
+        visible={showDatePicker}
+        onClose={() => setShowDatePicker(false)}
+        onSelect={setSelectedDate}
+        selectedDate={selectedDate}
+        colors={colors}
+      />
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -783,9 +961,7 @@ export default function LiveStreamScreen() {
             </View>
           )}
 
-          {/* ── Past streams log ── */}
           {renderStreamLog()}
-
           <View style={{ height: 60 }} />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -824,7 +1000,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
   },
-
   streamHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -896,7 +1071,6 @@ const styles = StyleSheet.create({
   },
   offlineSubtext: { fontSize: 13 },
 
-  // Reactions
   reactionsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -924,7 +1098,6 @@ const styles = StyleSheet.create({
   reactionCount: { fontSize: 12, fontWeight: '600', color: '#666' },
   reactionCountSelected: { color: '#EF4444' },
 
-  // Comments
   commentsSection: { paddingHorizontal: 16, paddingBottom: 16 },
   sectionLabel: { fontSize: 14, fontWeight: '700', marginBottom: 8 },
   commentsList: { maxHeight: 200 },
@@ -944,7 +1117,6 @@ const styles = StyleSheet.create({
   commentsClosed: { fontSize: 13, marginTop: 8, textAlign: 'center' },
   emptyHint: { fontSize: 13, marginBottom: 8 },
 
-  // Divider
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -960,7 +1132,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
   },
 
-  // Filter bar
   filterRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -977,43 +1148,33 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     gap: 6,
   },
-  filterTextInput: {
-    flex: 1,
-    fontSize: 13,
-    paddingVertical: 0,
-  },
-  clearAllBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+  filterTextInput: { flex: 1, fontSize: 13, paddingVertical: 0 },
+  datePickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    gap: 5,
   },
-  clearAllText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  filterResult: {
-    fontSize: 12,
-    marginHorizontal: 16,
-    marginBottom: 8,
-  },
+  datePickerText: { fontSize: 13, fontWeight: '500' },
+  clearAllBtn: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8 },
+  clearAllText: { fontSize: 13, fontWeight: '600' },
+  filterResult: { fontSize: 12, marginHorizontal: 16, marginBottom: 8 },
 
-  // Stream log
   logSection: { marginBottom: 8 },
-
   emptyLogText: {
     fontSize: 14,
     textAlign: 'center',
     marginHorizontal: 16,
     marginVertical: 16,
   },
-
   logCard: {
     borderRadius: 12,
     marginHorizontal: 16,
     marginBottom: 10,
     overflow: 'hidden',
   },
-
   logCardHeader: { flexDirection: 'row', alignItems: 'center', padding: 14 },
   logCardInfo: { flex: 1 },
   logCardTitle: { fontSize: 15, fontWeight: '600', marginBottom: 4 },
@@ -1048,18 +1209,56 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
   emptySubtitle: { fontSize: 14, textAlign: 'center' },
 
-  datePickerBtn: {
-    flexDirection: 'row',
+  // Date picker modal
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  pickerModal: {
+    width: '85%',
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  pickerTitle: { fontSize: 16, fontWeight: '700' },
+  pickerColumns: { flexDirection: 'row', padding: 12, gap: 8 },
+  pickerColumn: { flex: 1, alignItems: 'center' },
+  pickerColLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  pickerScroll: { height: 180, width: '100%' },
+  pickerItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
     borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    gap: 6,
+    alignItems: 'center',
+    marginBottom: 2,
   },
-  datePickerText: {
-    fontSize: 13,
-    fontWeight: '500',
+  pickerItemText: { fontSize: 14 },
+  pickerConfirmBtn: {
+    margin: 16,
+    marginTop: 8,
+    padding: 14,
+    borderRadius: 10,
+    alignItems: 'center',
   },
+  pickerConfirmText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });
 
 // WORKING VERSION BEFORE COMMENTS AND REACTIONS WERE ADDED - RETAINED FOR REFERENCE
