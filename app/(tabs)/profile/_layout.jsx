@@ -1,7 +1,6 @@
 import { Stack } from 'expo-router';
 
-// Defines the nested layout for the Songs tab
-export default function SongsLayout() {
+export default function ProfileLayout() {
   return (
     <Stack
       screenOptions={{

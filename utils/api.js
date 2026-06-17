@@ -1,8 +1,14 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// export const API_BASE_URL = __DEV__
+//   ? 'http://10.192.6.252:4000/'
+//   : 'https://us-central1-southpark-11f5d.cloudfunctions.net/api';
+
 export const API_BASE_URL =
   'https://us-central1-southpark-11f5d.cloudfunctions.net/api';
+
+console.log('API_BASE_URL:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,

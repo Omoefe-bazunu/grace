@@ -39,23 +39,9 @@ export default function AdminDashboardScreen() {
     {
       id: 'upload-sermon',
       title: 'Add Sermon',
-      description: 'Upload new sermons with audio',
+      description: 'Add new sermons with audio',
       icon: <Mic size={32} color="#1E3A8A" />,
       onPress: () => router.push('/(tabs)/profile/admin/upload/sermon'),
-    },
-    {
-      id: 'upload-song',
-      title: 'Upload Song',
-      description: 'Add gospel music to the library',
-      icon: <Music size={32} color="#1E3A8A" />,
-      onPress: () => router.push('/(tabs)/profile/admin/upload/song'),
-    },
-    {
-      id: 'upload-video',
-      title: 'Upload Video',
-      description: 'Add animated Bible stories',
-      icon: <Video size={32} color="#1E3A8A" />,
-      onPress: () => router.push('/(tabs)/profile/admin/upload/video'),
     },
     {
       id: 'upload-sermon-audio',
@@ -74,22 +60,30 @@ export default function AdminDashboardScreen() {
     {
       id: 'upload-daily-devotional',
       title: 'Daily Devotional',
-      description: 'Add daily devotional guides',
+      description: 'Add daily devotional guide',
       icon: <BookOpen size={32} color="#1E3A8A" />,
       onPress: () =>
         router.push('/(tabs)/profile/admin/upload/dailyDevotional'),
     },
     {
-      id: 'view-messages',
-      title: 'View Messages',
-      description: 'Check contact form submissions',
-      icon: <MessageCircle size={32} color="#059669" />,
-      onPress: () => router.push('/(tabs)/profile/admin/messages'),
+      id: 'upload-song',
+      title: 'Upload Song',
+      description: 'Add gospel music to the library',
+      icon: <Music size={32} color="#1E3A8A" />,
+      onPress: () => router.push('/(tabs)/profile/admin/upload/song'),
     },
+    {
+      id: 'upload-video',
+      title: 'Upload Animation',
+      description: 'Add animated Bible stories',
+      icon: <Video size={32} color="#1E3A8A" />,
+      onPress: () => router.push('/(tabs)/profile/admin/upload/video'),
+    },
+
     {
       id: 'quiz-resource',
       title: 'Quiz Resource',
-      description: 'Upload Quiz Resources',
+      description: 'Add and Update Quiz Resources',
       icon: <Brain size={32} color="#DC2626" />,
       onPress: () => router.push('/(tabs)/profile/admin/quizupload'),
     },
@@ -100,6 +94,7 @@ export default function AdminDashboardScreen() {
       icon: <MessageCircleQuestion size={32} color="#DC2626" />,
       onPress: () => router.push('/(tabs)/profile/admin/quizhelpquestions'),
     },
+
     {
       id: 'upload-notices',
       title: 'Upload Notices',
@@ -109,15 +104,30 @@ export default function AdminDashboardScreen() {
     },
     {
       id: 'read-notices',
-      title: 'Read Notices',
+      title: 'Manage Notices',
       description: 'View, edit, and delete all notices',
       icon: <FileText size={32} color="#7C3AED" />,
       onPress: () => router.push('/(tabs)/profile/admin/readnotices'),
     },
     {
+      id: 'manage-directories',
+      title: 'Manage Directories',
+      description: 'Manage church directory entries',
+      icon: <Map size={32} color="#1E3A8A" />,
+      onPress: () => router.push('/(tabs)/profile/admin/directory'),
+    },
+    {
+      id: 'view-messages',
+      title: 'View Messages',
+      description: 'Check contact form submissions',
+      icon: <MessageCircle size={32} color="#059669" />,
+      onPress: () => router.push('/(tabs)/profile/admin/messages'),
+    },
+    {
       id: 'manage-contents',
       title: 'Manage Contents',
-      description: 'View, edit, and delete all contents',
+      description:
+        'View, edit, and delete sermons, songs and animation contents',
       icon: <FileText size={32} color="#7C3AED" />,
       onPress: () => router.push('/(tabs)/profile/admin/contentmanager'),
     },
@@ -128,24 +138,18 @@ export default function AdminDashboardScreen() {
       icon: <Podcast size={32} color="#1E3A8A" />,
       onPress: () => router.push('/(tabs)/profile/admin/livestreammanager'),
     },
-    {
-      id: 'manage-directories',
-      title: 'Manage Directories',
-      description: 'Manage church directory entries',
-      icon: <Map size={32} color="#1E3A8A" />,
-      onPress: () => router.push('/(tabs)/profile/admin/directory'),
-    },
+
     {
       id: 'gallery-management',
       title: 'Gallery Management',
-      description: 'Upload pictures, videos & ministers data',
+      description: 'Add pictures, videos & ministers data',
       icon: <ImageIcon size={32} color="#1E3A8A" />,
       onPress: () => router.push('(tabs)/profile/admin/gallery'),
     },
     {
       id: 'archive-management',
       title: 'Archive Management',
-      description: 'Upload pictures & videos data',
+      description: 'Add pictures & videos data',
       icon: <ImageIcon size={32} color="#1E3A8A" />,
       onPress: () => router.push('(tabs)/profile/admin/archive'),
     },

@@ -14,6 +14,7 @@ import {
   Modal,
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
+import { router } from 'expo-router';
 import {
   RefreshCw,
   ExternalLink,
@@ -26,15 +27,13 @@ import {
   Calendar,
 } from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
-import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
-import { TopNavigation } from '../../components/TopNavigation';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { useLiveStream } from '../../contexts/LiveStreamContexts';
-import { getYouTubeVideoId } from '../../services/dataService';
-import { AppText } from '../../components/ui/AppText';
-
-const REACTION_EMOJIS = ['❤️', '😂', '😮', '😢', '👏', '🔥'];
+import { SafeAreaWrapper } from '../../../components/ui/SafeAreaWrapper';
+import { TopNavigation } from '../../../components/TopNavigation';
+import { useTheme } from '../../../contexts/ThemeContext';
+import { useLanguage } from '../../../contexts/LanguageContext';
+import { useLiveStream } from '../../../contexts/LiveStreamContexts';
+import { getYouTubeVideoId } from '../../../services/dataService';
+import { AppText } from '../../../components/ui/AppText';
 
 const MONTHS = [
   'January',
@@ -99,7 +98,6 @@ function DatePickerModal({ visible, onClose, onSelect, selectedDate, colors }) {
             </TouchableOpacity>
           </View>
 
-          {/* Month / Day / Year columns */}
           <View style={styles.pickerColumns}>
             {/* Month */}
             <View style={styles.pickerColumn}>
@@ -229,11 +227,8 @@ export default function LiveStreamScreen() {
     loading,
     fetchLiveStream,
     comments,
-    reactions,
-    myReactions,
     canComment,
     postComment,
-    toggleReaction,
     streamLog,
     logLoading,
     logHasMore,
@@ -244,16 +239,23 @@ export default function LiveStreamScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [videoLoading, setVideoLoading] = useState({});
   const [videoErrors, setVideoErrors] = useState({});
+
+  // Comment fields
   const [commentText, setCommentText] = useState('');
+  const [commentName, setCommentName] = useState('');
+  const [commentLocation, setCommentLocation] = useState('');
   const [posting, setPosting] = useState(false);
+
   const [expandedLogId, setExpandedLogId] = useState(null);
   const [logDetails, setLogDetails] = useState({});
   const [logDetailsLoading, setLogDetailsLoading] = useState({});
 
-  // ── Filter state ───────────────────────────────────────────────────────────
+  // Filter state
   const [searchTitle, setSearchTitle] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
+
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [playingRecordingId, setPlayingRecordingId] = useState(null);
 
   const hasActiveFilter = searchTitle.trim() !== '' || selectedDate !== null;
 
@@ -261,15 +263,15 @@ export default function LiveStreamScreen() {
     const titleMatch =
       searchTitle.trim() === '' ||
       stream.title?.toLowerCase().includes(searchTitle.trim().toLowerCase());
-
     const dateMatch =
       selectedDate === null ||
       (() => {
         if (!stream.createdAt) return false;
-        const streamDate = new Date(stream.createdAt).toDateString();
-        return streamDate === selectedDate.toDateString();
+        return (
+          new Date(stream.createdAt).toDateString() ===
+          selectedDate.toDateString()
+        );
       })();
-
     return titleMatch && dateMatch;
   });
 
@@ -302,10 +304,16 @@ export default function LiveStreamScreen() {
 
   const handlePostComment = async (streamId) => {
     if (!commentText.trim()) return;
+    if (!commentName.trim()) {
+      Alert.alert('Name required', 'Please enter your name to comment.');
+      return;
+    }
     setPosting(true);
     try {
-      await postComment(streamId, commentText);
+      await postComment(streamId, commentText, commentName, commentLocation);
       setCommentText('');
+      setCommentName('');
+      setCommentLocation('');
     } catch {
       Alert.alert('Error', 'Could not post comment. Please try again.');
     } finally {
@@ -332,53 +340,93 @@ export default function LiveStreamScreen() {
     }
   };
 
-  // ─── Video Players ────────────────────────────────────────────────────────
+  // ─── Video Players — restored exactly from working version ────────────────
 
   const renderYouTubePlayer = (stream) => {
     const videoId = getYouTubeVideoId(stream.streamUrl) || stream.streamUrl;
     if (!videoId) return renderFallbackPlayer(stream);
-    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0&modestbranding=1&fs=1`;
+
+    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0&modestbranding=1&fs=1&origin=https://mountaingks.org`;
+
+    const injectedJS = `
+      (function() {
+        var checkInterval = setInterval(function() {
+          var errorScreen = document.querySelector('.ytp-error');
+          if (errorScreen) {
+            clearInterval(checkInterval);
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'YT_ERROR' }));
+          }
+        }, 1000);
+        setTimeout(function() { clearInterval(checkInterval); }, 10000);
+      })();
+      true;
+    `;
+
+    const handleWebViewMessage = (event) => {
+      try {
+        const msg = JSON.parse(event.nativeEvent.data);
+        if (msg.type === 'YT_ERROR') {
+          handleVideoError(stream.id);
+        }
+      } catch (_) {}
+    };
+
     return (
       <View style={styles.videoContainer}>
         <WebView
           key={`yt-${stream.id}`}
-          source={{ uri: embedUrl }}
+          source={{
+            uri: embedUrl,
+            headers: {
+              Referer: 'https://mountaingks.org',
+            },
+          }}
           style={styles.webView}
-          allowsInlineMediaPlayback
+          allowsInlineMediaPlayback={true}
           mediaPlaybackRequiresUserAction={false}
-          allowsFullscreenVideo
-          javaScriptEnabled
-          domStorageEnabled
+          allowsFullscreenVideo={true}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          startInLoadingState={true}
           scrollEnabled={false}
           bounces={false}
+          overScrollMode="never"
+          scalesPageToFit={false}
+          mixedContentMode="compatibility"
+          injectedJavaScript={injectedJS}
+          onMessage={handleWebViewMessage}
           onLoadStart={() => handleVideoLoadStart(stream.id)}
           onLoadEnd={() => setTimeout(() => handleVideoLoad(stream.id), 2000)}
-          onError={() => handleVideoError(stream.id)}
-          onHttpError={() => handleVideoError(stream.id)}
+          onError={(e) => handleVideoError(stream.id)}
+          onHttpError={(e) => handleVideoError(stream.id)}
           userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         />
         {videoLoading[stream.id] && (
-          <View style={styles.videoOverlay}>
+          <View style={styles.videoLoadingOverlay}>
             <ActivityIndicator size="large" color="#fff" />
-            <AppText style={styles.overlayText}>Loading stream...</AppText>
+            <AppText style={styles.videoLoadingText}>
+              {translations.loadingStream || 'Loading stream...'}
+            </AppText>
           </View>
         )}
         {videoErrors[stream.id] && (
-          <View style={styles.videoOverlay}>
-            <AppText style={styles.overlayTitle}>
+          <View style={styles.videoErrorOverlay}>
+            <AppText style={styles.videoErrorText}>
               Stream unavailable in app
             </AppText>
-            <AppText style={styles.overlaySubtext}>
-              Tap below to watch on YouTube
+            <AppText style={styles.videoErrorSubtext}>
+              Tap below to watch the live stream on YouTube
             </AppText>
             <TouchableOpacity
-              style={styles.youtubeBtn}
+              style={styles.openBrowserButtonLarge}
               onPress={() =>
                 openInBrowser(`https://youtube.com/watch?v=${videoId}`)
               }
             >
-              <ExternalLink size={18} color="#fff" />
-              <AppText style={styles.youtubeBtnText}>Watch on YouTube</AppText>
+              <ExternalLink size={20} color="#fff" />
+              <AppText style={styles.openBrowserTextLarge}>
+                Watch on YouTube
+              </AppText>
             </TouchableOpacity>
           </View>
         )}
@@ -392,20 +440,30 @@ export default function LiveStreamScreen() {
         source={{ uri: stream.streamUrl }}
         style={styles.videoPlayer}
         resizeMode={ResizeMode.CONTAIN}
-        shouldPlay
-        useNativeControls
+        shouldPlay={true}
+        isLooping={false}
+        isMuted={false}
+        useNativeControls={true}
         onLoadStart={() => handleVideoLoadStart(stream.id)}
         onReadyForDisplay={() => handleVideoLoad(stream.id)}
         onError={() => handleVideoError(stream.id)}
       />
       {videoLoading[stream.id] && (
-        <View style={styles.videoOverlay}>
+        <View style={styles.videoLoadingOverlay}>
           <ActivityIndicator size="large" color="#fff" />
+          <AppText style={styles.videoLoadingText}>
+            Loading HLS stream...
+          </AppText>
         </View>
       )}
       {videoErrors[stream.id] && (
-        <View style={styles.videoOverlay}>
-          <AppText style={styles.overlayTitle}>Stream unavailable</AppText>
+        <View style={styles.videoErrorOverlay}>
+          <AppText style={styles.videoErrorText}>
+            HLS Stream unavailable
+          </AppText>
+          <AppText style={styles.videoErrorSubtext}>
+            Could not load this stream
+          </AppText>
         </View>
       )}
     </View>
@@ -414,17 +472,41 @@ export default function LiveStreamScreen() {
   const renderFallbackPlayer = (stream) => {
     const videoId = getYouTubeVideoId(stream.streamUrl) || stream.streamUrl;
     return (
-      <View style={[styles.videoContainer, styles.fallbackContainer]}>
-        <Play size={48} color="#fff" opacity={0.8} />
-        <TouchableOpacity
-          style={[styles.youtubeBtn, { marginTop: 16 }]}
-          onPress={() =>
-            openInBrowser(`https://www.youtube.com/watch?v=${videoId}`)
-          }
-        >
-          <ExternalLink size={18} color="#fff" />
-          <AppText style={styles.youtubeBtnText}>Open in YouTube</AppText>
-        </TouchableOpacity>
+      <View style={styles.videoContainer}>
+        <View style={styles.externalStreamContainer}>
+          <Play size={48} color="#fff" opacity={0.8} />
+          <AppText style={styles.externalStreamText}>
+            {stream.streamType?.toUpperCase() || 'EXTERNAL'} Stream
+          </AppText>
+          <AppText style={styles.externalStreamSubtext}>
+            {stream.streamType === 'youtube'
+              ? 'Tap below to watch in YouTube app'
+              : 'This stream type must be opened externally'}
+          </AppText>
+          <TouchableOpacity
+            style={[
+              styles.openBrowserButtonLarge,
+              {
+                backgroundColor:
+                  stream.streamType === 'youtube' ? '#FF0000' : '#3B82F6',
+              },
+            ]}
+            onPress={() => {
+              if (stream.streamType === 'youtube' && videoId) {
+                openInBrowser(`https://www.youtube.com/watch?v=${videoId}`);
+              } else {
+                openInBrowser(stream.streamUrl);
+              }
+            }}
+          >
+            <ExternalLink size={20} color="#fff" />
+            <AppText style={styles.openBrowserTextLarge}>
+              {stream.streamType === 'youtube'
+                ? 'Open in YouTube'
+                : 'Watch in Browser'}
+            </AppText>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -440,41 +522,6 @@ export default function LiveStreamScreen() {
     }
   };
 
-  // ─── Reactions ────────────────────────────────────────────────────────────
-
-  const renderReactions = (streamId, reactionCounts, isActive) => (
-    <View style={styles.reactionsRow}>
-      {REACTION_EMOJIS.map((emoji) => {
-        const isSelected = myReactions[emoji] === true;
-        const count = reactionCounts[emoji] || 0;
-        return (
-          <TouchableOpacity
-            key={emoji}
-            style={[
-              styles.reactionBtn,
-              isSelected && styles.reactionBtnSelected,
-              !isActive && styles.reactionBtnDisabled,
-            ]}
-            onPress={() => isActive && toggleReaction(streamId, emoji)}
-            activeOpacity={isActive ? 0.7 : 1}
-          >
-            <AppText style={styles.reactionEmoji}>{emoji}</AppText>
-            {count > 0 && (
-              <AppText
-                style={[
-                  styles.reactionCount,
-                  isSelected && styles.reactionCountSelected,
-                ]}
-              >
-                {count}
-              </AppText>
-            )}
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
-
   // ─── Comments ─────────────────────────────────────────────────────────────
 
   const renderComments = (streamId, commentList, commentsOpen) => (
@@ -482,57 +529,116 @@ export default function LiveStreamScreen() {
       <AppText style={[styles.sectionLabel, { color: colors.text }]}>
         💬 Comments ({commentList.length})
       </AppText>
+
       <ScrollView style={styles.commentsList} nestedScrollEnabled>
         {commentList.length === 0 ? (
           <AppText style={[styles.emptyHint, { color: colors.textSecondary }]}>
             No comments yet. Be the first!
           </AppText>
         ) : (
-          commentList.map((c) => (
-            <View
-              key={c.id}
-              style={[
-                styles.commentBubble,
-                { backgroundColor: colors.surface },
-              ]}
-            >
-              <AppText style={[styles.commentText, { color: colors.text }]}>
-                {c.text}
-              </AppText>
+          commentList.map((c, index) => (
+            <View key={c.id}>
+              <View style={styles.commentBubble}>
+                <View style={styles.commentMeta}>
+                  <AppText
+                    style={[styles.commentName, { color: colors.primary }]}
+                  >
+                    {c.name?.trim() || 'Anonymous'}
+                  </AppText>
+                  {c.location?.trim() ? (
+                    <AppText
+                      style={[
+                        styles.commentLocation,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      📍 {c.location}
+                    </AppText>
+                  ) : null}
+                </View>
+                <AppText style={[styles.commentText, { color: colors.text }]}>
+                  {c.text}
+                </AppText>
+              </View>
+              {index < commentList.length - 1 && (
+                <View
+                  style={[
+                    styles.commentDivider,
+                    { backgroundColor: colors.border },
+                  ]}
+                />
+              )}
             </View>
           ))
         )}
       </ScrollView>
+      <View
+        style={[styles.sectionDivider, { backgroundColor: colors.border }]}
+      />
       {commentsOpen ? (
         <View
-          style={[styles.commentInputRow, { backgroundColor: colors.card }]}
+          style={[
+            styles.commentInputContainer,
+            { backgroundColor: colors.card },
+          ]}
         >
-          <TextInput
-            value={commentText}
-            onChangeText={setCommentText}
-            placeholder="Add a comment..."
-            placeholderTextColor={colors.textSecondary}
-            style={[styles.commentTextInput, { color: colors.text }]}
-            maxLength={300}
-            returnKeyType="send"
-            onSubmitEditing={() => handlePostComment(streamId)}
-          />
-          <TouchableOpacity
-            onPress={() => handlePostComment(streamId)}
-            disabled={posting || !commentText.trim()}
-            style={styles.sendBtn}
-          >
-            {posting ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : (
-              <Send
-                size={20}
-                color={
-                  commentText.trim() ? colors.primary : colors.textSecondary
-                }
-              />
-            )}
-          </TouchableOpacity>
+          {/* Name + Location row */}
+          <View style={styles.commentFieldsRow}>
+            <TextInput
+              value={commentName}
+              onChangeText={setCommentName}
+              placeholder="Your name *"
+              placeholderTextColor={colors.textSecondary}
+              style={[
+                styles.commentFieldInput,
+                { color: colors.text, borderColor: colors.border },
+              ]}
+              maxLength={50}
+            />
+            <TextInput
+              value={commentLocation}
+              onChangeText={setCommentLocation}
+              placeholder="Location (optional)"
+              placeholderTextColor={colors.textSecondary}
+              style={[
+                styles.commentFieldInput,
+                { color: colors.text, borderColor: colors.border },
+              ]}
+              maxLength={50}
+            />
+          </View>
+
+          {/* Message + Send row */}
+          <View style={styles.commentInputRow}>
+            <TextInput
+              value={commentText}
+              onChangeText={setCommentText}
+              placeholder="Add a comment..."
+              placeholderTextColor={colors.textSecondary}
+              style={[styles.commentTextInput, { color: colors.text }]}
+              maxLength={300}
+              returnKeyType="send"
+              onSubmitEditing={() => handlePostComment(streamId)}
+            />
+            <TouchableOpacity
+              onPress={() => handlePostComment(streamId)}
+              disabled={posting || !commentText.trim() || !commentName.trim()}
+              style={styles.sendBtn}
+            >
+              {posting ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Send
+                  size={20}
+                  color={
+                    commentText.trim() && commentName.trim()
+                      ? colors.primary
+                      : colors.textSecondary
+                  }
+                />
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       ) : (
         <AppText
@@ -562,7 +668,7 @@ export default function LiveStreamScreen() {
     <View style={styles.logSection}>
       {renderSectionDivider('PAST STREAMS')}
 
-      {/* ── Filter bar ── */}
+      {/* Filter bar */}
       <View style={styles.filterRow}>
         <View
           style={[styles.filterInputWrap, { backgroundColor: colors.card }]}
@@ -637,7 +743,6 @@ export default function LiveStreamScreen() {
         )}
       </View>
 
-      {/* ── Result count ── */}
       {hasActiveFilter && (
         <AppText style={[styles.filterResult, { color: colors.textSecondary }]}>
           {filteredStreamLog.length} result
@@ -645,7 +750,6 @@ export default function LiveStreamScreen() {
         </AppText>
       )}
 
-      {/* ── Empty state ── */}
       {filteredStreamLog.length === 0 && !logLoading && (
         <AppText style={[styles.emptyLogText, { color: colors.textSecondary }]}>
           {hasActiveFilter
@@ -654,7 +758,6 @@ export default function LiveStreamScreen() {
         </AppText>
       )}
 
-      {/* ── Stream cards ── */}
       {filteredStreamLog.map((stream) => {
         const isExpanded = expandedLogId === stream.id;
         const details = logDetails[stream.id];
@@ -685,14 +788,6 @@ export default function LiveStreamScreen() {
                     ]}
                   >
                     💬 {stream.commentCount || 0}
-                  </AppText>
-                  <AppText
-                    style={[
-                      styles.logMetaText,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    ❤️ {stream.reactionCount || 0}
                   </AppText>
                   {stream.createdAt && (
                     <AppText
@@ -739,23 +834,79 @@ export default function LiveStreamScreen() {
                       </AppText>
                     ) : null}
 
-                    {details?.reactions &&
-                      Object.keys(details.reactions).length > 0 && (
-                        <View style={styles.reactionsRow}>
-                          {Object.entries(details.reactions).map(
-                            ([emoji, count]) => (
-                              <View key={emoji} style={styles.reactionBtn}>
-                                <AppText style={styles.reactionEmoji}>
-                                  {emoji}
-                                </AppText>
-                                <AppText style={styles.reactionCount}>
-                                  {count}
-                                </AppText>
-                              </View>
-                            ),
-                          )}
+                    {/* ── Recording player ── */}
+                    {stream.streamUrl ? (
+                      playingRecordingId === stream.id ? (
+                        <View style={styles.recordingPlayerContainer}>
+                          <WebView
+                            key={`rec-${stream.id}`}
+                            source={{
+                              uri: `https://www.youtube.com/embed/${stream.streamUrl}?autoplay=1&playsinline=1&rel=0&modestbranding=1&fs=1&origin=https://mountaingks.org`,
+                              headers: { Referer: 'https://mountaingks.org' },
+                            }}
+                            style={{ flex: 1 }}
+                            allowsInlineMediaPlayback={true}
+                            mediaPlaybackRequiresUserAction={false}
+                            allowsFullscreenVideo={true}
+                            javaScriptEnabled={true}
+                            domStorageEnabled={true}
+                            scrollEnabled={false}
+                            userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                          />
+                          <TouchableOpacity
+                            style={styles.recordingCloseBtn}
+                            onPress={() => setPlayingRecordingId(null)}
+                          >
+                            <X size={14} color="#fff" />
+                          </TouchableOpacity>
                         </View>
-                      )}
+                      ) : (
+                        <View style={styles.recordingRow}>
+                          <TouchableOpacity
+                            style={[
+                              styles.watchRecordingBtn,
+                              { backgroundColor: colors.primary },
+                            ]}
+                            onPress={() =>
+                              router.push({
+                                pathname: '/live/recording',
+                                params: {
+                                  videoId: stream.streamUrl,
+                                  title: stream.title,
+                                  streamId: stream.id,
+                                },
+                              })
+                            }
+                          >
+                            <Play size={15} color="#fff" />
+                            <AppText style={styles.watchRecordingText}>
+                              Watch Recording
+                            </AppText>
+                          </TouchableOpacity>
+                          {/* <TouchableOpacity
+                            style={[
+                              styles.watchYouTubeBtn,
+                              { borderColor: colors.primary },
+                            ]}
+                            onPress={() =>
+                              openInBrowser(
+                                `https://youtube.com/watch?v=${stream.streamUrl}`,
+                              )
+                            }
+                          >
+                            <ExternalLink size={15} color={colors.primary} />
+                            <AppText
+                              style={[
+                                styles.watchYouTubeBtnText,
+                                { color: colors.primary },
+                              ]}
+                            >
+                              YouTube
+                            </AppText>
+                          </TouchableOpacity> */}
+                        </View>
+                      )
+                    ) : null}
 
                     <AppText
                       style={[styles.sectionLabel, { color: colors.text }]}
@@ -772,19 +923,46 @@ export default function LiveStreamScreen() {
                         No comments on this stream
                       </AppText>
                     ) : (
-                      details.comments.map((c) => (
-                        <View
-                          key={c.id}
-                          style={[
-                            styles.commentBubble,
-                            { backgroundColor: colors.surface },
-                          ]}
-                        >
-                          <AppText
-                            style={[styles.commentText, { color: colors.text }]}
-                          >
-                            {c.text}
-                          </AppText>
+                      details.comments.map((c, index) => (
+                        <View key={c.id}>
+                          <View style={styles.commentBubble}>
+                            <View style={styles.commentMeta}>
+                              <AppText
+                                style={[
+                                  styles.commentName,
+                                  { color: colors.primary },
+                                ]}
+                              >
+                                {c.name?.trim() || 'Anonymous'}
+                              </AppText>
+                              {c.location?.trim() ? (
+                                <AppText
+                                  style={[
+                                    styles.commentLocation,
+                                    { color: colors.textSecondary },
+                                  ]}
+                                >
+                                  📍 {c.location}
+                                </AppText>
+                              ) : null}
+                            </View>
+                            <AppText
+                              style={[
+                                styles.commentText,
+                                { color: colors.text },
+                              ]}
+                            >
+                              {c.text}
+                            </AppText>
+                          </View>
+                          {index < details.comments.length - 1 && (
+                            <View
+                              style={[
+                                styles.commentDivider,
+                                { backgroundColor: colors.border },
+                              ]}
+                            />
+                          )}
                         </View>
                       ))
                     )}
@@ -819,7 +997,10 @@ export default function LiveStreamScreen() {
   if (loading) {
     return (
       <SafeAreaWrapper>
-        <TopNavigation showBackButton title={translations.live || 'Live'} />
+        <TopNavigation
+          showBackButton={true}
+          title={translations.live || 'Live'}
+        />
         <View
           style={[
             styles.centerContainer,
@@ -830,7 +1011,7 @@ export default function LiveStreamScreen() {
           <AppText
             style={[styles.loadingText, { color: colors.textSecondary }]}
           >
-            Loading streams...
+            {translations.liveStreamLoading || 'Loading streams...'}
           </AppText>
         </View>
       </SafeAreaWrapper>
@@ -839,9 +1020,11 @@ export default function LiveStreamScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton title={translations.live || 'Live'} />
+      <TopNavigation
+        showBackButton={true}
+        title={translations.live || 'Live'}
+      />
 
-      {/* Pure JS date picker — no native modules */}
       <DatePickerModal
         visible={showDatePicker}
         onClose={() => setShowDatePicker(false)}
@@ -849,6 +1032,29 @@ export default function LiveStreamScreen() {
         selectedDate={selectedDate}
         colors={colors}
       />
+
+      <View
+        style={[styles.headerActions, { backgroundColor: colors.background }]}
+      >
+        <TouchableOpacity
+          style={[styles.refreshButton, { backgroundColor: colors.card }]}
+          onPress={onRefresh}
+          disabled={refreshing}
+        >
+          <RefreshCw
+            size={18}
+            color={colors.primary}
+            style={refreshing && styles.refreshingIcon}
+          />
+          <AppText
+            style={[styles.refreshButtonText, { color: colors.primary }]}
+          >
+            {refreshing
+              ? translations.refreshing || 'Refreshing...'
+              : translations.refreshStreams || 'Refresh Streams'}
+          </AppText>
+        </TouchableOpacity>
+      </View>
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -865,27 +1071,6 @@ export default function LiveStreamScreen() {
             />
           }
         >
-          {/* ── Refresh button ── */}
-          <View
-            style={[
-              styles.headerActions,
-              { backgroundColor: colors.background },
-            ]}
-          >
-            <TouchableOpacity
-              style={[styles.refreshButton, { backgroundColor: colors.card }]}
-              onPress={onRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw size={18} color={colors.primary} />
-              <AppText
-                style={[styles.refreshButtonText, { color: colors.primary }]}
-              >
-                {refreshing ? 'Refreshing...' : 'Refresh Streams'}
-              </AppText>
-            </TouchableOpacity>
-          </View>
-
           {/* ── Active stream ── */}
           {streams.length > 0 ? (
             streams.map((stream) => (
@@ -923,7 +1108,9 @@ export default function LiveStreamScreen() {
                         { color: stream.isActive ? '#10B981' : '#6B7280' },
                       ]}
                     >
-                      {stream.isActive ? 'LIVE' : 'OFFLINE'}
+                      {stream.isActive
+                        ? translations.liveLabel || 'LIVE'
+                        : translations.offlineLabel || 'OFFLINE'}
                     </AppText>
                   </View>
                 </View>
@@ -932,37 +1119,40 @@ export default function LiveStreamScreen() {
                   renderStreamPlayer(stream)
                 ) : (
                   <View style={styles.offlineContainer}>
-                    <AppText style={styles.offlineText}>Stream Offline</AppText>
+                    <AppText style={styles.offlineText}>
+                      {translations.streamOffline || 'Stream Offline'}
+                    </AppText>
                     <AppText
                       style={[
                         styles.offlineSubtext,
                         { color: colors.textSecondary },
                       ]}
                     >
-                      Check back later for live streams
+                      {translations.streamNotActive ||
+                        'This stream is currently not active'}
                     </AppText>
                   </View>
                 )}
 
-                {renderReactions(stream.id, reactions, stream.isActive)}
                 {renderComments(stream.id, comments, canComment(stream))}
               </View>
             ))
           ) : (
             <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
               <AppText style={[styles.emptyTitle, { color: colors.text }]}>
-                No Active Stream
+                {translations.noActiveStreams || 'No Active Stream'}
               </AppText>
               <AppText
                 style={[styles.emptySubtitle, { color: colors.textSecondary }]}
               >
-                Check back later for live streams
+                {translations.checkBackLaterLive ||
+                  'Check back later for live streams'}
               </AppText>
             </View>
           )}
 
           {renderStreamLog()}
-          <View style={{ height: 60 }} />
+          <View style={{ height: 40 }} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaWrapper>
@@ -989,16 +1179,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   refreshButtonText: { fontSize: 14, fontWeight: '600' },
+  refreshingIcon: { transform: [{ rotate: '360deg' }] },
 
   streamCard: {
     margin: 16,
     borderRadius: 12,
     overflow: 'hidden',
-    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
+    elevation: 4,
   },
   streamHeader: {
     flexDirection: 'row',
@@ -1018,6 +1209,7 @@ const styles = StyleSheet.create({
   statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 4 },
   statusText: { fontSize: 10, fontWeight: '600' },
 
+  // Video — restored from working version
   videoContainer: {
     height: 220,
     backgroundColor: '#000',
@@ -1025,98 +1217,143 @@ const styles = StyleSheet.create({
   },
   videoPlayer: { width: '100%', height: '100%' },
   webView: { flex: 1, backgroundColor: '#000' },
-  fallbackContainer: { justifyContent: 'center', alignItems: 'center' },
-  videoOverlay: {
+  videoLoadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.85)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  videoLoadingText: { color: '#fff', marginTop: 8, fontSize: 14 },
+  videoErrorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.9)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    zIndex: 10,
   },
-  overlayText: { color: '#fff', marginTop: 8, fontSize: 14 },
-  overlayTitle: {
+  videoErrorText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
   },
-  overlaySubtext: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 13,
+  videoErrorSubtext: {
+    color: '#fff',
+    fontSize: 14,
+    opacity: 0.8,
     marginBottom: 16,
     textAlign: 'center',
   },
-  youtubeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FF0000',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  youtubeBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-
-  offlineContainer: {
-    height: 120,
+  externalStreamContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.9)',
     padding: 20,
+  },
+  externalStreamText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  externalStreamSubtext: {
+    color: '#fff',
+    fontSize: 14,
+    opacity: 0.7,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  openBrowserButtonLarge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  openBrowserTextLarge: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  offlineContainer: {
+    height: 220,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   offlineText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#666',
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  offlineSubtext: { fontSize: 13 },
+  offlineSubtext: { fontSize: 14, color: '#999' },
 
-  reactionsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
+  // Comments
+  commentsSection: { paddingHorizontal: 16, paddingBottom: 16 },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 16,
+    marginBottom: 8,
   },
-  reactionBtn: {
+  commentInputDivider: {
+    width: '100%',
+    height: 0.5,
+    backgroundColor: '#00000',
+  },
+  commentsList: { maxHeight: 240 },
+  commentBubble: { paddingVertical: 10 },
+  commentMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    borderWidth: 1,
-    borderColor: 'transparent',
+    gap: 8,
+    marginBottom: 4,
   },
-  reactionBtnSelected: {
-    backgroundColor: 'rgba(239,68,68,0.12)',
-    borderColor: 'rgba(239,68,68,0.35)',
-  },
-  reactionBtnDisabled: { opacity: 0.5 },
-  reactionEmoji: { fontSize: 20 },
-  reactionCount: { fontSize: 12, fontWeight: '600', color: '#666' },
-  reactionCountSelected: { color: '#EF4444' },
-
-  commentsSection: { paddingHorizontal: 16, paddingBottom: 16 },
-  sectionLabel: { fontSize: 14, fontWeight: '700', marginBottom: 8 },
-  commentsList: { maxHeight: 200 },
-  commentBubble: { padding: 10, borderRadius: 10, marginBottom: 6 },
+  commentName: { fontSize: 13, fontWeight: '700' },
+  commentLocation: { fontSize: 12 },
   commentText: { fontSize: 14, lineHeight: 20 },
+  commentDivider: { height: 1, marginVertical: 2 },
+  commentInputContainer: {
+    borderRadius: 12,
+    padding: 10,
+    marginTop: 10,
+    gap: 8,
+  },
+  sectionDivider: {
+    height: 1,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  commentFieldsRow: { flexDirection: 'row', gap: 8 },
+  commentFieldInput: {
+    flex: 1,
+    fontSize: 13,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
   commentInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 24,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    marginTop: 8,
     gap: 8,
+    borderRadius: 6,
+    borderColor: '#cccccc',
+    borderWidth: 0.5,
   },
-  commentTextInput: { flex: 1, fontSize: 14, paddingVertical: 6 },
+  commentTextInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
   sendBtn: { padding: 4 },
   commentsClosed: { fontSize: 13, marginTop: 8, textAlign: 'center' },
   emptyHint: { fontSize: 13, marginBottom: 8 },
 
+  // Divider
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1132,6 +1369,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
   },
 
+  // Filter
   filterRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1162,6 +1400,7 @@ const styles = StyleSheet.create({
   clearAllText: { fontSize: 13, fontWeight: '600' },
   filterResult: { fontSize: 12, marginHorizontal: 16, marginBottom: 8 },
 
+  // Stream log
   logSection: { marginBottom: 8 },
   emptyLogText: {
     fontSize: 14,
@@ -1207,7 +1446,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyTitle: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
-  emptySubtitle: { fontSize: 14, textAlign: 'center' },
+  emptySubtitle: { fontSize: 14, textAlign: 'center', marginBottom: 20 },
 
   // Date picker modal
   modalBackdrop: {
@@ -1259,6 +1498,56 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pickerConfirmText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+
+  // Recording playback
+  recordingPlayerContainer: {
+    height: 200,
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 12,
+    backgroundColor: '#000',
+    position: 'relative',
+  },
+  recordingCloseBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 12,
+    padding: 4,
+  },
+  recordingRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+    marginTop: 4,
+  },
+  watchRecordingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 8,
+    gap: 6,
+  },
+  watchRecordingText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  watchYouTubeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 6,
+  },
+  watchYouTubeBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
 });
 
 // WORKING VERSION BEFORE COMMENTS AND REACTIONS WERE ADDED - RETAINED FOR REFERENCE

@@ -153,6 +153,34 @@ export const getQuizResource = async (id) => {
 };
 
 /**
+ * Updates an existing quiz resource (Admin only).
+ * Hits: PUT /api/quiz/resources/:id
+ */
+export const updateQuizResource = async (id, data) => {
+  try {
+    const response = await apiClient.put(`quiz/resources/${id}`, data);
+    return response.data;
+  } catch (err) {
+    console.error('Error updating quiz resource:', err);
+    throw err;
+  }
+};
+
+/**
+ * Deletes a quiz resource (Admin only).
+ * Hits: DELETE /api/quiz/resources/:id
+ */
+export const deleteQuizResource = async (id) => {
+  try {
+    const response = await apiClient.delete(`quiz/resources/${id}`);
+    return response.data;
+  } catch (err) {
+    console.error('Error deleting quiz resource:', err);
+    throw err;
+  }
+};
+
+/**
  * Generic search function for specific collections.
  * Handles the call: searchContent(query, 'quizResources')
  */
@@ -664,17 +692,20 @@ export const getLiveStreamComments = async (streamId) => {
   }
 };
 
-export const addLiveStreamComment = async (streamId, text, userId) => {
-  try {
-    const response = await apiClient.post(`livestreams/${streamId}/comments`, {
-      text,
-      userId,
-    });
-    return response.data;
-  } catch (err) {
-    console.error('Error posting comment:', err);
-    throw err;
-  }
+export const addLiveStreamComment = async (
+  streamId,
+  text,
+  userId,
+  name,
+  location,
+) => {
+  const response = await apiClient.post(`livestreams/${streamId}/comments`, {
+    text,
+    userId,
+    name,
+    location,
+  });
+  return response.data;
 };
 
 export const getLiveStreamReactions = async (streamId) => {

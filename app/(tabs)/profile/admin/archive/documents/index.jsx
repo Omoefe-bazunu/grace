@@ -71,7 +71,7 @@ export default function UploadDocuments() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton title="Add Document" />
+      <TopNavigation showBackButton />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

@@ -9,14 +9,29 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Edit, Trash2, Plus, Search, ArrowLeft } from 'lucide-react-native';
+import {
+  Edit,
+  Trash2,
+  Plus,
+  Search,
+  ArrowLeft,
+  X,
+  FileText,
+  Image as ImageIcon,
+  CheckCircle,
+} from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
 import { TopNavigation } from '@/components/TopNavigation';
 import { getNotices, post, put, del } from '@/services/dataService';
+import apiClient from '@/utils/api';
+import * as DocumentPicker from 'expo-document-picker';
+
+const ATTACHMENT_LIMITS = { image: 5, pdf: 10 }; // MB
 
 export default function AdminNoticesScreen() {
   const [notices, setNotices] = useState([]);
@@ -25,6 +40,9 @@ export default function AdminNoticesScreen() {
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
   const [editMessage, setEditMessage] = useState('');
+  const [editImages, setEditImages] = useState([]);
+  const [editPdfUrl, setEditPdfUrl] = useState(null);
+  const [editUploadProgress, setEditUploadProgress] = useState({});
   const { colors } = useTheme();
   const { translations } = useLanguage();
 
@@ -69,6 +87,137 @@ export default function AdminNoticesScreen() {
     );
   };
 
+  const startEditing = (item) => {
+    setEditingId(item.id);
+    setEditTitle(item.title || '');
+    setEditMessage(item.message || '');
+    setEditImages(item.images || []);
+    setEditPdfUrl(item.pdfUrl || null);
+    setEditUploadProgress({});
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditImages([]);
+    setEditPdfUrl(null);
+    setEditUploadProgress({});
+  };
+
+  // Same upload pattern as NoticeUploadScreen — request a signed URL, then PUT the blob directly to storage.
+  const uploadEditFile = async (field, uri, fileName, mimeType, maxSizeMB) => {
+    setEditUploadProgress((prev) => ({
+      ...prev,
+      [field]: { status: 'uploading', progress: 0 },
+    }));
+    try {
+      const configRes = await apiClient.getUploadConfig(
+        'notices',
+        fileName,
+        mimeType,
+      );
+      const { uploadUrl, fileUrl } = configRes.data;
+      const fileResp = await fetch(uri);
+      const blob = await fileResp.blob();
+
+      if (blob.size > maxSizeMB * 1024 * 1024) {
+        Alert.alert('File Too Large', `File must be less than ${maxSizeMB}MB`);
+        setEditUploadProgress((prev) => ({
+          ...prev,
+          [field]: { status: 'error', progress: 0 },
+        }));
+        return null;
+      }
+
+      return new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', uploadUrl);
+        xhr.setRequestHeader('Content-Type', mimeType);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setEditUploadProgress((prev) => ({
+              ...prev,
+              [field]: {
+                status: 'uploading',
+                progress: Math.round((e.loaded / e.total) * 100),
+              },
+            }));
+          }
+        };
+        xhr.onload = () => {
+          setEditUploadProgress((prev) => ({
+            ...prev,
+            [field]: { status: 'success', progress: 100 },
+          }));
+          resolve(fileUrl);
+        };
+        xhr.onerror = () => {
+          setEditUploadProgress((prev) => ({
+            ...prev,
+            [field]: { status: 'error', progress: 0 },
+          }));
+          resolve(null);
+        };
+        xhr.send(blob);
+      });
+    } catch (error) {
+      setEditUploadProgress((prev) => ({
+        ...prev,
+        [field]: { status: 'error', progress: 0 },
+      }));
+      return null;
+    }
+  };
+
+  const pickEditImage = async () => {
+    if (editImages.length >= 3) {
+      return Alert.alert('Limit Reached', 'Maximum 3 images allowed');
+    }
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ type: 'image/*' });
+      if (result.canceled) return;
+      const file = result.assets[0];
+      const fieldKey = `img_${Date.now()}`;
+      const uploadedUrl = await uploadEditFile(
+        fieldKey,
+        file.uri,
+        file.name,
+        file.mimeType,
+        ATTACHMENT_LIMITS.image,
+      );
+      if (uploadedUrl) {
+        setEditImages((prev) => [...prev, uploadedUrl]);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
+  const removeEditImage = (index) => {
+    setEditImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const pickEditPdf = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+      });
+      if (result.canceled) return;
+      const file = result.assets[0];
+      const uploadedUrl = await uploadEditFile(
+        'pdfUrl',
+        file.uri,
+        file.name,
+        file.mimeType,
+        ATTACHMENT_LIMITS.pdf,
+      );
+      if (uploadedUrl) setEditPdfUrl(uploadedUrl);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick PDF');
+    }
+  };
+
+  const removeEditPdf = () => setEditPdfUrl(null);
+
   const handleSaveEdit = async (id) => {
     if (!editTitle.trim() || !editMessage.trim()) {
       Alert.alert('Error', 'Title and message are required');
@@ -79,14 +228,24 @@ export default function AdminNoticesScreen() {
       await put('notices', id, {
         title: editTitle,
         message: editMessage,
+        images: editImages,
+        pdfUrl: editPdfUrl,
       });
 
       setNotices((prev) =>
         prev.map((n) =>
-          n.id === id ? { ...n, title: editTitle, message: editMessage } : n,
+          n.id === id
+            ? {
+                ...n,
+                title: editTitle,
+                message: editMessage,
+                images: editImages,
+                pdfUrl: editPdfUrl,
+              }
+            : n,
         ),
       );
-      setEditingId(null);
+      cancelEditing();
     } catch (error) {
       Alert.alert('Error', 'Failed to update notice');
     }
@@ -125,6 +284,114 @@ export default function AdminNoticesScreen() {
               placeholderTextColor={colors.textSecondary}
               multiline
             />
+
+            <Text style={[styles.attachmentsLabel, { color: colors.text }]}>
+              Images ({editImages.length}/3)
+            </Text>
+            <View style={styles.imagePreviewRow}>
+              {editImages.map((url, index) => (
+                <View key={index} style={styles.imageWrapper}>
+                  <Image source={{ uri: url }} style={styles.previewThumb} />
+                  <TouchableOpacity
+                    style={styles.removeBadge}
+                    onPress={() => removeEditImage(index)}
+                  >
+                    <X size={12} color="#FFF" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.attachmentBtn,
+                { borderColor: colors.primary },
+                editImages.length >= 3 && { opacity: 0.5 },
+              ]}
+              onPress={pickEditImage}
+              disabled={editImages.length >= 3}
+            >
+              <ImageIcon size={16} color={colors.primary} />
+              <Text
+                style={[styles.attachmentBtnText, { color: colors.primary }]}
+              >
+                Add Image
+              </Text>
+            </TouchableOpacity>
+
+            <Text
+              style={[
+                styles.attachmentsLabel,
+                { color: colors.text, marginTop: 14 },
+              ]}
+            >
+              PDF Attachment
+            </Text>
+            {editPdfUrl ? (
+              <View style={styles.pdfRow}>
+                <View style={styles.pdfChip}>
+                  <FileText size={16} color={colors.primary} />
+                  <Text
+                    style={[styles.pdfChipText, { color: colors.text }]}
+                    numberOfLines={1}
+                  >
+                    PDF attached
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={removeEditPdf}
+                  style={styles.iconBtn}
+                >
+                  <Trash2 size={16} color="#EF4444" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={pickEditPdf} style={styles.iconBtn}>
+                  <Edit size={16} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.attachmentBtn, { borderColor: colors.primary }]}
+                onPress={pickEditPdf}
+              >
+                <FileText size={16} color={colors.primary} />
+                <Text
+                  style={[styles.attachmentBtnText, { color: colors.primary }]}
+                >
+                  Add PDF
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {Object.entries(editUploadProgress).map(([key, val]) => (
+              <View key={key} style={styles.progressContainer}>
+                <View style={styles.progressHeader}>
+                  <Text
+                    style={[
+                      styles.progressText,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    {key.includes('img') ? 'Image' : 'PDF'}:{' '}
+                    {val.status === 'success' ? 'Done' : `${val.progress}%`}
+                  </Text>
+                  {val.status === 'success' && (
+                    <CheckCircle size={13} color="#10B981" />
+                  )}
+                </View>
+                <View style={styles.progressBarBg}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      {
+                        width: `${val.progress}%`,
+                        backgroundColor:
+                          val.status === 'error' ? '#EF4444' : colors.primary,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            ))}
+
             <View style={styles.editActions}>
               <TouchableOpacity
                 style={[styles.btn, { backgroundColor: colors.primary }]}
@@ -134,7 +401,7 @@ export default function AdminNoticesScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.btn, { backgroundColor: colors.surface }]}
-                onPress={() => setEditingId(null)}
+                onPress={cancelEditing}
               >
                 <Text style={[styles.btnText, { color: colors.text }]}>
                   Cancel
@@ -153,11 +420,7 @@ export default function AdminNoticesScreen() {
               </Text>
               <View style={styles.actions}>
                 <TouchableOpacity
-                  onPress={() => {
-                    setEditingId(item.id);
-                    setEditTitle(item.title);
-                    setEditMessage(item.message);
-                  }}
+                  onPress={() => startEditing(item)}
                   style={styles.iconBtn}
                 >
                   <Edit size={18} color={colors.primary} />
@@ -173,6 +436,38 @@ export default function AdminNoticesScreen() {
             <Text style={[styles.message, { color: colors.textSecondary }]}>
               {item.message}
             </Text>
+
+            {(item.images?.length > 0 || item.pdfUrl) && (
+              <View style={styles.attachmentBadgeRow}>
+                {item.images?.length > 0 && (
+                  <View style={styles.attachmentBadge}>
+                    <ImageIcon size={12} color={colors.textSecondary} />
+                    <Text
+                      style={[
+                        styles.attachmentBadgeText,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      {item.images.length}
+                    </Text>
+                  </View>
+                )}
+                {item.pdfUrl && (
+                  <View style={styles.attachmentBadge}>
+                    <FileText size={12} color={colors.textSecondary} />
+                    <Text
+                      style={[
+                        styles.attachmentBadgeText,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      PDF
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+
             <Text style={[styles.date, { color: colors.textSecondary }]}>
               {new Date(item.createdAt).toLocaleDateString()}
             </Text>
@@ -184,19 +479,7 @@ export default function AdminNoticesScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title="Read Notices" />
-      <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ArrowLeft size={24} color={colors.text} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.addBtn, { backgroundColor: colors.primary }]}
-          onPress={() => router.push('/(tabs)/profile/admin/upload/notice')}
-        >
-          <Plus size={20} color="#FFF" />
-          <Text style={styles.addBtnText}>New Notice</Text>
-        </TouchableOpacity>
-      </View>
+      <TopNavigation showBackButton={true} title="Manage" />
 
       <View
         style={[styles.searchContainer, { backgroundColor: colors.surface }]}
@@ -340,6 +623,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 8,
+    marginTop: 14,
   },
   btn: {
     paddingHorizontal: 16,
@@ -360,4 +644,93 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
+  attachmentsLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  imagePreviewRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 10,
+  },
+  imageWrapper: { position: 'relative' },
+  previewThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+  },
+  removeBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#EF4444',
+    borderRadius: 12,
+    padding: 3,
+  },
+  attachmentBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    paddingVertical: 10,
+    marginBottom: 4,
+  },
+  attachmentBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  pdfRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  pdfChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  pdfChipText: {
+    fontSize: 13,
+    flexShrink: 1,
+  },
+  attachmentBadgeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  attachmentBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  attachmentBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  progressContainer: { marginTop: 8 },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  progressText: { fontSize: 11 },
+  progressBarBg: {
+    height: 5,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBarFill: { height: '100%' },
 });

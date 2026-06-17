@@ -410,7 +410,8 @@ const styles = StyleSheet.create({
   sermonRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 18,
+    paddingTop: 18,
+    paddingBottom: 25,
     borderBottomWidth: 1,
   },
   sermonTitleText: {

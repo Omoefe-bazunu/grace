@@ -28,12 +28,21 @@ import apiClient from '../../../../../utils/api';
 import { Edit2, Trash2, X } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
+const TABS = [
+  { key: 'sermon', label: 'Sermons', icon: '📖' },
+  { key: 'song', label: 'Songs', icon: '🎵' },
+  { key: 'video', label: 'Videos', icon: '🎬' },
+  { key: 'sermonVideo', label: 'Sermon Videos', icon: '🎥' },
+  { key: 'dailyDevotional', label: 'Devotionals', icon: '📅' },
+];
+
 export default function ContentManager() {
   const { colors } = useTheme();
   const { translations } = useLanguage();
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState('sermon');
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({
@@ -264,6 +273,8 @@ export default function ContentManager() {
     return colorsMap[type] || colors.primary;
   };
 
+  const filteredContent = content.filter((item) => item.type === activeTab);
+
   if (loading) {
     return (
       <SafeAreaWrapper>
@@ -277,18 +288,70 @@ export default function ContentManager() {
   return (
     <SafeAreaWrapper>
       <TopNavigation showBackButton={true} />
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={[
+          styles.tabBar,
+          { borderBottomColor: colors.textSecondary + '20' },
+        ]}
+        contentContainerStyle={styles.tabBarContent}
+      >
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          const count = content.filter((c) => c.type === tab.key).length;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              onPress={() => setActiveTab(tab.key)}
+              style={[
+                styles.tabButton,
+                isActive && { borderBottomColor: getTypeColor(tab.key) },
+              ]}
+            >
+              <Text style={styles.tabIcon}>{tab.icon}</Text>
+              <Text
+                style={[
+                  styles.tabLabel,
+                  {
+                    color: isActive
+                      ? getTypeColor(tab.key)
+                      : colors.textSecondary,
+                  },
+                ]}
+              >
+                {tab.label}
+              </Text>
+              <View
+                style={[
+                  styles.tabCountBadge,
+                  {
+                    backgroundColor: isActive
+                      ? getTypeColor(tab.key)
+                      : colors.textSecondary + '30',
+                  },
+                ]}
+              >
+                <Text style={styles.tabCountText}>{count}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
       <ScrollView
         style={{ backgroundColor: colors.background }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {content.length === 0 ? (
+        {filteredContent.length === 0 ? (
           <Text style={[styles.empty, { color: colors.textSecondary }]}>
             No content available
           </Text>
         ) : (
-          content.map((item) => {
+          filteredContent.map((item) => {
             const typeColor = getTypeColor(item.type);
             return (
               <View
@@ -539,6 +602,34 @@ export default function ContentManager() {
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   empty: { textAlign: 'center', marginTop: 40, fontSize: 16 },
+  tabBar: {
+    flexGrow: 0,
+    borderBottomWidth: 1,
+  },
+  tabBarContent: {
+    paddingHorizontal: 12,
+    gap: 4,
+  },
+  tabButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabIcon: { fontSize: 14 },
+  tabLabel: { fontSize: 13, fontWeight: '600' },
+  tabCountBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  tabCountText: { fontSize: 11, fontWeight: '700', color: '#fff' },
   item: {
     marginHorizontal: 20,
     marginVertical: 8,

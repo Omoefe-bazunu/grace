@@ -61,14 +61,24 @@ export function LiveStreamProvider({ children }) {
   };
 
   // Fetch comments for active stream
+  // WITH this:
   const fetchComments = async (streamId) => {
     try {
       const data = await getLiveStreamComments(streamId);
-      setComments(data);
+      // Guard: only set if this is still the active stream
+      setComments((prev) => (liveStream?.id === streamId ? data : prev));
     } catch (err) {
       console.error('Comments fetch error:', err);
     }
   };
+  // const fetchComments = async (streamId) => {
+  //   try {
+  //     const data = await getLiveStreamComments(streamId);
+  //     setComments(data);
+  //   } catch (err) {
+  //     console.error('Comments fetch error:', err);
+  //   }
+  // };
 
   // Fetch reactions for active stream
   const fetchReactions = async (streamId) => {
@@ -122,11 +132,9 @@ export function LiveStreamProvider({ children }) {
     return hoursElapsed < 24;
   };
 
-  // Post comment
-  const postComment = async (streamId, text) => {
+  const postComment = async (streamId, text, name, location) => {
     const uid = userId || (await getAnonymousUserId());
-    await addLiveStreamComment(streamId, text, uid);
-    // Refresh immediately after posting
+    await addLiveStreamComment(streamId, text, uid, name, location);
     await fetchComments(streamId);
   };
 

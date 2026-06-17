@@ -143,7 +143,7 @@ export default function AdminGalleryManager() {
   if (loading)
     return (
       <SafeAreaWrapper>
-        <TopNavigation title="Gallery Admin" showBackButton />
+        <TopNavigation title="Manage" showBackButton />
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -152,7 +152,7 @@ export default function AdminGalleryManager() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title="Gallery Admin" showBackButton />
+      <TopNavigation title="Manage" showBackButton />
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={fetchAll} />

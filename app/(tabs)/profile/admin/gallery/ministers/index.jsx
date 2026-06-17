@@ -116,7 +116,7 @@ export default function UploadMinisters() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton={true} title="Add Minister" />
+      <TopNavigation showBackButton={true} />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Full Name *</Text>
