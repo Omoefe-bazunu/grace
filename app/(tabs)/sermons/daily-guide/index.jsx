@@ -152,7 +152,7 @@ export default function DailyGuideScreen() {
             </AppText>
             <AppText style={styles.headerSubtitle}>
               {translations.dailyDevotionalBannerSubtitle ||
-                'Nourish your spirit with daily guidance.'}
+                "God's Word a Lamp to My Feet."}
             </AppText>
           </View>
         </ImageBackground>
@@ -216,6 +216,12 @@ export default function DailyGuideScreen() {
             />
 
             <View style={styles.mainTextContainer}>
+              <AppText style={[styles.devotionalTitle, { color: colors.text }]}>
+                THEME: {currentDevotional.title}
+              </AppText>
+            </View>
+
+            <View style={styles.mainTextContainer}>
               <AppText style={[styles.mainText, { color: colors.text }]}>
                 {currentDevotional.mainText}
               </AppText>
@@ -262,7 +268,7 @@ export default function DailyGuideScreen() {
         )}
 
         {/* Recent Devotionals */}
-        {devotionals.length > 0 && (
+        {/* {devotionals.length > 0 && (
           <View style={styles.recentSection}>
             <AppText style={[styles.sectionTitle, { color: colors.text }]}>
               {translations.recentDevotionals || 'Recent Devotionals'}
@@ -301,7 +307,7 @@ export default function DailyGuideScreen() {
               ))}
             </ScrollView>
           </View>
-        )}
+        )} */}
 
         <View style={styles.bottomSpacer} />
       </ScrollView>

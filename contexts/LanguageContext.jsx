@@ -111,7 +111,7 @@ const translations = {
       'Deepen your understanding with sound biblical teaching.',
     homeCardTitleStories: 'Bible-based Stories',
     homeCardSubtitleStories:
-      'Spiritual values brought to life through narrative.',
+      'Spiritual lessons brought to life through narrative.',
     homeCardTitleArchive: 'Archive',
     homeCardSubtitleArchive:
       'Explore historical records and past events of the society.',
@@ -140,7 +140,7 @@ const translations = {
     videoSermons: 'Video Sermons',
     watchSermons: 'Watch live sessions and recordings',
     dailyGuide: 'Daily Guide',
-    dailyGuideSubtitle: "Study God's word daily",
+    dailyGuideSubtitle: "God's Word A Lamp to My Feet.",
 
     // Text Sermons Screen
     textSermonsBannerTitle: 'TEXT SERMONS',
@@ -240,7 +240,7 @@ const translations = {
     // Daily Guide Screen
     dailyGuideTitle: 'Daily Guide',
     dailyDevotionalBanner: 'Daily Devotional',
-    dailyDevotionalBannerSubtitle: 'Nourish your spirit with daily guidance.',
+    dailyDevotionalBannerSubtitle: "God's Word, A Lamp To My Feet.",
     today: 'Today',
     yesterday: 'Yesterday',
     tomorrow: 'Tomorrow',

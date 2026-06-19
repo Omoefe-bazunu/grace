@@ -27,6 +27,7 @@ import { Button } from '../../../../../components/ui/Button';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import { apiClient } from '../../../../../utils/api';
+import { getSongCategories } from '../../../../../services/dataService';
 
 let VideoCompressor;
 try {
@@ -126,16 +127,26 @@ export default function UploadScreen() {
     else if (type === 'sermonVideo') fetchSermonVideoCategories();
   }, [type]);
 
+  // const fetchSongCategories = async () => {
+  //   try {
+  //     const res = await apiClient.get('songs');
+  //     console.log('Total songs fetched:', res.data.songs?.length);
+  //     console.log(
+  //       'Categories found:',
+  //       Array.from(new Set(res.data.songs?.map((s) => s.category))),
+  //     );
+  //     const categories = new Set();
+  //     const items = res.data.songs || [];
+  //     items.forEach((s) => s.category && categories.add(s.category.trim()));
+  //     setSongCategories(Array.from(categories).sort());
+  //   } catch (err) {
+  //     console.log('Category load error', err);
+  //   }
+  // };
+
   const fetchSongCategories = async () => {
-    try {
-      const res = await apiClient.get('songs');
-      const categories = new Set();
-      const items = res.data.songs || [];
-      items.forEach((s) => s.category && categories.add(s.category.trim()));
-      setSongCategories(Array.from(categories).sort());
-    } catch (err) {
-      console.log('Category load error', err);
-    }
+    const categories = await getSongCategories();
+    setSongCategories(categories);
   };
 
   const fetchSermonVideoCategories = async () => {
@@ -692,7 +703,7 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     marginBottom: 12,
   },
-  categoryScroll: { maxHeight: 60, marginBottom: 16 },
+  categoryScroll: { maxHeight: 120, marginBottom: 16 },
   categoryChip: {
     backgroundColor: '#F3F4F6',
     paddingHorizontal: 16,

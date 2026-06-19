@@ -17,7 +17,7 @@ import {
 } from '../services/dataService';
 import { getAnonymousUserId } from '../utils/anonymousUser';
 
-const POLL_INTERVAL_MS = 5 * 60 * 1000; // stream status: every 5 min
+const POLL_INTERVAL_MS = 3 * 60 * 1000; // stream status: every 3 min
 const COMMENT_POLL_MS = 10_000; // comments: every 10s when live
 const REACTION_POLL_MS = 15_000; // reactions: every 15s when live
 
@@ -49,10 +49,29 @@ export function LiveStreamProvider({ children }) {
   }, []);
 
   // Fetch active stream
+  // const fetchLiveStream = async () => {
+  //   try {
+  //     const streams = await getActiveLiveStreams();
+  //     setLiveStream(streams[0] || null);
+  //   } catch (err) {
+  //     console.error('Live fetch error:', err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const fetchLiveStream = async () => {
     try {
       const streams = await getActiveLiveStreams();
-      setLiveStream(streams[0] || null);
+      const newStream = streams[0] || null;
+
+      // ✅ If stream just ended, refresh the log to pick it up
+      setLiveStream((prev) => {
+        if (prev?.isActive && !newStream) {
+          fetchStreamLog(true);
+        }
+        return newStream;
+      });
     } catch (err) {
       console.error('Live fetch error:', err);
     } finally {

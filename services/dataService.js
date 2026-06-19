@@ -380,6 +380,16 @@ export const getSongsByCategoryPaginated = async (
   }
 };
 
+export const getSongCategories = async () => {
+  try {
+    const response = await apiClient.get('songs/categories');
+    return response.data.categories || [];
+  } catch (err) {
+    console.error('Error fetching song categories:', err);
+    return [];
+  }
+};
+
 export const getSong = async (id) => {
   try {
     const response = await apiClient.get(`songs/${id}`);
@@ -706,6 +716,22 @@ export const addLiveStreamComment = async (
     location,
   });
   return response.data;
+};
+
+/**
+ * Deletes a single comment from a stream (Admin moderation).
+ * Hits: DELETE /api/livestreams/:streamId/comments/:commentId
+ */
+export const deleteLiveStreamComment = async (streamId, commentId) => {
+  try {
+    const response = await apiClient.delete(
+      `livestreams/${streamId}/comments/${commentId}`,
+    );
+    return response.data;
+  } catch (err) {
+    console.error('Error deleting comment:', err);
+    throw err;
+  }
 };
 
 export const getLiveStreamReactions = async (streamId) => {

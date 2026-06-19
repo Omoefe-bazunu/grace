@@ -33,7 +33,7 @@ import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
 import { getSong } from '../../../../services/dataService';
 import { AppText } from '../../../../components/ui/AppText';
-import ChoirImage from '../../../../assets/images/musicicon.png';
+import ChoirImage from '../../../../assets/images/songbg.jpg';
 
 export default function MusicDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -212,7 +212,13 @@ export default function MusicDetailScreen() {
           >
             <Image
               source={ChoirImage}
-              style={{ width: 250, height: 250, borderRadius: 125 }}
+              style={{
+                width: 250,
+                height: 250,
+                borderRadius: 125,
+                backgroundColor: '#ffffff',
+                borderColor: '#ffffff',
+              }}
             />
           </Animated.View>
         </View>

@@ -2,65 +2,81 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  ScrollView,
+  FlatList,
   StyleSheet,
   TouchableOpacity,
   TextInput,
   Alert,
   ActivityIndicator,
-  Switch,
   Modal,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
+  ScrollView,
 } from 'react-native';
-import { router } from 'expo-router';
 import {
-  Plus,
   Edit2,
   Trash2,
   X,
-  Youtube,
-  Facebook,
-  Video,
+  MessageCircle,
+  Heart,
   Calendar,
-  Podcast,
+  Radio,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react-native';
 import { SafeAreaWrapper } from '../../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../../components/TopNavigation';
 import { useTheme } from '../../../../../contexts/ThemeContext';
 import {
-  getLiveStreams,
-  createLiveStream,
+  getLiveStreamLog,
   updateLiveStream,
   deleteLiveStream,
+  getLiveStreamDetails,
+  deleteLiveStreamComment,
 } from '../../../../../services/dataService';
-
-const STREAM_TYPES = [
-  { id: 'youtube', name: 'YouTube Live', icon: Youtube, color: '#FF0000' },
-  { id: 'facebook', name: 'Facebook Live', icon: Facebook, color: '#1877F2' },
-  { id: 'hls', name: 'HLS Stream', icon: Video, color: '#10B981' },
-  { id: 'rtmp', name: 'RTMP Stream', icon: Podcast, color: '#8B5CF6' },
-  { id: 'obs', name: 'OBS Stream', icon: Podcast, color: '#F59E0B' },
-];
 
 export default function LiveStreamManager() {
   const { colors } = useTheme();
   const [streams, setStreams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingStream, setEditingStream] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    streamType: 'youtube',
-    streamUrl: '',
-    isActive: false,
-    schedule: '',
-    thumbnailUrl: '',
-    customData: {},
+  // Edit title modal
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingStream, setEditingStream] = useState(null);
+  const [editTitleValue, setEditTitleValue] = useState('');
+  const [savingTitle, setSavingTitle] = useState(false);
+
+  // Comments moderation modal
+  const [commentsModalVisible, setCommentsModalVisible] = useState(false);
+  const [selectedStream, setSelectedStream] = useState(null);
+  const [streamComments, setStreamComments] = useState([]);
+  const [reactionsTotal, setReactionsTotal] = useState(0);
+  const [loadingComments, setLoadingComments] = useState(false);
+
+  // Result feedback modal (success / failure of an action)
+  const [statusModal, setStatusModal] = useState({
+    visible: false,
+    type: 'success', // 'success' | 'error'
+    message: '',
   });
+
+  const showStatus = (type, message) => {
+    setStatusModal({ visible: true, type, message });
+  };
+
+  const closeStatus = () => {
+    setStatusModal((prev) => ({ ...prev, visible: false }));
+  };
+
+  // Auto-dismiss the status modal after a short delay
+  useEffect(() => {
+    if (statusModal.visible) {
+      const timer = setTimeout(closeStatus, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [statusModal.visible]);
 
   useEffect(() => {
     loadStreams();
@@ -68,92 +84,69 @@ export default function LiveStreamManager() {
 
   const loadStreams = async () => {
     try {
-      const streamData = await getLiveStreams();
-      setStreams(streamData);
+      const result = await getLiveStreamLog(50);
+      setStreams(result.streams);
     } catch (error) {
       console.error('Error loading streams:', error);
       Alert.alert('Error', 'Failed to load live streams');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const openCreateModal = () => {
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadStreams();
+  };
+
+  // --- Edit title ---
+
+  const openEditTitle = (item) => {
+    setEditingStream(item);
+    setEditTitleValue(item.title || '');
+    setEditModalVisible(true);
+  };
+
+  const closeEditTitle = () => {
+    setEditModalVisible(false);
     setEditingStream(null);
-    setForm({
-      title: '',
-      description: '',
-      streamType: 'youtube',
-      streamUrl: '',
-      isActive: false,
-      schedule: '',
-      thumbnailUrl: '',
-      customData: {},
-    });
-    setModalVisible(true);
+    setEditTitleValue('');
   };
 
-  const openEditModal = (stream) => {
-    setEditingStream(stream);
-    setForm({
-      title: stream.title,
-      description: stream.description,
-      streamType: stream.streamType,
-      streamUrl: stream.streamUrl,
-      isActive: stream.isActive,
-      schedule: stream.schedule,
-      thumbnailUrl: stream.thumbnailUrl,
-      customData: stream.customData || {},
-    });
-    setModalVisible(true);
-  };
-
-  const closeModal = () => {
-    setModalVisible(false);
-    setEditingStream(null);
-  };
-
-  const handleSave = async () => {
-    if (!form.title.trim() || !form.streamUrl.trim()) {
-      Alert.alert('Error', 'Title and Stream URL are required');
+  const handleSaveTitle = async () => {
+    if (!editTitleValue.trim()) {
+      Alert.alert('Error', 'Title is required');
       return;
     }
-
-    setSaving(true);
+    setSavingTitle(true);
     try {
-      const streamData = {
-        title: form.title.trim(),
-        description: form.description.trim(),
-        streamType: form.streamType,
-        streamUrl: form.streamUrl.trim(),
-        isActive: form.isActive,
-        schedule: form.schedule.trim(),
-        thumbnailUrl: form.thumbnailUrl.trim(),
-        customData: form.customData,
-      };
-
-      if (editingStream) {
-        await updateLiveStream(editingStream.id, streamData);
-        Alert.alert('Success', 'Live stream updated successfully');
-      } else {
-        await createLiveStream(streamData);
-        Alert.alert('Success', 'Live stream created successfully');
-      }
-
-      closeModal();
-      loadStreams();
+      await updateLiveStream(editingStream.id, {
+        title: editTitleValue.trim(),
+      });
+      setStreams((prev) =>
+        prev.map((s) =>
+          s.id === editingStream.id
+            ? { ...s, title: editTitleValue.trim() }
+            : s,
+        ),
+      );
+      closeEditTitle();
+      showStatus('success', 'Title updated successfully');
     } catch (error) {
-      console.error('Error saving stream:', error);
-      Alert.alert('Error', 'Failed to save live stream');
+      console.error('Error updating title:', error);
+      showStatus('error', 'Failed to update title');
     } finally {
-      setSaving(false);
+      setSavingTitle(false);
     }
   };
 
-  const handleDelete = (stream) => {
+  // --- Delete stream ---
+
+  const handleDeleteStream = (item) => {
     Alert.alert(
       'Delete Stream',
-      `Are you sure you want to delete "${stream.title}"?`,
+      `Delete "${item.title || 'this stream'}"? This also removes its comments and reactions. This cannot be undone.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -161,197 +154,180 @@ export default function LiveStreamManager() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteLiveStream(stream.id);
-              loadStreams();
-              Alert.alert('Success', 'Live stream deleted successfully');
+              await deleteLiveStream(item.id);
+              setStreams((prev) => prev.filter((s) => s.id !== item.id));
+              showStatus('success', 'Stream deleted successfully');
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete live stream');
+              console.error('Error deleting stream:', error);
+              showStatus('error', 'Failed to delete live stream');
             }
           },
         },
-      ]
+      ],
     );
   };
 
-  const getStreamTypeConfig = (type) => {
-    return STREAM_TYPES.find((t) => t.id === type) || STREAM_TYPES[0];
+  // --- Comments moderation ---
+
+  const openComments = async (item) => {
+    setSelectedStream(item);
+    setCommentsModalVisible(true);
+    setLoadingComments(true);
+    try {
+      const result = await getLiveStreamDetails(item.id);
+      setStreamComments(result.comments);
+      const total = Object.values(result.reactions || {}).reduce(
+        (sum, count) => sum + count,
+        0,
+      );
+      setReactionsTotal(total);
+    } catch (error) {
+      console.error('Error loading comments:', error);
+      Alert.alert('Error', 'Failed to load comments');
+    } finally {
+      setLoadingComments(false);
+    }
   };
 
-  const renderFormFields = () => {
-    return (
-      <ScrollView style={styles.formContent}>
-        {/* Stream Type Selection */}
-        <Text style={[styles.label, { color: colors.text }]}>
-          Platform Type
-        </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.typeScroll}
-        >
-          {STREAM_TYPES.map((type) => {
-            const Icon = type.icon;
-            return (
-              <TouchableOpacity
-                key={type.id}
-                style={[
-                  styles.typeOption,
-                  { backgroundColor: colors.card },
-                  form.streamType === type.id && {
-                    borderColor: type.color,
-                    borderWidth: 2,
-                  },
-                ]}
-                onPress={() => setForm({ ...form, streamType: type.id })}
-              >
-                <Icon
-                  size={20}
-                  color={
-                    form.streamType === type.id
-                      ? type.color
-                      : colors.textSecondary
-                  }
-                />
-                <Text
-                  style={[
-                    styles.typeText,
-                    {
-                      color:
-                        form.streamType === type.id
-                          ? type.color
-                          : colors.textSecondary,
-                    },
-                  ]}
-                >
-                  {type.name}
-                </Text>
-              </TouchableOpacity>
+  const closeComments = () => {
+    setCommentsModalVisible(false);
+    setSelectedStream(null);
+    setStreamComments([]);
+    setReactionsTotal(0);
+  };
+
+  const handleDeleteComment = (comment) => {
+    Alert.alert('Delete Comment', 'Remove this comment?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteLiveStreamComment(selectedStream.id, comment.id);
+            setStreamComments((prev) =>
+              prev.filter((c) => c.id !== comment.id),
             );
-          })}
-        </ScrollView>
-
-        {/* Basic Information */}
-        <TextInput
-          placeholder="Stream Title *"
-          value={form.title}
-          onChangeText={(text) => setForm({ ...form, title: text })}
-          style={[
-            styles.input,
-            { backgroundColor: colors.card, color: colors.text },
-          ]}
-          placeholderTextColor={colors.textSecondary}
-        />
-
-        <TextInput
-          placeholder="Description"
-          value={form.description}
-          onChangeText={(text) => setForm({ ...form, description: text })}
-          style={[
-            styles.input,
-            styles.textArea,
-            { backgroundColor: colors.card, color: colors.text },
-          ]}
-          placeholderTextColor={colors.textSecondary}
-          multiline
-          numberOfLines={4}
-        />
-
-        {/* Platform-specific URL Fields */}
-        {form.streamType === 'youtube' && (
-          <View>
-            <Text style={[styles.sublabel, { color: colors.textSecondary }]}>
-              YouTube Video ID or Embed URL
-            </Text>
-            <TextInput
-              placeholder="e.g., dQw4w9WgXcQ or full embed URL"
-              value={form.streamUrl}
-              onChangeText={(text) => setForm({ ...form, streamUrl: text })}
-              style={[
-                styles.input,
-                { backgroundColor: colors.card, color: colors.text },
-              ]}
-              placeholderTextColor={colors.textSecondary}
-            />
-          </View>
-        )}
-
-        {form.streamType === 'facebook' && (
-          <View>
-            <Text style={[styles.sublabel, { color: colors.textSecondary }]}>
-              Facebook Video URL
-            </Text>
-            <TextInput
-              placeholder="e.g., https://facebook.com/watch/live/?v=123456"
-              value={form.streamUrl}
-              onChangeText={(text) => setForm({ ...form, streamUrl: text })}
-              style={[
-                styles.input,
-                { backgroundColor: colors.card, color: colors.text },
-              ]}
-              placeholderTextColor={colors.textSecondary}
-            />
-          </View>
-        )}
-
-        {(form.streamType === 'hls' ||
-          form.streamType === 'rtmp' ||
-          form.streamType === 'obs') && (
-          <View>
-            <Text style={[styles.sublabel, { color: colors.textSecondary }]}>
-              Stream URL ({form.streamType.toUpperCase()})
-            </Text>
-            <TextInput
-              placeholder={`e.g., https://yourserver.com/stream.m3u8`}
-              value={form.streamUrl}
-              onChangeText={(text) => setForm({ ...form, streamUrl: text })}
-              style={[
-                styles.input,
-                { backgroundColor: colors.card, color: colors.text },
-              ]}
-              placeholderTextColor={colors.textSecondary}
-            />
-          </View>
-        )}
-
-        {/* Schedule */}
-        <TextInput
-          placeholder="Schedule (e.g., Sundays 10:00 AM)"
-          value={form.schedule}
-          onChangeText={(text) => setForm({ ...form, schedule: text })}
-          style={[
-            styles.input,
-            { backgroundColor: colors.card, color: colors.text },
-          ]}
-          placeholderTextColor={colors.textSecondary}
-        />
-
-        {/* Thumbnail URL */}
-        <TextInput
-          placeholder="Thumbnail URL (optional)"
-          value={form.thumbnailUrl}
-          onChangeText={(text) => setForm({ ...form, thumbnailUrl: text })}
-          style={[
-            styles.input,
-            { backgroundColor: colors.card, color: colors.text },
-          ]}
-          placeholderTextColor={colors.textSecondary}
-        />
-
-        {/* Active Switch */}
-        <View style={styles.switchContainer}>
-          <Text style={[styles.label, { color: colors.text }]}>
-            Active Stream
-          </Text>
-          <Switch
-            value={form.isActive}
-            onValueChange={(value) => setForm({ ...form, isActive: value })}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor={form.isActive ? '#fff' : '#f4f3f4'}
-          />
-        </View>
-      </ScrollView>
-    );
+            showStatus('success', 'Comment deleted successfully');
+          } catch (error) {
+            console.error('Error deleting comment:', error);
+            showStatus('error', 'Failed to delete comment');
+          }
+        },
+      },
+    ]);
   };
+
+  const renderStreamCard = ({ item }) => (
+    <View style={[styles.streamCard, { backgroundColor: colors.card }]}>
+      <View
+        style={[
+          styles.accentBar,
+          {
+            backgroundColor: item.isActive
+              ? '#10B981'
+              : colors.textSecondary + '40',
+          },
+        ]}
+      />
+      <View style={styles.streamCardBody}>
+        <View style={styles.streamHeader}>
+          <Text
+            style={[styles.streamTitle, { color: colors.text }]}
+            numberOfLines={1}
+          >
+            {item.title || 'Untitled Stream'}
+          </Text>
+          <View
+            style={[
+              styles.statusBadge,
+              {
+                backgroundColor: item.isActive
+                  ? '#10B98115'
+                  : colors.textSecondary + '15',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.statusDot,
+                { backgroundColor: item.isActive ? '#10B981' : '#9CA3AF' },
+              ]}
+            />
+            <Text
+              style={[
+                styles.statusText,
+                { color: item.isActive ? '#10B981' : '#9CA3AF' },
+              ]}
+            >
+              {item.isActive ? 'LIVE' : 'OFFLINE'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.metaRow}>
+          <View style={styles.metaItem}>
+            <Calendar size={12} color={colors.textSecondary} />
+            <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+              {item.createdAt
+                ? new Date(item.createdAt).toLocaleDateString()
+                : '—'}
+            </Text>
+          </View>
+          <View style={styles.metaItem}>
+            <MessageCircle size={12} color={colors.textSecondary} />
+            <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+              {item.commentCount ?? 0}
+            </Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Heart size={12} color={colors.textSecondary} />
+            <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+              {item.reactionCount ?? 0}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.streamActions}>
+          <TouchableOpacity
+            style={[
+              styles.actionButton,
+              { backgroundColor: colors.primary + '12' },
+            ]}
+            onPress={() => openEditTitle(item)}
+          >
+            <Edit2 size={15} color={colors.primary} />
+            <Text style={[styles.actionButtonText, { color: colors.primary }]}>
+              Title
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.actionButton,
+              { backgroundColor: colors.textSecondary + '12' },
+            ]}
+            onPress={() => openComments(item)}
+          >
+            <MessageCircle size={15} color={colors.textSecondary} />
+            <Text
+              style={[styles.actionButtonText, { color: colors.textSecondary }]}
+            >
+              Comments
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: '#EF444412' }]}
+            onPress={() => handleDeleteStream(item)}
+          >
+            <Trash2 size={15} color="#EF4444" />
+            <Text style={[styles.actionButtonText, { color: '#EF4444' }]}>
+              Delete
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
 
   if (loading) {
     return (
@@ -367,127 +343,54 @@ export default function LiveStreamManager() {
     <SafeAreaWrapper>
       <TopNavigation showBackButton={true} />
 
-      {/* Add Stream Button */}
-      <TouchableOpacity
-        style={[styles.addButton, { backgroundColor: colors.primary }]}
-        onPress={openCreateModal}
-      >
-        <Plus size={20} color="#fff" />
-        <Text style={styles.addButtonText}>Add Live Stream</Text>
-      </TouchableOpacity>
+      <View style={styles.headerRow}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Live Streams
+        </Text>
+        <View style={styles.headerSubtitleRow}>
+          <Radio size={13} color={colors.textSecondary} />
+          <Text
+            style={[styles.headerSubtitle, { color: colors.textSecondary }]}
+          >
+            {streams.length} entries
+          </Text>
+        </View>
+      </View>
 
-      <ScrollView style={styles.content}>
-        {streams.length === 0 ? (
+      <FlatList
+        data={streams}
+        keyExtractor={(item) => item.id}
+        renderItem={renderStreamCard}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+          />
+        }
+        ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Podcast size={48} color={colors.textSecondary} />
+            <Radio size={40} color={colors.textSecondary} />
             <Text style={[styles.emptyText, { color: colors.text }]}>
-              No Live Streams
+              No stream entries yet
             </Text>
             <Text
               style={[styles.emptySubtext, { color: colors.textSecondary }]}
             >
-              Add your first live stream to get started
+              Entries appear automatically when the YouTube poller detects a
+              stream
             </Text>
           </View>
-        ) : (
-          streams.map((stream) => {
-            const typeConfig = getStreamTypeConfig(stream.streamType);
-            const Icon = typeConfig.icon;
+        }
+      />
 
-            return (
-              <View
-                key={stream.id}
-                style={[styles.streamCard, { backgroundColor: colors.card }]}
-              >
-                <View style={styles.streamHeader}>
-                  <View style={styles.streamType}>
-                    <Icon size={20} color={typeConfig.color} />
-                    <Text
-                      style={[
-                        styles.streamTypeText,
-                        { color: typeConfig.color },
-                      ]}
-                    >
-                      {typeConfig.name}
-                    </Text>
-                  </View>
-                  <View style={styles.statusBadge}>
-                    <View
-                      style={[
-                        styles.statusDot,
-                        {
-                          backgroundColor: stream.isActive
-                            ? '#10B981'
-                            : '#6B7280',
-                        },
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        styles.statusText,
-                        { color: stream.isActive ? '#10B981' : '#6B7280' },
-                      ]}
-                    >
-                      {stream.isActive ? 'LIVE' : 'OFFLINE'}
-                    </Text>
-                  </View>
-                </View>
-
-                <Text style={[styles.streamTitle, { color: colors.text }]}>
-                  {stream.title}
-                </Text>
-
-                {stream.description && (
-                  <Text
-                    style={[
-                      styles.streamDescription,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    {stream.description}
-                  </Text>
-                )}
-
-                {stream.schedule && (
-                  <View style={styles.scheduleInfo}>
-                    <Calendar size={14} color={colors.textSecondary} />
-                    <Text
-                      style={[
-                        styles.scheduleText,
-                        { color: colors.textSecondary },
-                      ]}
-                    >
-                      {stream.schedule}
-                    </Text>
-                  </View>
-                )}
-
-                <View style={styles.streamActions}>
-                  <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => openEditModal(stream)}
-                  >
-                    <Edit2 size={18} color={colors.primary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => handleDelete(stream)}
-                  >
-                    <Trash2 size={18} color="#EF4444" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            );
-          })
-        )}
-      </ScrollView>
-
-      {/* Add/Edit Modal */}
+      {/* Edit Title Modal */}
       <Modal
-        visible={modalVisible}
+        visible={editModalVisible}
         transparent
         animationType="slide"
-        onRequestClose={closeModal}
+        onRequestClose={closeEditTitle}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -501,163 +404,294 @@ export default function LiveStreamManager() {
           >
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
-                {editingStream ? 'Edit Live Stream' : 'Add Live Stream'}
+                Edit Title
               </Text>
-              <TouchableOpacity onPress={closeModal}>
-                <X size={24} color={colors.textSecondary} />
+              <TouchableOpacity onPress={closeEditTitle}>
+                <X size={22} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            {renderFormFields()}
+            <View style={styles.modalBody}>
+              <TextInput
+                value={editTitleValue}
+                onChangeText={setEditTitleValue}
+                placeholder="Stream title"
+                placeholderTextColor={colors.textSecondary}
+                style={[
+                  styles.input,
+                  { backgroundColor: colors.card, color: colors.text },
+                ]}
+                autoFocus
+              />
+            </View>
 
             <View style={styles.modalFooter}>
               <TouchableOpacity
-                onPress={closeModal}
+                onPress={closeEditTitle}
                 style={[
                   styles.modalButton,
-                  { backgroundColor: colors.textSecondary + '30' },
+                  { backgroundColor: colors.textSecondary + '20' },
                 ]}
               >
-                <Text style={{ color: colors.textSecondary }}>Cancel</Text>
+                <Text
+                  style={{ color: colors.textSecondary, fontWeight: '600' }}
+                >
+                  Cancel
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={handleSave}
-                disabled={saving}
+                onPress={handleSaveTitle}
+                disabled={savingTitle}
                 style={[
                   styles.modalButton,
                   { backgroundColor: colors.primary },
                 ]}
               >
-                {saving ? (
+                {savingTitle ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={{ color: '#fff', fontWeight: '600' }}>
-                    {editingStream ? 'Update' : 'Create'}
-                  </Text>
+                  <Text style={{ color: '#fff', fontWeight: '600' }}>Save</Text>
                 )}
               </TouchableOpacity>
             </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Comments Moderation Modal */}
+      <Modal
+        visible={commentsModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={closeComments}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalContent,
+              { backgroundColor: colors.background, maxHeight: '80%' },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[styles.modalTitle, { color: colors.text }]}
+                  numberOfLines={1}
+                >
+                  {selectedStream?.title || 'Comments'}
+                </Text>
+                <Text
+                  style={[
+                    styles.modalSubtitle,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  {streamComments.length} comments • {reactionsTotal} reactions
+                </Text>
+              </View>
+              <TouchableOpacity onPress={closeComments}>
+                <X size={22} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {loadingComments ? (
+              <View style={styles.center}>
+                <ActivityIndicator size="large" color={colors.primary} />
+              </View>
+            ) : (
+              <ScrollView style={styles.commentsList}>
+                {streamComments.length === 0 ? (
+                  <Text
+                    style={[
+                      styles.emptyCommentsText,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    No comments on this stream
+                  </Text>
+                ) : (
+                  streamComments.map((comment) => (
+                    <View
+                      key={comment.id}
+                      style={[
+                        styles.commentRow,
+                        { borderBottomColor: colors.textSecondary + '15' },
+                      ]}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={[styles.commentName, { color: colors.text }]}
+                        >
+                          {comment.name || 'Anonymous'}
+                          {comment.location ? ` • ${comment.location}` : ''}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.commentText,
+                            { color: colors.textSecondary },
+                          ]}
+                        >
+                          {comment.text}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.commentDate,
+                            { color: colors.textSecondary },
+                          ]}
+                        >
+                          {comment.createdAt
+                            ? new Date(comment.createdAt).toLocaleString()
+                            : ''}
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.commentDeleteBtn}
+                        onPress={() => handleDeleteComment(comment)}
+                      >
+                        <Trash2 size={16} color="#EF4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ))
+                )}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Status Modal — confirms success or failure after an action */}
+      <Modal
+        visible={statusModal.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeStatus}
+      >
+        <TouchableOpacity
+          style={styles.statusOverlay}
+          activeOpacity={1}
+          onPress={closeStatus}
+        >
+          <View
+            style={[styles.statusBox, { backgroundColor: colors.background }]}
+          >
+            {statusModal.type === 'success' ? (
+              <CheckCircle size={40} color="#10B981" />
+            ) : (
+              <XCircle size={40} color="#EF4444" />
+            )}
+            <Text style={[styles.statusText, { color: colors.text }]}>
+              {statusModal.message}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    padding: 20,
+  headerRow: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 14,
   },
-  addButton: {
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  headerSubtitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    margin: 20,
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
+    gap: 5,
+    marginTop: 3,
   },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  headerSubtitle: {
+    fontSize: 12,
   },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    textAlign: 'center',
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
   },
   streamCard: {
-    padding: 16,
-    borderRadius: 12,
+    flexDirection: 'row',
+    borderRadius: 14,
     marginBottom: 12,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
+  accentBar: { width: 4 },
+  streamCardBody: { flex: 1, padding: 16 },
   streamHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 8,
+    gap: 8,
   },
-  streamType: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  streamTypeText: {
-    fontSize: 12,
-    fontWeight: '600',
+  streamTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    flex: 1,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 8,
   },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  statusText: { fontSize: 10, fontWeight: '700' },
+  metaRow: {
+    flexDirection: 'row',
+    gap: 14,
+    marginBottom: 14,
   },
-  statusText: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  streamTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  streamDescription: {
-    fontSize: 14,
-    marginBottom: 8,
-    lineHeight: 20,
-  },
-  scheduleInfo: {
+  metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 12,
+    gap: 4,
   },
-  scheduleText: {
-    fontSize: 12,
-  },
+  metaText: { fontSize: 12 },
   streamActions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
+    gap: 8,
   },
   actionButton: {
-    padding: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
+  actionButtonText: { fontSize: 12, fontWeight: '600' },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 40,
   },
-  // Modal Styles
+  emptyState: { alignItems: 'center', justifyContent: 'center', padding: 60 },
+  emptyText: {
+    fontSize: 17,
+    fontWeight: '600',
+    marginTop: 14,
+    marginBottom: 6,
+  },
+  emptySubtext: { fontSize: 13, textAlign: 'center' },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    maxHeight: '90%', // This keeps the modal from covering the whole screen
-    width: '100%', // Ensure full width
+    width: '100%',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     overflow: 'hidden',
@@ -665,63 +699,18 @@ const styles = StyleSheet.create({
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  formContent: {
-    padding: 20,
-    flexShrink: 1,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  sublabel: {
-    fontSize: 12,
-    marginBottom: 4,
-    fontStyle: 'italic',
-  },
-  typeScroll: {
-    marginBottom: 16,
-  },
-  typeOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    minWidth: 120,
-  },
-  typeText: {
-    marginLeft: 8,
-    fontSize: 12,
-    fontWeight: '600',
-  },
+  modalTitle: { fontSize: 18, fontWeight: '600' },
+  modalSubtitle: { fontSize: 12, marginTop: 3 },
+  modalBody: { padding: 20 },
   input: {
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-    fontSize: 16,
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  switchContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    padding: 14,
+    borderRadius: 10,
+    fontSize: 15,
   },
   modalFooter: {
     flexDirection: 'row',
@@ -735,5 +724,38 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
+  },
+  commentsList: {
+    paddingHorizontal: 20,
+  },
+  emptyCommentsText: {
+    textAlign: 'center',
+    fontSize: 14,
+    paddingVertical: 30,
+  },
+  commentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    gap: 10,
+  },
+  commentName: { fontSize: 13, fontWeight: '700', marginBottom: 3 },
+  commentText: { fontSize: 14, lineHeight: 19, marginBottom: 4 },
+  commentDate: { fontSize: 11 },
+  commentDeleteBtn: { padding: 6 },
+  statusOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statusBox: {
+    width: 240,
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    gap: 12,
   },
 });
