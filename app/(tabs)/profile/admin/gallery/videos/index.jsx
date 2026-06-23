@@ -31,7 +31,7 @@ export default function UploadGalleryVideos() {
     try {
       await apiClient.post('gallery/upload', {
         type: 'video',
-        event: title.trim(),
+        title: title.trim(),
         description: desc.trim().slice(0, 200),
         url: videoUrl.trim(),
         category: 'General',

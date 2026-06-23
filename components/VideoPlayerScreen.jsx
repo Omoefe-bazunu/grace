@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Share,
   Dimensions,
+  Animated,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import YoutubeIframe from 'react-native-youtube-iframe';
@@ -58,20 +59,64 @@ const injectCSS = `
   })();
 `;
 
-const PlayerPlaceholder = () => {
+// Shared pulse hook — one animation drives all skeleton elements
+const usePulse = () => {
+  const opacity = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0.4,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [opacity]);
+  return opacity;
+};
+
+// Animated skeleton block — drop-in replacement for static LinearGradient skeletons
+const SkeletonBlock = ({ style }) => {
   const { colors } = useTheme();
+  const opacity = usePulse();
   return (
-    <LinearGradient
-      colors={[
-        colors.skeleton || '#E5E7EB',
-        colors.skeletonHighlight || '#F3F4F6',
-      ]}
-      style={styles.playerPlaceholderOverlay}
-    />
+    <Animated.View style={[{ opacity }]}>
+      <LinearGradient
+        colors={[
+          colors.skeleton || '#E5E7EB',
+          colors.skeletonHighlight || '#F3F4F6',
+        ]}
+        style={style}
+      />
+    </Animated.View>
   );
 };
 
-const SkeletonVideo = ({ ShareIcon }) => {
+const PlayerPlaceholder = () => {
+  const { colors } = useTheme();
+  const opacity = usePulse();
+  return (
+    <Animated.View style={[styles.playerPlaceholderOverlay, { opacity }]}>
+      <LinearGradient
+        colors={[
+          colors.skeleton || '#E5E7EB',
+          colors.skeletonHighlight || '#F3F4F6',
+        ]}
+        style={StyleSheet.absoluteFill}
+      />
+    </Animated.View>
+  );
+};
+
+const SkeletonVideo = () => {
   const { colors } = useTheme();
   return (
     <SafeAreaWrapper
@@ -79,38 +124,14 @@ const SkeletonVideo = ({ ShareIcon }) => {
     >
       <TopNavigation showBackButton={true} />
       <View style={styles.videoContainer}>
-        <LinearGradient
-          colors={[
-            colors.skeleton || '#E5E7EB',
-            colors.skeletonHighlight || '#F3F4F6',
-          ]}
-          style={{ width: '100%', height: VIDEO_HEIGHT }}
-        />
+        <SkeletonBlock style={{ width: '100%', height: VIDEO_HEIGHT }} />
       </View>
       <View style={[styles.videoInfo, { backgroundColor: colors.card }]}>
-        <LinearGradient
-          colors={[
-            colors.skeleton || '#E5E7EB',
-            colors.skeletonHighlight || '#F3F4F6',
-          ]}
-          style={styles.skeletonTitle}
-        />
-        <LinearGradient
-          colors={[
-            colors.skeleton || '#E5E7EB',
-            colors.skeletonHighlight || '#F3F4F6',
-          ]}
-          style={styles.skeletonMeta}
-        />
+        <SkeletonBlock style={styles.skeletonTitle} />
+        <SkeletonBlock style={styles.skeletonMeta} />
       </View>
       <View style={[styles.controls, { backgroundColor: colors.card }]}>
-        <LinearGradient
-          colors={[
-            colors.skeleton || '#E5E7EB',
-            colors.skeletonHighlight || '#F3F4F6',
-          ]}
-          style={styles.skeletonControl}
-        />
+        <SkeletonBlock style={styles.skeletonControl} />
       </View>
     </SafeAreaWrapper>
   );
@@ -245,14 +266,14 @@ export default function VideoPlayerScreen({
         )}
       </View>
 
-      <View style={[styles.controls, { backgroundColor: colors.card }]}>
+      {/* <View style={[styles.controls, { backgroundColor: colors.card }]}>
         <TouchableOpacity style={styles.controlButton} onPress={handleShare}>
           <ShareIcon size={24} color={colors.primary} />
           <AppText style={[styles.controlText, { color: colors.primary }]}>
             {translations.share || 'Share'}
           </AppText>
         </TouchableOpacity>
-      </View>
+      </View> */}
     </SafeAreaWrapper>
   );
 }

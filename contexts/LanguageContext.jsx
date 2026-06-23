@@ -210,8 +210,7 @@ const translations = {
     loadingVideos: 'Loading videos...',
     noVideosInCategory: 'No videos found in this category',
     sermonVideosBannerTitle: 'SERMON VIDEOS',
-    sermonVideosBannerSubtitle:
-      'Watch the video versions of sermons organized by categories.',
+    sermonVideosBannerSubtitle: 'Watch the video versions of sermons.',
     searchSermonVideosPlaceholder: 'Search sermon videos...',
     clearSearch: 'Clear',
     sermonVideoCategoriesTitle: 'Sermon Video Categories',

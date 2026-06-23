@@ -31,7 +31,7 @@ export default function UploadVideos() {
     try {
       await apiClient.post('archive/upload', {
         type: 'video',
-        event: title.trim(),
+        title: title.trim(),
         description: desc.trim().slice(0, 200),
         url: videoUrl.trim(),
         date: date.trim(),

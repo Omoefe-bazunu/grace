@@ -66,7 +66,7 @@ export default function MiniPlayer() {
             style={[styles.artist, { color: colors.textSecondary }]}
             numberOfLines={1}
           >
-            {currentSong.artist || 'Unknown Artist'}
+            {currentSong.category || 'Unknown Category'}
           </Text>
         </View>
 
