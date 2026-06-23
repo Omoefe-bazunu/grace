@@ -18,13 +18,14 @@ import { useTheme } from '../../../../contexts/ThemeContext';
 import { SafeAreaWrapper } from '../../../../components/ui/SafeAreaWrapper';
 import { TopNavigation } from '../../../../components/TopNavigation';
 import {
+  searchSermons,
   getSermonsByCategoryPaginated,
   searchContentPaginated,
 } from '../../../../services/dataService';
 import { LinearGradient } from 'expo-linear-gradient';
 import debounce from 'lodash.debounce';
 import { AppText } from '../../../../components/ui/AppText';
-import SERMONIMAGE from '../../../../assets/images/textsermons.jpg';
+// import { SERMONBG } from '../../../../assets/images';
 
 const { height } = Dimensions.get('window');
 
@@ -111,12 +112,13 @@ export default function TextSermonsScreen() {
       }
       try {
         setRefreshing(true);
-        const { sermons } = await searchContentPaginated(
-          trimmed,
-          null,
-          100,
-          null,
-        );
+        const sermons = await searchSermons(trimmed);
+        // const { sermons } = await searchContentPaginated(
+        //   trimmed,
+        //   null,
+        //   100,
+        //   null,
+        // );
         const grouped = SERMON_CATEGORIES.reduce(
           (acc, cat) => ({ ...acc, [cat]: [] }),
           {},
@@ -197,7 +199,12 @@ export default function TextSermonsScreen() {
         title={translations.sermons || 'Sermons'}
       />
 
-      <ImageBackground source={SERMONIMAGE} style={styles.bannerImage}>
+      <ImageBackground
+        source={{
+          uri: 'https://firebasestorage.googleapis.com/v0/b/southpark-11f5d.firebasestorage.app/o/general%2Fsermonsection.jpeg?alt=media&token=4ed2e960-ac18-401a-a9f6-e15dc5e30d16',
+        }}
+        style={styles.bannerImage}
+      >
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.8)']}
           style={styles.bannerGradient}

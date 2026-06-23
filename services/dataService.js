@@ -64,6 +64,21 @@ export const getSermon = async (id) => {
   }
 };
 
+/**
+ * Searches sermons by title or content across the full collection
+ * (not just the most recent page), so older sermons are findable.
+ * Hits: GET /api/sermons/search?q=term
+ */
+export const searchSermons = async (term) => {
+  try {
+    const response = await apiClient.get('sermons/search', { q: term });
+    return response.data.sermons || [];
+  } catch (err) {
+    console.error('Error searching sermons:', err);
+    return [];
+  }
+};
+
 // === QUIZ RESOURCES ===
 
 /**
@@ -314,13 +329,14 @@ export const getSermonVideosByCategoryPaginated = async (
  */
 export const getSermonVideo = async (id) => {
   try {
-    // We target the 'sermons' endpoint because sermonVideos are mapped there in UploadScreen
-    const response = await apiClient.get(`sermons/${id}`); // Safety check: Ensure the returned item actually has a video
-
-    if (response.data && response.data.videoUrl) {
-      return response.data;
+    const response = await apiClient.get(`sermons/${id}`);
+    const data = response.data;
+    if (data && data.videoUrl) {
+      return {
+        ...data,
+        youtubeId: getYouTubeVideoId(data.videoUrl),
+      };
     }
-
     console.warn(`Sermon ${id} found but contains no videoUrl`);
     return null;
   } catch (err) {
@@ -332,6 +348,26 @@ export const getSermonVideo = async (id) => {
     return null;
   }
 };
+// export const getSermonVideo = async (id) => {
+//   try {
+//     // We target the 'sermons' endpoint because sermonVideos are mapped there in UploadScreen
+//     const response = await apiClient.get(`sermons/${id}`); // Safety check: Ensure the returned item actually has a video
+
+//     if (response.data && response.data.videoUrl) {
+//       return response.data;
+//     }
+
+//     console.warn(`Sermon ${id} found but contains no videoUrl`);
+//     return null;
+//   } catch (err) {
+//     if (err.response?.status === 404) {
+//       console.warn(`Sermon video ID ${id} not found on server.`);
+//     } else {
+//       console.error('Error fetching sermon video:', err);
+//     }
+//     return null;
+//   }
+// };
 
 // === SONGS ===
 export const getSongs = async () => {

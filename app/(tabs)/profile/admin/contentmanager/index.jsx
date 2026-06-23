@@ -21,11 +21,10 @@ import {
   getSermonsPaginated,
   getSongsPaginated,
   getVideosPaginated,
-  getSermonVideosPaginated,
   getDailyDevotionalsPaginated,
 } from '@/services/dataService';
 import apiClient from '../../../../../utils/api';
-import { Edit2, Trash2, X } from 'lucide-react-native';
+import { Edit2, Trash2, X, Search } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const TABS = [
@@ -43,6 +42,7 @@ export default function ContentManager() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('sermon');
+  const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({
@@ -57,21 +57,29 @@ export default function ContentManager() {
 
   const fetchAllContent = async () => {
     try {
-      const [sermonsRes, songsRes, videosRes, sermonVideosRes, devotionalsRes] =
+      const fetchAllSermons = async () => {
+        let all = [];
+        let cursor = null;
+        do {
+          const res = await getSermonsPaginated(100, cursor);
+          all = [...all, ...(res.sermons || [])];
+          cursor = res.hasMore ? res.nextCursor : null;
+        } while (cursor);
+        return all;
+      };
+
+      const [allSermons, songsRes, videosRes, devotionalsRes] =
         await Promise.all([
-          getSermonsPaginated(50),
-          getSongsPaginated(50),
-          getVideosPaginated(50),
-          getSermonVideosPaginated(50),
-          getDailyDevotionalsPaginated(50),
+          fetchAllSermons(),
+          getSongsPaginated(100),
+          getVideosPaginated(100),
+          getDailyDevotionalsPaginated(100),
         ]);
 
-      // Separate sermons into text sermons (no video) and sermon videos (with video)
-      const textSermons = (sermonsRes.sermons || []).filter((s) => !s.videoUrl);
-      const sermonVideos = sermonVideosRes.sermonVideos || [];
+      const textSermons = allSermons.filter((s) => !s.videoUrl);
+      const sermonVideos = allSermons.filter((s) => s.videoUrl);
 
       const formatted = [
-        // Only include text sermons (those without videoUrl)
         ...textSermons.map((s) => ({
           id: s.id,
           title: s.title,
@@ -96,7 +104,6 @@ export default function ContentManager() {
           date: v.createdAt?.split('T')[0] || '',
           icon: '🎬',
         })),
-        // Sermon videos come from the same sermons collection but have videoUrl
         ...sermonVideos.map((v) => ({
           id: v.id,
           title: v.title,
@@ -155,7 +162,6 @@ export default function ContentManager() {
         onPress: async () => {
           try {
             const collection = getCollectionName(item.type);
-            // Pass collection and id separately - apiClient will build the URL
             await apiClient.delete(collection, item.id);
             setContent((prev) => prev.filter((c) => c.id !== item.id));
             Alert.alert('Success', 'Deleted successfully');
@@ -203,12 +209,14 @@ export default function ContentManager() {
     setSaving(true);
     try {
       const collection = getCollectionName(editingItem.type);
-      const payload = { title: form.title };
+      let payload = { title: form.title };
 
-      // Add type-specific fields
       if (editingItem.type === 'sermon') {
-        payload.content = form.content;
         if (form.category) payload.category = form.category;
+        payload.translations = {
+          en: { title: form.title, content: form.content },
+        };
+        payload.content = form.content;
       } else if (editingItem.type === 'song') {
         if (form.category) payload.category = form.category;
       } else if (editingItem.type === 'sermonVideo') {
@@ -218,11 +226,9 @@ export default function ContentManager() {
         payload.mainText = form.mainText;
         payload.date = form.date;
       } else if (editingItem.type === 'video') {
-        // Animation videos
         if (form.videoUrl) payload.videoUrl = form.videoUrl;
       }
 
-      // Pass collection, id, and data separately - apiClient will build the URL
       await apiClient.put(collection, editingItem.id, payload);
 
       setContent((prev) =>
@@ -273,7 +279,17 @@ export default function ContentManager() {
     return colorsMap[type] || colors.primary;
   };
 
-  const filteredContent = content.filter((item) => item.type === activeTab);
+  const filteredContent = content
+    .filter((item) => item.type === activeTab)
+    .filter((item) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        (item.title || '').toLowerCase().includes(q) ||
+        (item.category || '').toLowerCase().includes(q) ||
+        (item.date || '').includes(q)
+      );
+    });
 
   if (loading) {
     return (
@@ -289,6 +305,7 @@ export default function ContentManager() {
     <SafeAreaWrapper>
       <TopNavigation showBackButton={true} />
 
+      {/* Tab Bar */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -304,7 +321,10 @@ export default function ContentManager() {
           return (
             <TouchableOpacity
               key={tab.key}
-              onPress={() => setActiveTab(tab.key)}
+              onPress={() => {
+                setActiveTab(tab.key);
+                setSearchQuery('');
+              }}
               style={[
                 styles.tabButton,
                 isActive && { borderBottomColor: getTypeColor(tab.key) },
@@ -340,6 +360,38 @@ export default function ContentManager() {
         })}
       </ScrollView>
 
+      {/* Search Bar */}
+      <View
+        style={[styles.searchWrapper, { backgroundColor: colors.background }]}
+      >
+        <View
+          style={[styles.searchContainer, { backgroundColor: colors.card }]}
+        >
+          <Search size={16} color={colors.textSecondary} />
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder={`Search ${activeTab}s...`}
+            placeholderTextColor={colors.textSecondary}
+            style={[styles.searchInput, { color: colors.text }]}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <X size={16} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+        {searchQuery.trim() ? (
+          <Text
+            style={[styles.searchResultCount, { color: colors.textSecondary }]}
+          >
+            {filteredContent.length} result
+            {filteredContent.length !== 1 ? 's' : ''}
+          </Text>
+        ) : null}
+      </View>
+
+      {/* Content List */}
       <ScrollView
         style={{ backgroundColor: colors.background }}
         refreshControl={
@@ -348,7 +400,9 @@ export default function ContentManager() {
       >
         {filteredContent.length === 0 ? (
           <Text style={[styles.empty, { color: colors.textSecondary }]}>
-            No content available
+            {searchQuery.trim()
+              ? `No results for "${searchQuery}"`
+              : 'No content available'}
           </Text>
         ) : (
           filteredContent.map((item) => {
@@ -478,14 +532,20 @@ export default function ContentManager() {
                       { backgroundColor: colors.card, color: colors.text },
                     ]}
                   />
+                  <Text
+                    style={[styles.fieldLabel, { color: colors.textSecondary }]}
+                  >
+                    Content ({form.content?.length || 0} chars)
+                  </Text>
                   <TextInput
                     value={form.content}
                     onChangeText={(t) => setForm({ ...form, content: t })}
-                    placeholder="Content"
+                    placeholder="Sermon content..."
                     placeholderTextColor={colors.textSecondary}
                     multiline
                     style={[
                       styles.textarea,
+                      styles.contentArea,
                       { backgroundColor: colors.card, color: colors.text },
                     ]}
                   />
@@ -601,22 +661,19 @@ export default function ContentManager() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  contentArea: { height: 300, textAlignVertical: 'top' },
+  fieldLabel: { fontSize: 12, marginBottom: 6, marginTop: 4 },
   empty: { textAlign: 'center', marginTop: 40, fontSize: 16 },
-  tabBar: {
-    flexGrow: 0,
-    borderBottomWidth: 1,
-  },
-  tabBarContent: {
-    paddingHorizontal: 12,
-    gap: 4,
-  },
+  tabBar: { flexGrow: 0, borderBottomWidth: 1, marginVertical: 8 },
+  tabBarContent: { paddingHorizontal: 12, gap: 4 },
   tabButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingVertical: 5,
     borderBottomWidth: 2,
+    paddingBottom: 8,
     borderBottomColor: 'transparent',
   },
   tabIcon: { fontSize: 14 },
@@ -630,6 +687,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   tabCountText: { fontSize: 11, fontWeight: '700', color: '#fff' },
+  searchWrapper: { paddingHorizontal: 16, paddingVertical: 10, gap: 6 },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    gap: 10,
+    elevation: 2,
+  },
+  searchInput: { flex: 1, fontSize: 15, paddingVertical: 0 },
+  searchResultCount: { fontSize: 12, paddingLeft: 4 },
   item: {
     marginHorizontal: 20,
     marginVertical: 8,
@@ -645,10 +714,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: 6,
   },
-  itemContent: {
-    flex: 1,
-    padding: 16,
-  },
+  itemContent: { flex: 1, padding: 16 },
   itemHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -662,44 +728,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  typeText: {
-    fontSize: 14,
-  },
-  titleContainer: {
-    flex: 1,
-  },
-  itemTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  itemType: {
-    fontSize: 12,
-    fontWeight: '500',
-    textTransform: 'capitalize',
-  },
+  typeText: { fontSize: 14 },
+  titleContainer: { flex: 1 },
+  itemTitle: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
+  itemType: { fontSize: 12, fontWeight: '500', textTransform: 'capitalize' },
   metaContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  itemCategory: {
-    fontSize: 13,
-    flex: 1,
-  },
-  itemDate: {
-    fontSize: 12,
-    opacity: 0.7,
-  },
+  itemCategory: { fontSize: 13, flex: 1 },
+  itemDate: { fontSize: 12, opacity: 0.7 },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingRight: 12,
     gap: 12,
   },
-  actionBtn: {
-    padding: 8,
-  },
+  actionBtn: { padding: 8 },
   bottomSpacer: { height: 40 },
   modalOverlay: {
     flex: 1,
@@ -720,13 +766,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  modalBody: {
-    padding: 20,
-  },
+  modalTitle: { fontSize: 18, fontWeight: '600' },
+  modalBody: { padding: 20 },
   input: {
     padding: 16,
     borderRadius: 12,
