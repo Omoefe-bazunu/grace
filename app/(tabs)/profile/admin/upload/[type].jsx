@@ -50,13 +50,13 @@ const SERMON_CATEGORIES = [
   "God's Kingdom Advocate Volume 1",
   "God's Kingdom Advocate Volume 2",
   "God's Kingdom Advocate Volume 3",
+  "God's Kingdom Advocate Volume 4",
   'Abridged Bible Subjects',
   'The Ten Fundamental Truths',
   "GKS President's Feast Message",
   "GKS President's Freedom Day Message",
   "GKS President's Youth Assembly Message",
   'Sermon Summaries',
-  'Questions and Answers',
 ];
 
 const ProgressBar = ({ progress, status }) => {

@@ -9,7 +9,7 @@ import {
   Linking,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Search, FileText, Download, ChevronRight } from 'lucide-react-native';
+import { Search, FileText, ChevronRight } from 'lucide-react-native';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
@@ -21,9 +21,9 @@ import debounce from 'lodash.debounce';
 const QuizCard = ({ item, colors }) => {
   const { translations } = useLanguage(); // ✅ Access translations inside card
 
-  const openPdf = () => {
-    if (item.pdfUrl) Linking.openURL(item.pdfUrl);
-  };
+  // const openPdf = () => {
+  //   if (item.pdfUrl) Linking.openURL(item.pdfUrl);
+  // };
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card }]}>
@@ -57,28 +57,25 @@ const QuizCard = ({ item, colors }) => {
       </View>
 
       <View style={styles.actionRow}>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={[styles.actionBtn, { backgroundColor: colors.primary }]}
           onPress={openPdf}
         >
-          <Download size={16} color="#FFF" />
+          <FileText size={16} color="#FFF" />
           <AppText style={styles.actionBtnText}>
-            {translations.downloadPdf || 'Download PDF'}
+            {translations.openPdf || 'Open Material'}
           </AppText>
-        </TouchableOpacity>
-
+        </TouchableOpacity> */}
         <TouchableOpacity
-          style={[styles.detailsBtn, { borderColor: colors.border }]}
+          style={[styles.detailsBtn, { backgroundColor: colors.primary }]}
           onPress={() =>
             router.push(`/(tabs)/profile/quizresources/${item.id}`)
           }
         >
-          <AppText
-            style={[styles.detailsBtnText, { color: colors.textSecondary }]}
-          >
+          <AppText style={[styles.detailsBtnText, { color: '#ffffff' }]}>
             {translations.details || 'Details'}
           </AppText>
-          <ChevronRight size={16} color={colors.textSecondary} />
+          <ChevronRight size={16} color="#ffffff" />
         </TouchableOpacity>
       </View>
     </View>
@@ -228,7 +225,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: 40,
     borderRadius: 8,
-    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 4,

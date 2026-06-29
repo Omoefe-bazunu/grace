@@ -415,6 +415,11 @@ const styles = StyleSheet.create({
     top: 50,
     right: 25,
     zIndex: 10,
-    padding: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

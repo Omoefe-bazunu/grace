@@ -278,9 +278,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   playlistTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textTransform: 'uppercase',
+    textAlign: 'center',
   },
   playlistSubtitle: {
     fontSize: 16,

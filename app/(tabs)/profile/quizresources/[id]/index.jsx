@@ -4,8 +4,11 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Linking,
+  ActivityIndicator,
+  Modal,
+  SafeAreaView,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { useLocalSearchParams, router } from 'expo-router';
 import {
   FileText,
@@ -13,9 +16,10 @@ import {
   Calendar,
   User,
   Users,
+  X,
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useLanguage } from '@/contexts/LanguageContext'; // ✅ Added Language Hook
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getQuizResource } from '@/services/dataService';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
@@ -23,14 +27,33 @@ import { TopNavigation } from '@/components/TopNavigation';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 
+const toPreviewUrl = (url) => {
+  if (!url) return url;
+  const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) return `https://drive.google.com/file/d/${match[1]}/preview`;
+  return url;
+};
+
+const ENABLE_ZOOM_JS = `
+  (function() {
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (meta) {
+      meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+    }
+  })();
+  true;
+`;
+
 export default function QuizDetailScreen() {
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
   const { colors } = useTheme();
-  const { translations } = useLanguage(); // ✅ Access translations
+  const { translations } = useLanguage();
 
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [pdfOpen, setPdfOpen] = useState(false);
+  const [webViewLoading, setWebViewLoading] = useState(true);
 
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -74,10 +97,11 @@ export default function QuizDetailScreen() {
           </View>
 
           <Button
-            title={
-              translations.openStudyMaterial || 'Open Study Material (PDF)'
-            }
-            onPress={() => Linking.openURL(quiz.pdfUrl)}
+            title={translations.openStudyMaterial || 'Open Study Material'}
+            onPress={() => {
+              setWebViewLoading(true);
+              setPdfOpen(true);
+            }}
             style={styles.mainBtn}
           />
         </View>
@@ -106,6 +130,51 @@ export default function QuizDetailScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* In-app PDF Viewer Modal */}
+      <Modal
+        visible={pdfOpen}
+        animationType="slide"
+        onRequestClose={() => setPdfOpen(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
+          {/* Header */}
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => setPdfOpen(false)}
+              style={styles.closeBtn}
+            >
+              <X size={22} color="#fff" />
+            </TouchableOpacity>
+            <AppText style={styles.modalTitle} numberOfLines={1}>
+              {quiz.title}
+            </AppText>
+            <View style={{ width: 40 }} />
+          </View>
+
+          {/* WebView */}
+          <WebView
+            source={{ uri: toPreviewUrl(quiz.pdfUrl) }}
+            style={{ flex: 1 }}
+            onLoadStart={() => setWebViewLoading(true)}
+            onLoadEnd={() => setWebViewLoading(false)}
+            javaScriptEnabled
+            domStorageEnabled
+            startInLoadingState
+            injectedJavaScript={ENABLE_ZOOM_JS}
+            scalesPageToFit={false} // ← add this
+            setSupportMultipleWindows={false} // ← add this
+            renderLoading={() => (
+              <View style={styles.webViewLoader}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <AppText style={{ color: '#fff', marginTop: 12, fontSize: 13 }}>
+                  Loading document...
+                </AppText>
+              </View>
+            )}
+          />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaWrapper>
   );
 }
@@ -132,7 +201,6 @@ const styles = StyleSheet.create({
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   metaLabel: { fontSize: 13, fontWeight: '600', color: '#666' },
   mainBtn: { width: '100%' },
-
   helpSection: { marginTop: 40, alignItems: 'center' },
   helpTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
   helpDesc: {
@@ -150,36 +218,33 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     gap: 10,
   },
-  divider: {
-    height: 0.5,
-    width: '100%',
-    color: '#666',
-    backgroundColor: '#666',
-    marginBottom: 10,
-  },
   helpBtnText: { fontWeight: 'bold', fontSize: 15 },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    padding: 25,
-    paddingBottom: 40,
-  },
+  // Modal styles
   modalHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 15,
+    backgroundColor: '#1a1a1a',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  modalTitle: { fontSize: 20, fontWeight: 'bold' },
-  modalSub: { fontSize: 14, color: '#666', marginBottom: 10 },
-  messageInput: { textAlignVertical: 'top', height: 120, marginBottom: 20 },
+  closeBtn: { padding: 4 },
+  modalTitle: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginHorizontal: 8,
+  },
+  webViewLoader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#111',
+  },
 });

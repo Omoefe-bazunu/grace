@@ -389,7 +389,7 @@ const translations = {
     ministersNavTitle: 'Ministers',
     ministersBannerTitle: 'MINISTERS PROFILE',
     ministersBannerSubtitle:
-      'Official profiles of the GKS ministry. Identifying and honouring those who labour in the word.',
+      'Official profiles of the GKS ministers. Identifying and honouring those who labour in the word.',
     searchByName: 'Search by name...',
     unnamedMinister: 'Unnamed Minister',
     ministerLabel: 'Minister',

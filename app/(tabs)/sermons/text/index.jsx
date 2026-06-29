@@ -35,13 +35,13 @@ const SERMON_CATEGORIES = [
   "God's Kingdom Advocate Volume 1",
   "God's Kingdom Advocate Volume 2",
   "God's Kingdom Advocate Volume 3",
+  "God's Kingdom Advocate Volume 4",
   'Abridged Bible Subjects',
   'The Ten Fundamental Truths',
   "GKS President's Feast Message",
   "GKS President's Freedom Day Message",
   "GKS President's Youth Assembly Message",
   'Sermon Summaries',
-  'Questions and Answers',
 ];
 
 // ✅ Infers a sermon's language even if the `language` field wasn't written at upload time.
@@ -393,7 +393,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   categoryHeader: { flex: 1 },
-  categoryTitle: { fontSize: 16, fontWeight: '700' },
+  categoryTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
   categoryCount: { fontSize: 12, marginTop: 4 },
   modalOverlay: {
     flex: 1,
@@ -426,5 +430,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
     marginRight: 10,
+    textTransform: 'uppercase',
   },
 });

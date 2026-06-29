@@ -35,6 +35,17 @@ import {
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
+const CATEGORIES = [
+  'Founding Instrument',
+  'Past Presidents',
+  'Past Chairman of Executive Board',
+  'Executive Board Members',
+  'Spiritual Advisers',
+  'Senior Ministers',
+  'Intermediate Ministers',
+  'Junior Ministers',
+];
+
 export default function AdminGalleryManager() {
   const { colors } = useTheme();
   const [items, setItems] = useState([]);
@@ -106,11 +117,13 @@ export default function AdminGalleryManager() {
       },
     ]);
   };
-
   const handleSave = async () => {
     try {
-      // Hits PUT /api/gallery/:collection/:id [cite: 560]
-      await updateGalleryEntry(editingItem.type, editingItem.id, form);
+      const payload =
+        editingItem.type === 'galleryMinisters'
+          ? { ...form, rank: form.rank ? parseInt(form.rank, 10) : 999 }
+          : form;
+      await updateGalleryEntry(editingItem.type, editingItem.id, payload);
       fetchAll();
       setModalVisible(false);
       Alert.alert('Success', 'Updated successfully');
@@ -126,8 +139,9 @@ export default function AdminGalleryManager() {
         ? {
             name: item.name,
             category: item.category,
-            dateDevoted: item.dateDevoted,
+            duration: item.duration,
             contact: item.contact,
+            rank: item.rank != null ? String(item.rank) : '',
           }
         : { event: item.event, description: item.description },
     );
@@ -213,23 +227,60 @@ export default function AdminGalleryManager() {
                     onChangeText={(t) => setForm({ ...form, name: t })}
                     placeholder="Name"
                   />
+
+                  {/* Category selector */}
+                  <Text
+                    style={[
+                      styles.sectionLabel,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Category
+                  </Text>
+                  {CATEGORIES.map((cat) => (
+                    <TouchableOpacity
+                      key={cat}
+                      onPress={() => setForm({ ...form, category: cat })}
+                      style={[
+                        styles.categoryOption,
+                        { borderColor: colors.border },
+                        form.category === cat && styles.categorySelected,
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.radioCircle,
+                          { borderColor: colors.border },
+                          form.category === cat && styles.radioSelected,
+                        ]}
+                      >
+                        {form.category === cat && (
+                          <View style={styles.radioDot} />
+                        )}
+                      </View>
+                      <Text
+                        style={[
+                          { fontSize: 13, color: colors.text },
+                          form.category === cat && styles.categoryTextSelected,
+                        ]}
+                      >
+                        {cat}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+
                   <TextInput
                     style={[
                       styles.input,
-                      { color: colors.text, borderColor: colors.border },
+                      {
+                        color: colors.text,
+                        borderColor: colors.border,
+                        marginTop: 12,
+                      },
                     ]}
-                    value={form.category}
-                    onChangeText={(t) => setForm({ ...form, category: t })}
-                    placeholder="Category"
-                  />
-                  <TextInput
-                    style={[
-                      styles.input,
-                      { color: colors.text, borderColor: colors.border },
-                    ]}
-                    value={form.dateDevoted}
-                    onChangeText={(t) => setForm({ ...form, dateDevoted: t })}
-                    placeholder="Date Devoted"
+                    value={form.duration}
+                    onChangeText={(t) => setForm({ ...form, duration: t })}
+                    placeholder="Duration (e.g. 1995 – Present)"
                   />
                   <TextInput
                     style={[
@@ -239,6 +290,16 @@ export default function AdminGalleryManager() {
                     value={form.contact}
                     onChangeText={(t) => setForm({ ...form, contact: t })}
                     placeholder="Contact"
+                  />
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { color: colors.text, borderColor: colors.border },
+                    ]}
+                    value={form.rank}
+                    onChangeText={(t) => setForm({ ...form, rank: t })}
+                    placeholder="Display order / Rank (e.g. 1)"
+                    keyboardType="number-pad"
                   />
                 </>
               ) : (
@@ -316,4 +377,26 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   saveBtn: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
+  sectionLabel: { fontSize: 12, marginBottom: 8, marginTop: 4 },
+  categoryOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 6,
+  },
+  categorySelected: { borderColor: '#007AFF', backgroundColor: '#EFF6FF' },
+  categoryTextSelected: { color: '#007AFF', fontWeight: '500' },
+  radioCircle: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioSelected: { borderColor: '#007AFF', backgroundColor: '#007AFF' },
+  radioDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#fff' },
 });

@@ -10,44 +10,39 @@ import {
   Modal,
   FlatList,
   RefreshControl,
+  TextInput,
 } from 'react-native';
-import {
-  Upload,
-  CheckCircle,
-  X,
-  Pencil,
-  Trash2,
-  FileText,
-} from 'lucide-react-native';
+import { X, Pencil, Trash2, FileText, Link } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
 import { TopNavigation } from '@/components/TopNavigation';
-import * as DocumentPicker from 'expo-document-picker';
-import { apiClient } from '@/utils/api';
 import {
   getQuizResources,
   addQuizResource,
   updateQuizResource,
   deleteQuizResource,
-} from '@/services/dataService'; // adjust path to wherever dataService.js lives in your project
+} from '@/services/dataService';
+
+const convertDriveLink = (url) => {
+  const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) return `https://drive.google.com/file/d/${match[1]}/preview`;
+  return null;
+};
 
 export default function QuizResourceUploader() {
   const { colors } = useTheme();
-  const PDF_SIZE_LIMIT = 5; // MB
 
-  const [activeTab, setActiveTab] = useState('upload'); // 'upload' | 'manage'
+  const [activeTab, setActiveTab] = useState('upload');
 
   // --- Upload tab state ---
   const [title, setTitle] = useState('');
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [ageCategory, setAgeCategory] = useState('Senior');
   const [genderCategory, setGenderCategory] = useState('Brothers');
-  const [pdfUrl, setPdfUrl] = useState(null);
+  const [driveLink, setDriveLink] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
 
   // --- Manage tab state ---
   const [resources, setResources] = useState([]);
@@ -61,9 +56,7 @@ export default function QuizResourceUploader() {
   const [editYear, setEditYear] = useState('');
   const [editAgeCategory, setEditAgeCategory] = useState('Senior');
   const [editGenderCategory, setEditGenderCategory] = useState('Brothers');
-  const [editPdfUrl, setEditPdfUrl] = useState(null);
-  const [editIsUploading, setEditIsUploading] = useState(false);
-  const [editUploadProgress, setEditUploadProgress] = useState(0);
+  const [editDriveLink, setEditDriveLink] = useState('');
   const [editIsSaving, setEditIsSaving] = useState(false);
 
   const fetchResources = useCallback(async () => {
@@ -85,91 +78,26 @@ export default function QuizResourceUploader() {
     setRefreshing(false);
   };
 
-  // Generic upload helper, parameterized so both the upload form and the edit modal can reuse it
-  const uploadFile = async (
-    file,
-    { setUploading, setProgress, setPdfUrl: setUrl },
-  ) => {
-    setUploading(true);
-    setProgress(0);
-
-    try {
-      const configRes = await apiClient.getUploadConfig(
-        'quizResources',
-        file.name,
-        'application/pdf',
-      );
-      const { uploadUrl, fileUrl } = configRes.data;
-
-      const response = await fetch(file.uri);
-      const blob = await response.blob();
-
-      const xhr = new XMLHttpRequest();
-      xhr.open('PUT', uploadUrl);
-      xhr.setRequestHeader('Content-Type', 'application/pdf');
-
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          setProgress(Math.round((event.loaded / event.total) * 100));
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status === 200 || xhr.status === 201) {
-          setUrl(fileUrl);
-          setUploading(false);
-        } else {
-          throw new Error('Upload failed');
-        }
-      };
-
-      xhr.onerror = () => {
-        throw new Error('Network error');
-      };
-      xhr.send(blob);
-    } catch (error) {
-      setUploading(false);
-      Alert.alert('Upload Failed', 'Could not upload PDF to server.');
-    }
-  };
-
-  const pickPDF = async (handlers) => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/pdf',
-        copyToCacheDirectory: true,
-      });
-
-      if (result.canceled) return;
-
-      const file = result.assets[0];
-
-      if (file.size > PDF_SIZE_LIMIT * 1024 * 1024) {
-        return Alert.alert(
-          'File too large',
-          `The PDF must be smaller than ${PDF_SIZE_LIMIT}MB`,
-        );
-      }
-
-      await uploadFile(file, handlers);
-    } catch (err) {
-      Alert.alert('Error', 'Failed to pick document');
-    }
-  };
-
   const resetForm = () => {
     setTitle('');
     setYear(new Date().getFullYear().toString());
     setAgeCategory('Senior');
     setGenderCategory('Brothers');
-    setPdfUrl(null);
+    setDriveLink('');
   };
 
   const handleSubmit = async () => {
-    if (!title || !pdfUrl)
+    if (!title || !driveLink.trim())
       return Alert.alert(
         'Missing Fields',
-        'Please provide a title and upload a PDF',
+        'Please provide a title and a Google Drive link',
+      );
+
+    const previewUrl = convertDriveLink(driveLink.trim());
+    if (!previewUrl)
+      return Alert.alert(
+        'Invalid Link',
+        'That does not look like a valid Google Drive file link.\n\nIt should contain /file/d/...',
       );
 
     setIsSubmitting(true);
@@ -179,9 +107,8 @@ export default function QuizResourceUploader() {
         year,
         ageCategory,
         genderCategory,
-        pdfUrl,
+        pdfUrl: previewUrl,
       });
-
       Alert.alert('Success', 'Quiz resource published!', [
         { text: 'Upload Another', onPress: resetForm },
         {
@@ -205,7 +132,7 @@ export default function QuizResourceUploader() {
     setEditYear(item.year ? String(item.year) : '');
     setEditAgeCategory(item.ageCategory || 'Senior');
     setEditGenderCategory(item.genderCategory || 'Brothers');
-    setEditPdfUrl(item.pdfUrl || null);
+    setEditDriveLink(item.pdfUrl || '');
     setEditModalVisible(true);
   };
 
@@ -215,9 +142,14 @@ export default function QuizResourceUploader() {
   };
 
   const handleUpdate = async () => {
-    if (!editTitle || !editPdfUrl) {
-      return Alert.alert('Missing Fields', 'Please provide a title and PDF');
-    }
+    if (!editTitle || !editDriveLink.trim())
+      return Alert.alert(
+        'Missing Fields',
+        'Please provide a title and a Google Drive link',
+      );
+
+    const previewUrl =
+      convertDriveLink(editDriveLink.trim()) || editDriveLink.trim();
 
     setEditIsSaving(true);
     try {
@@ -226,9 +158,8 @@ export default function QuizResourceUploader() {
         year: editYear,
         ageCategory: editAgeCategory,
         genderCategory: editGenderCategory,
-        pdfUrl: editPdfUrl,
+        pdfUrl: previewUrl,
       });
-
       setResources((prev) =>
         prev.map((r) =>
           r.id === editingId
@@ -238,7 +169,7 @@ export default function QuizResourceUploader() {
                 year: editYear,
                 ageCategory: editAgeCategory,
                 genderCategory: editGenderCategory,
-                pdfUrl: editPdfUrl,
+                pdfUrl: previewUrl,
               }
             : r,
         ),
@@ -302,39 +233,36 @@ export default function QuizResourceUploader() {
     </View>
   );
 
-  const PdfDropZone = ({
-    pdfUrl: url,
-    isUploading: uploading,
-    uploadProgress: progress,
-    onPress,
-  }) => (
-    <TouchableOpacity
-      style={[
-        styles.dropZone,
-        { borderColor: colors.primary, backgroundColor: colors.primary + '08' },
-      ]}
-      onPress={onPress}
-      disabled={uploading}
-    >
-      {uploading ? (
-        <View style={styles.progressCircle}>
-          <ActivityIndicator color={colors.primary} />
-          <Text style={{ marginTop: 8, color: colors.text }}>{progress}%</Text>
-        </View>
-      ) : url ? (
-        <View style={styles.fileSelected}>
-          <CheckCircle color="#10B981" size={32} />
-          <Text style={{ color: colors.text, marginTop: 8 }}>PDF Ready</Text>
-        </View>
-      ) : (
-        <View style={styles.idleState}>
-          <Upload color={colors.primary} size={32} />
-          <Text style={{ color: colors.primary, marginTop: 8 }}>
-            Select PDF (Max 5MB)
-          </Text>
-        </View>
-      )}
-    </TouchableOpacity>
+  const DriveLinkInput = ({ value, onChange }) => (
+    <View>
+      <View
+        style={[styles.linkInputRow, { borderColor: colors.border || '#ddd' }]}
+      >
+        <Link
+          size={18}
+          color="#888"
+          style={{ marginRight: 8, flexShrink: 0 }}
+        />
+        <TextInput
+          value={value}
+          onChangeText={onChange}
+          placeholder="https://drive.google.com/file/d/..."
+          placeholderTextColor={colors.textSecondary || '#aaa'}
+          style={[styles.linkInput, { color: colors.text }]}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
+        />
+        {value.length > 0 && (
+          <TouchableOpacity onPress={() => onChange('')} style={{ padding: 4 }}>
+            <Text style={{ color: '#aaa', fontSize: 18 }}>×</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+      <Text style={styles.linkHint}>
+        Set sharing to "Anyone with the link → Viewer" before pasting.
+      </Text>
+    </View>
   );
 
   const TabButton = ({ label, value }) => (
@@ -431,26 +359,15 @@ export default function QuizResourceUploader() {
 
           <View style={styles.uploadBox}>
             <Text style={[styles.label, { color: colors.text }]}>
-              Study Material (PDF)
+              Google Drive Link (PDF)
             </Text>
-            <PdfDropZone
-              pdfUrl={pdfUrl}
-              isUploading={isUploading}
-              uploadProgress={uploadProgress}
-              onPress={() =>
-                pickPDF({
-                  setUploading: setIsUploading,
-                  setProgress: setUploadProgress,
-                  setPdfUrl,
-                })
-              }
-            />
+            <DriveLinkInput value={driveLink} onChange={setDriveLink} />
           </View>
 
           <Button
             title={isSubmitting ? 'Saving...' : 'Publish Quiz'}
             onPress={handleSubmit}
-            disabled={isSubmitting || isUploading || !pdfUrl}
+            disabled={isSubmitting || !driveLink.trim()}
             style={{ marginTop: 30 }}
           />
         </ScrollView>
@@ -539,26 +456,18 @@ export default function QuizResourceUploader() {
 
               <View style={styles.uploadBox}>
                 <Text style={[styles.label, { color: colors.text }]}>
-                  Study Material (PDF)
+                  Google Drive Link (PDF)
                 </Text>
-                <PdfDropZone
-                  pdfUrl={editPdfUrl}
-                  isUploading={editIsUploading}
-                  uploadProgress={editUploadProgress}
-                  onPress={() =>
-                    pickPDF({
-                      setUploading: setEditIsUploading,
-                      setProgress: setEditUploadProgress,
-                      setPdfUrl: setEditPdfUrl,
-                    })
-                  }
+                <DriveLinkInput
+                  value={editDriveLink}
+                  onChange={setEditDriveLink}
                 />
               </View>
 
               <Button
                 title={editIsSaving ? 'Saving...' : 'Save Changes'}
                 onPress={handleUpdate}
-                disabled={editIsSaving || editIsUploading || !editPdfUrl}
+                disabled={editIsSaving || !editDriveLink.trim()}
                 style={{ marginTop: 20 }}
               />
             </ScrollView>
@@ -583,17 +492,17 @@ const styles = StyleSheet.create({
   },
   chipText: { fontSize: 14, fontWeight: '600' },
   uploadBox: { marginTop: 10 },
-  dropZone: {
-    height: 140,
-    borderRadius: 15,
-    borderStyle: 'dashed',
-    borderWidth: 2,
-    justifyContent: 'center',
+  linkInputRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
   },
-  idleState: { alignItems: 'center' },
-  fileSelected: { alignItems: 'center' },
-  progressCircle: { alignItems: 'center' },
+  linkInput: { flex: 1, fontSize: 14 },
+  linkHint: { fontSize: 11, color: '#888', marginTop: 6, lineHeight: 16 },
   tabBar: {
     flexDirection: 'row',
     borderBottomWidth: 1,

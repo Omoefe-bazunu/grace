@@ -24,6 +24,23 @@ import { AppText } from '../../../../components/ui/AppText';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { getArchiveDocuments } from '../../../../services/dataService';
 
+const toPreviewUrl = (url) => {
+  if (!url) return url;
+  const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) return `https://drive.google.com/file/d/${match[1]}/preview`;
+  return url;
+};
+
+const ENABLE_ZOOM_JS = `
+  (function() {
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (meta) {
+      meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+    }
+  })();
+  true;
+`;
+
 export default function ArchiveDocuments() {
   const { colors } = useTheme();
   const [documents, setDocuments] = useState([]);
@@ -201,13 +218,16 @@ export default function ArchiveDocuments() {
           {/* WebView */}
           {selectedDoc && (
             <WebView
-              source={{ uri: selectedDoc.url }}
+              source={{ uri: toPreviewUrl(selectedDoc.url) }}
               style={{ flex: 1 }}
               onLoadStart={() => setWebViewLoading(true)}
               onLoadEnd={() => setWebViewLoading(false)}
               javaScriptEnabled
               domStorageEnabled
               startInLoadingState
+              injectedJavaScript={ENABLE_ZOOM_JS}
+              scalesPageToFit={false} // ← add this
+              setSupportMultipleWindows={false} // ← add this
               renderLoading={() => (
                 <View style={styles.webViewLoader}>
                   <ActivityIndicator size="large" color={colors.primary} />

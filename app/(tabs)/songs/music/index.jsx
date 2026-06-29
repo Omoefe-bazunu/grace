@@ -325,6 +325,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1, // Ensures text takes up available space but doesn't push the icon off
     paddingRight: 10,
+    textTransform: 'uppercase',
   },
   miniPlayIcon: {
     width: 32,

@@ -18,14 +18,25 @@ import { TopNavigation } from '../../../../../components/TopNavigation';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '../../../../../components/ui/AppText';
 import { useTheme } from '../../../../../contexts/ThemeContext';
-import { useLanguage } from '../../../../../contexts/LanguageContext'; // ✅ Added Language Hook
-import { Calendar, Phone, BadgeCheck, X, Maximize2 } from 'lucide-react-native';
+import { useLanguage } from '../../../../../contexts/LanguageContext';
+import { Phone, BadgeCheck, X, Maximize2 } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 
+const CATEGORY_ORDER = [
+  'Founding Instrument',
+  'Past Presidents',
+  'Past Chairman of Executive Board',
+  'Executive Board Members',
+  'Spiritual Advisers',
+  'Senior Ministers',
+  'Intermediate Ministers',
+  'Junior Ministers',
+];
+
 export default function MinistersGallery() {
   const { colors } = useTheme();
-  const { translations } = useLanguage(); // ✅ Access translations
+  const { translations } = useLanguage();
   const [ministers, setMinisters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -53,9 +64,26 @@ export default function MinistersGallery() {
     fetchMinisters();
   }, []);
 
-  const filteredMinisters = ministers.filter((minister) =>
-    minister.name?.toLowerCase().includes(searchQuery.toLowerCase()),
+  const filteredMinisters = ministers.filter((m) =>
+    m.name?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  // Group by category in canonical order
+  const groupedMinisters = CATEGORY_ORDER.reduce((acc, cat) => {
+    const members = filteredMinisters
+      .filter((m) => m.category === cat)
+      .sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999));
+    if (members.length > 0) acc.push({ category: cat, members });
+    return acc;
+  }, []);
+
+  // Ministers whose category doesn't match any known one go at the end
+  const uncategorised = filteredMinisters.filter(
+    (m) => !CATEGORY_ORDER.includes(m.category),
+  );
+  if (uncategorised.length > 0) {
+    groupedMinisters.push({ category: 'Other', members: uncategorised });
+  }
 
   if (loading) {
     return (
@@ -82,7 +110,7 @@ export default function MinistersGallery() {
             />
           }
         >
-          {/* Header Section */}
+          {/* Header */}
           <View style={styles.headerSection}>
             <View style={styles.bannerContainer}>
               <ImageBackground
@@ -101,11 +129,12 @@ export default function MinistersGallery() {
                   </AppText>
                   <AppText style={styles.bannerSubtitle}>
                     {translations.ministersBannerSubtitle ||
-                      'Official profiles of the GKS ministry. Identifying and honouring those who labour in the word.'}
+                      'Official profiles of the GKS ministers. Identifying and honouring those who labour in the word.'}
                   </AppText>
                 </View>
               </ImageBackground>
             </View>
+
             <View
               style={[styles.searchContainer, { backgroundColor: colors.card }]}
             >
@@ -119,91 +148,91 @@ export default function MinistersGallery() {
             </View>
           </View>
 
-          {/* List Section */}
+          {/* Grouped Cards */}
           <View style={styles.listContainer}>
-            {filteredMinisters.map((m) => (
-              <View
-                key={m.id}
-                style={[styles.card, { backgroundColor: colors.card }]}
-              >
-                <View
-                  style={[
-                    styles.topBorder,
-                    { backgroundColor: colors.primary },
-                  ]}
-                />
+            {groupedMinisters.map(({ category, members }) => (
+              <View key={category} style={styles.categorySection}>
+                <View style={styles.categoryHeaderRow}>
+                  <View
+                    style={[
+                      styles.categoryAccent,
+                      { backgroundColor: colors.primary },
+                    ]}
+                  />
+                  <AppText
+                    style={[styles.categoryHeader, { color: colors.text }]}
+                  >
+                    {category}
+                  </AppText>
+                </View>
 
-                <View style={styles.cardInner}>
+                {members.map((m) => (
                   <TouchableOpacity
+                    key={m.id}
                     onPress={() => setSelectedImage(m.url)}
                     activeOpacity={0.9}
-                    style={styles.photoContainer}
+                    style={styles.card}
                   >
-                    <Image
-                      source={{
-                        uri: m.url || 'https://via.placeholder.com/150',
-                      }}
-                      style={styles.photo}
+                    <ImageBackground
+                      source={{ uri: m.url }}
+                      style={StyleSheet.absoluteFill}
+                      imageStyle={{ borderRadius: 16 }}
                       resizeMode="cover"
-                    />
-                    <View style={styles.fullscreenHint}>
-                      <Maximize2 size={12} color="white" />
-                    </View>
+                    >
+                      <LinearGradient
+                        colors={[
+                          'transparent',
+                          'rgba(0,0,0,0.45)',
+                          'rgba(0,0,0,0.88)',
+                        ]}
+                        style={styles.cardGradient}
+                      />
+                      <View style={styles.expandHint}>
+                        <Maximize2 size={13} color="rgba(255,255,255,0.85)" />
+                      </View>
+                      <View style={styles.cardContent}>
+                        <AppText style={styles.cardName} numberOfLines={1}>
+                          {m.name || 'Unnamed Minister'}
+                        </AppText>
+                        <View style={styles.cardBadge}>
+                          <BadgeCheck
+                            size={12}
+                            color="rgba(255,255,255,0.85)"
+                          />
+                          <AppText
+                            style={styles.cardBadgeText}
+                            numberOfLines={1}
+                          >
+                            {m.category || 'Minister'}
+                          </AppText>
+                        </View>
+                        {m.duration ? (
+                          <View>
+                            <AppText
+                              style={styles.cardDuration}
+                              numberOfLines={1}
+                            >
+                              {m.duration}
+                            </AppText>
+                          </View>
+                        ) : null}
+
+                        {m.contact ? (
+                          <View style={styles.cardContact}>
+                            <Phone size={11} color="rgba(255,255,255,0.6)" />
+                            <AppText style={styles.cardContactText}>
+                              {m.contact}
+                            </AppText>
+                          </View>
+                        ) : null}
+                      </View>
+                    </ImageBackground>
                   </TouchableOpacity>
-
-                  <View style={styles.info}>
-                    <AppText style={[styles.name, { color: colors.text }]}>
-                      {m.name ||
-                        translations.unnamedMinister ||
-                        'Unnamed Minister'}
-                    </AppText>
-
-                    <View style={styles.detailRow}>
-                      <BadgeCheck
-                        size={14}
-                        color={colors.primary}
-                        style={styles.icon}
-                      />
-                      <AppText
-                        style={[styles.value, { color: colors.textSecondary }]}
-                      >
-                        {m.category || translations.ministerLabel || 'Minister'}
-                      </AppText>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                      <Calendar
-                        size={14}
-                        color={colors.textSecondary}
-                        style={styles.icon}
-                      />
-                      <AppText
-                        style={[styles.value, { color: colors.textSecondary }]}
-                      >
-                        {translations.devotedLabel || 'Devoted'}:{' '}
-                        {m.dateDevoted || 'N/A'}
-                      </AppText>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                      <Phone
-                        size={14}
-                        color={colors.textSecondary}
-                        style={styles.icon}
-                      />
-                      <AppText
-                        style={[styles.value, { color: colors.textSecondary }]}
-                      >
-                        {m.contact ||
-                          translations.contactNotProvided ||
-                          'Contact not provided'}
-                      </AppText>
-                    </View>
-                  </View>
-                </View>
+                ))}
               </View>
             ))}
           </View>
+
           <View style={{ height: 40 }} />
         </ScrollView>
 
@@ -215,7 +244,7 @@ export default function MinistersGallery() {
         >
           <View style={styles.modalContainer}>
             <TouchableOpacity
-              style={styles.modalOverlay}
+              style={StyleSheet.absoluteFill}
               activeOpacity={1}
               onPress={() => setSelectedImage(null)}
             >
@@ -249,7 +278,9 @@ export default function MinistersGallery() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  headerSection: { marginBottom: 16 },
+
+  // Header
+  headerSection: { marginBottom: 8 },
   bannerContainer: { overflow: 'hidden', height: 120 },
   bannerImage: { width: '100%', height: '100%', justifyContent: 'flex-end' },
   bannerGradient: { ...StyleSheet.absoluteFillObject },
@@ -284,46 +315,105 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
   },
   searchInput: { flex: 1, paddingVertical: 14, fontSize: 16 },
-  listContainer: { marginTop: 20 },
+
+  // Category groups
+  listContainer: { paddingHorizontal: 16, marginTop: 24 },
+  categorySection: { marginBottom: 28 },
+  categoryHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  categoryAccent: { width: 4, height: 18, borderRadius: 2, marginRight: 10 },
+  categoryHeader: { fontSize: 15, fontWeight: '700', letterSpacing: 0.2 },
+
   card: {
-    marginHorizontal: 16,
-    marginBottom: 16,
     borderRadius: 16,
     overflow: 'hidden',
-    elevation: 4,
+    marginBottom: 14,
+    height: 320,
+    backgroundColor: '#1a1a2e',
   },
-  topBorder: { height: 4, width: '100%' },
-  cardInner: { padding: 16, flexDirection: 'row', alignItems: 'center' },
-  photoContainer: { position: 'relative' },
-  photo: { width: 90, height: 110, borderRadius: 12 },
-  fullscreenHint: {
+  cardGradient: {
     position: 'absolute',
-    bottom: 6,
-    right: 6,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    padding: 4,
-    borderRadius: 10,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '65%',
   },
-  info: { flex: 1, marginLeft: 18, justifyContent: 'center' },
-  name: { fontSize: 17, fontWeight: '800', marginBottom: 8 },
-  detailRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
-  icon: { marginRight: 8 },
-  value: { fontSize: 13, fontWeight: '500' },
-
-  // Modal Styles
+  expandHint: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    padding: 6,
+    borderRadius: 8,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  cardContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 14,
+  },
+  cardName: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  cardBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    marginBottom: 6,
+  },
+  cardBadgeText: {
+    color: 'rgba(255,255,255,0.88)',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  cardContact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  cardContactText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 12,
+  },
+  cardDuration: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: 11,
+    marginBottom: 5,
+  },
+  // Modal
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'black',
   },
-  modalOverlay: { ...StyleSheet.absoluteFillObject },
-  fullImage: { width: width, height: height * 0.8 },
+  fullImage: { width, height: height * 0.8 },
   closeButton: {
     position: 'absolute',
     top: 50,
     right: 25,
     zIndex: 10,
-    padding: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

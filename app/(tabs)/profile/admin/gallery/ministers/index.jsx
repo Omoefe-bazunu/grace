@@ -17,10 +17,22 @@ import { TopNavigation } from '../../../../../../components/TopNavigation';
 import { apiClient } from '../../../../../../utils/api';
 import { X, CheckCircle, User } from 'lucide-react-native';
 
+const CATEGORIES = [
+  'Founding Instrument',
+  'Past Presidents',
+  'Past Chairman of Executive Board',
+  'Executive Board Members',
+  'Spiritual Advisers',
+  'Senior Ministers',
+  'Intermediate Ministers',
+  'Junior Ministers',
+];
+
 export default function UploadMinisters() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
-  const [dateDevoted, setDateDevoted] = useState('');
+  const [rank, setRank] = useState('');
+  const [duration, setDuration] = useState('');
   const [contact, setContact] = useState('');
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -91,16 +103,18 @@ export default function UploadMinisters() {
         type: 'minister',
         name: name.trim(),
         category: category.trim(),
-        dateDevoted: dateDevoted.trim(),
+        duration: duration.trim(),
         contact: contact.trim(),
+        rank: rank ? parseInt(rank, 10) : 999,
         url: fileUrl,
       });
 
       Alert.alert('Success', 'Minister profile created successfully!');
       setName('');
       setCategory('');
-      setDateDevoted('');
+      setDuration('');
       setContact('');
+      setRank('');
       setFile(null);
       setUploadProgress(0);
     } catch (err) {
@@ -130,24 +144,55 @@ export default function UploadMinisters() {
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Category / Title *</Text>
+          {CATEGORIES.map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              onPress={() => setCategory(cat)}
+              style={[
+                styles.categoryOption,
+                category === cat && styles.categorySelected,
+              ]}
+            >
+              <View
+                style={[
+                  styles.radioCircle,
+                  category === cat && styles.radioSelected,
+                ]}
+              >
+                {category === cat && <View style={styles.radioDot} />}
+              </View>
+              <Text
+                style={[
+                  styles.categoryText,
+                  category === cat && styles.categoryTextSelected,
+                ]}
+              >
+                {cat}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Duration / Years in Ministry</Text>
           <TextInput
-            value={category}
-            onChangeText={setCategory}
-            placeholder="e.g. Senior Minister, Intermediate Minister"
+            value={duration}
+            onChangeText={setDuration}
+            placeholder="e.g. 1995 – Present"
             style={styles.input}
           />
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Date Devoted</Text>
+          <Text style={styles.label}>Display Order / Rank</Text>
           <TextInput
-            value={dateDevoted}
-            onChangeText={setDateDevoted}
-            placeholder="YYYY-MM-DD"
+            value={rank}
+            onChangeText={setRank}
+            placeholder="e.g. 1 (lower = appears first)"
+            keyboardType="number-pad"
             style={styles.input}
           />
         </View>
-
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Contact Number</Text>
           <TextInput
@@ -209,6 +254,48 @@ export default function UploadMinisters() {
 
 const styles = StyleSheet.create({
   container: { padding: 20, gap: 16 },
+  categoryOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#fff',
+    marginBottom: 6,
+  },
+  categorySelected: {
+    borderColor: '#007AFF',
+    backgroundColor: '#EFF6FF',
+  },
+  categoryText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  categoryTextSelected: {
+    color: '#007AFF',
+    fontWeight: '500',
+  },
+  radioCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: '#ccc',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioSelected: {
+    borderColor: '#007AFF',
+    backgroundColor: '#007AFF',
+  },
+  radioDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#fff',
+  },
   inputGroup: { gap: 8 },
   label: { fontWeight: 'bold', fontSize: 14 },
   input: {
