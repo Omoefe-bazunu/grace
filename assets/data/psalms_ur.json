@@ -1,117 +1,126 @@
 [
   {
     "psalm_number": "1",
-    "title": "BLESS-ED IS THE MAN",
+    "title": "UNE 1",
     "subtitle": null,
-    "meter": "8.6.8.6",
+    "meter": null,
     "stanzas": [
       {
         "number": 1,
-        "text": "BLESS-ED is the man that/walketh/not; in\nthe coun/sel of /the un/godly;\n\nNor standeth in the way/of/ sin/ners:\nnor sitteth in the / seat / of / the / scorn / ful."
+        "text": "Ebruphiọ k'ohwo ro / jẹ yan / vw'e; vu r'ohri'i / hwo r i / j'Ọ/ghẹ/nẹ riẹn;"
       },
       {
         "number": 2,
-        "text": "But his delight is in the law/of/the/ LORD:\nAnd in His law doth he/meditate/day/and/night."
+        "text": "Ro je mudia'idjerhe / rui/mwe/mwu: ro je kidi'ẹdia / tu'i / j' Ọ/ghẹ/nẹ / fia."
       },
       {
         "number": 3,
-        "text": "And he shall be like a tree, planted by the/\nriv/ers/of/water; that bringeth forth/his/fruit/\nin/his/season;\n\nHis leaf also shall/not/wi/ther: and whatsoever/\nhe/doeth/shall/prosper."
+        "text": "Y'omavwerhovwẹ rọe'evu r'u/rhi' Ọ'O/VWO/RI:\nVu r'urhi Rọe y'o de / roro. u/vo / v'a/son."
       },
       {
         "number": 4,
-        "text": "The ungodly/are/not/so; but are like the chaff\nwhich /the wind/dri.veth/ a /way."
+        "text": "Kọ cha dia ker'urhe ra; kọn vwiy'oma / r'irhie / \nrẹ / ame; rọ m'emamọ / rọ/ye / vw'ọ/ke / rọye."
       },
       {
         "number": 5,
-        "text": "Therefore, the ungodly shall not stand/in/the\njudgement; nor sinners in the con/gre.ga.tion/\nof/the / righteous."
+        "text": "Ẹbe rọye che / vwio/ro / rẹ: vi kemukemu / ro / ruẹ che / vw'e/bruphiọ."
       },
       {
         "number": 6,
-        "text": "For the LORD knoweth the way /of / the /\nrighteous: but the way of the / un/god/ly shall\nperish."
+        "text": "Iruimwemwu / di'e/tiọe / rẹ; je họhọ ehẹ rẹ / odju / ro: djuẹ / ku/fia."
+      },
+      {
+        "number": 7,
+        "text": "Tiọena, ruimwemwu che mudia rẹ / vw'e/ vu'ẹ/djeguo; yẹ iruimwemwu vw'ọ / ghwẹ.ko.ko / rẹ / e/vwata."
+      },
+      {
+        "number": 8,
+        "text": "Y'Ọrovwori ri' idjerhe / ri / tu'e/vwata: ẹkẹvo'idjerhe / rui/mwe/mwu / cha ghwọrọ."
       }
     ],
     "category": ["Psalms"],
     "audio": ""
   },
+
   {
     "psalm_number": "24",
-    "title": "THE EARTH IS THE LORD'S",
+    "title": "UNE 24",
     "subtitle": null,
-    "meter": "",
+    "meter": null,
     "stanzas": [
       {
         "number": 1,
-        "text": "THE earth is the LORD'S and / the fullness/\nthere/of: The world / and they / that / dwell/\nthere/in."
+        "text": "Kpọ na'ỌROVWOHWO,v'o/bo erọ'e /jo/bi;  Akpọ / na. ve / re / di'e/vu / rọe.  "
       },
       {
         "number": 2,
-        "text": "For He hath founded it/ up/on / the / seas:\nand established / it up/on / the floods."
+        "text": "Die nẹ Ọye ma rọ / vw'e/nu / r'urhie; O de vwo mu / vwiy'e/nu / r'oghwe."
       },
       {
         "number": 3,
-        "text": "Who shall ascend into the Hill / of / the LORD?\nOr who shall stand / in/His / ho/ly/ place?"
+        "text": "O no che kpẹ Ugbenu r'Ọ/RO/VWOHWO?\n    No che muẹdia / vwi'a/dia / fuan/fon / Rọe?"
       },
       {
         "number": 4,
-        "text": "He that hath clean hands / and a / pure /heart\nWho hath not lifted up his life unto vanity,\nnor / sworn / de/ceit/fully."
+        "text": "R'abọ rọe fonro /v'ẹ.wẹn'ọ/fuan/fon: \n    Rọ je kparoma rọye vwiyẹ emu'ifefe-e, yẹ / du/ vw'i/yo/rin'efia-a."
       },
       {
         "number": 5,
-        "text": "He shall receive the blessing / from / the LORD:\nand righteousness from the LORD of /His / Sal/\nva/tion."
+        "text": "Ọ chamr'ebruphiọ'obọ' Ọ/RO/VWOHWO:      V'evuẹfuọn vw'obọ r'ỌROVWO/ HWO / ro / vw'a/rhọ."
       },
       {
         "number": 6,
-        "text": "This is the generation of / them that/seek /Him:\nThat seek / thy / face / O / Ja/cob."
+        "text": "Ọ nana yẹ uvwiẹ rẹ i/tu. re / guọ/n'Ọ:\n     Guọn'o/pha/ro / Wẹ Ja/kọb."
       },
       {
         "number": 7,
-        "text": "Lift up your heads O ye gates, and be ye\nlifted up ye / e.ver/last/ing / doors:\nAnd the KING of / glo/ry / shall / come / in"
+        "text": "Wa kpar'uyoin kpenu wa, inurhoro we vrẹ wa / ẹ. chẹ / ri / bẹ/dẹ.\n     K'OVIE r'urin/rin / cha / ru'u/we/vwin."
       },
       {
         "number": 8,
-        "text": "Who is / the KING / of / glory? JEHOVAH\nStrong and mighty, the LORD / migh/ty / in\nba/ttle."
+        "text": "O no'O / VIE r'u/rin/rin na? JEHOVAH \n     Ganre v'ẹgba, VWORI / r'ẹ/gba / vw'o/ fo/vwin."
       }
     ],
     "category": ["Psalms"],
     "audio": ""
   },
   {
-    "psalm_number": "Drawn from Psalm 84",
-    "title": "HOW LOVELY ARE THY TABERNACLES",
-    "subtitle": "May be sung during the Feast of Tabernacles",
-    "meter": "",
+    "psalm_number": "84",
+    "title": "(A sa suọ vwẹ Ẹdẹ rẹ Ofuvwegbe) (R'Areyọ nẹ ọbe rẹ Une 84)",
+    "subtitle": "(A je sa suọ vwẹ Orẹ rẹ Uwevwin r'Ọghẹnẹ)",
+    "meter": null,
     "stanzas": [
       {
         "number": 1,
-        "text": "HOW lovely are Thy ta/ber/na/cles:\nJE/HO/VAH / God / of / hosts."
+        "text": "MAVỌ Uwevwin Wẹ / yo/vwi/rin:\n      J'O/VAH'Ọ / Ghẹ/nẹ'O/fo/vwin."
       },
       {
         "number": 2,
-        "text": "My heart longeth yea / e.ven / clea/ veth:\nFor / Thy / Courts / O / my / LORD."
+        "text": "Ẹwẹn mẹ guọnọ / tobọ / gba/ne:\n      K'U/wein / Wẹ / Ọ'O/VWO/VWE."
       },
       {
         "number": 3,
-        "text": "Here shall I keep Thy / tes/ti/monies: in /Thy/\nTa/ber/na/cles / O / LORD."
+        "text": "Etinẹ me da / yọn/r'i/rhi Wẹ:\n      Vw'e/vu'U/wein / Wẹ/ Ọ/RO/VWO/RI."
       },
       {
         "number": 4,
-        "text": "Which shall never / be / destroyed: the de/sire/\nof / man/kind."
+        "text": "Ra cha sa guọ/ghọ / bẹdẹ-ẹ\n      Ọda/vwẹn / r'o/hwo'a/kpọ."
       },
       {
         "number": 5,
-        "text": "Thy Tabernacle shall / be / in / peace; Through / all/\nthe / world / a/round:"
+        "text": "Uwevwin Wẹ cha dia / vw'u/fuo/ma:\n     Wa'a/kpọ / na / e/jo/bi."
       },
       {
         "number": 6,
-        "text": "Proclaiming Thy righteousness / and / Thy / glory\nO / LORD / our / Strength / and Shield."
+        "text": "Vwo ghwoghwo ẹfuọn Wẹ vẹ/u/rin/rin /We:\n     Ẹ/gba / v'E/rhu/rho  mẹ."
       },
       {
         "number": 7,
-        "text": "In secret of Thy Tabernacle / will / I / dwell: To/\npraise / Thee / e/ver / more;"
+        "text": "Vwẹ odjavwọ rẹ  Uwevwin  Wẹ: me/dia/de:  Ji/r'U/we/ bẹ/vwẹ/dẹ."
       },
       {
         "number": 8,
-        "text": "With loving sacrifices of Thy praise; In per/\nfect / peace and love."
+        "text": "Vẹ ẹga r'ẹguọnọ r'e/ji/ro / Wẹ:\n     V'u/fuo/ma / v'ẹ/guọ/nọ."
       }
     ],
     "category": ["Psalms"],
@@ -119,57 +128,57 @@
   },
   {
     "psalm_number": "95",
-    "title": "O COME LET US SING UNTO THE LORD",
+    "title": "UNE 95",
     "subtitle": null,
-    "meter": "",
+    "meter": null,
     "stanzas": [
       {
         "number": 1,
-        "text": "O come let us sing / un.to / the / LORD: Let\nus make a joyful noise to / the Rock of / our /\nSalvation."
+        "text": "Wa mọ ra su'ine / k'Ọ.ro/vwo/hwo: We je ru'edo\n     r'aghọghọ k'O/ra.gha r'A/rhọ / r'a/vware."
       },
       {
         "number": 2,
-        "text": "Let us come before His presence / with / thanks/---\ngiving:\nAnd make a joyful noise / unto / Him / with /\npsalms."
+        "text": "We je ma rhi'obaro Rọye/ vẹ / ẹ/---kpẹvwẹ:\n     Ji ru'edo r'aghọghọ / vwọ / Kẹ / vẹ / i/ne."
       },
       {
         "number": 3,
-        "text": "For JEHOVAH / is. a / great / GOD: And a\ngreat /KING / a/bove / all /gods."
+        "text": "Die JOHOVAH'Ọ / GHẸ.NẸ / ro/de; \n     OVIE rọ / do / vr'e/ghẹ/nẹ'e/je. "
       },
       {
         "number": 4,
-        "text": "In His Hands are the deep pla/ces of / the/\nearth: the strength of / the / hills / is His /also."
+        "text": "Obọ Rọe y'asa'ikoko/do r'a/kpọ'e / pha:\n     Ẹgba rẹ / i/gbe/nu na / je Rọe."
       },
       {
         "number": 5,
-        "text": "The sea is His and / He made it: And His Hands / formed / the dry- / lands."
+        "text": "Abadi'ọ Rọye / Ye / ma.rọ; \t\n     Abọ Rọe / M'o/tọ ya-/ya."
       },
       {
         "number": 6,
-        "text": "O come let us wor/ship, and / bow down: Let us kneel / be.fore / JE.HO.VAH / our / Maker."
+        "text": "E wa mọ r'a ga / re, shi/guẹ / Kẹ:\n     Je shiguẹ'o / ba.ro / ri. J'O.VAH /  rọ / M'ohwo."
       },
       {
         "number": 7,
-        "text": "JEHOVAH / is / our / God: And we are the\npeople of His pasture, and / the / sheep / of/\nHis / Hand."
+        "text": "J'OVAH'Ọghẹ/nẹ' a/vwa/re; Avware ke rha'ihwo\n       r'egbri Rọye,v'i/go/dẹ / r'o/bọ / Rọe."
       },
       {
         "number": 8,
-        "text": "Today, if ye will / hear / His / voice /Har/d-en\nnot / your /hearts:"
+        "text": "Nonẹ, we de ny'u/rhu/ru / Rọe / we / vw'-- \n     Udu'ọ/ga/ga-an:"
       },
       {
         "number": 9,
-        "text": "As in the day pro/voca/tion; And as in\nday of temp/ta/tion / in / the / wil.der.ness."
+        "text": "Ker'ẹdẹ a da / mr'ẹd'o/phu; Vẹ ẹdẹ rẹ ọda/vwi/\n      ni / vwẹ / e/vu. r'a.to."
       },
       {
         "number": 10,
-        "text": "When your fa/thers temp/ted / me: Proved / me/\nand / saw / my / works."
+        "text": "R'esẹ'ovwa / vwọ. da'o/vwẹ / ni: Fuẹ/r' O/vwẹ\n      / mr'i/ruo / Mẹ."
       },
       {
         "number": 11,
-        "text": "Forty long years, was I grieved with this ge/\nne.ra.tion / and / said: It is the people that/\ndo / err / in their / hearts:"
+        "text": "Ikpe'ujuvẹ, ivu miovwe kpa'uvwiẹ / na. na. me /\n      da / ta: Na'ihwo na ri ru'oru/ chọ / vw'ẹ/wẹn\n      ra/yẹ."
       },
       {
         "number": 12,
-        "text": "And they have / not known / my / ways:\nUnto whom I sware in my wrath, that they\nshould not / en/ter/ in to / my / rest."
+        "text": "Y'aye ji / ri'i.dje/rhe / Mẹ: \n      Ri mi duvw'iyorin vw'ophu, n'aye cha ruẹ / u/ro./vwo.ma / mẹ--/ẹ"
       }
     ],
     "category": ["Psalms"],
@@ -177,41 +186,41 @@
   },
   {
     "psalm_number": "121",
-    "title": "I WILL LIFT UP MINE EYES",
+    "title": "UNE 121",
     "subtitle": null,
-    "meter": "",
+    "meter": null,
     "stanzas": [
       {
         "number": 1,
-        "text": "I will lift up mine eyes/ un.to/ the/ hills;\nFrom/ whence/ co/meth/ my/ help."
+        "text": "Me cha kpa'ẹro kpenu / vwo n'i/gbe/nu;\n    Sa'u/kẹ/cha / mẹ / nẹ /cha."
       },
       {
         "number": 2,
-        "text": "My help cometh/ from/ the/ LORD:\nWhich / made/ hea/ven/ and / earth."
+        "text": "Kẹcha mẹ n'Ọ'O/VWO/RI / cha:\n    Rọ / m'o/dju/vwu / v'a/kpọ."
       },
       {
         "number": 3,
-        "text": "He will not suffer thy foot / to / be/ moved;\nHe that keepeth/ thee/ will/ not/ slum/ber."
+        "text": "Ọ cha rhọvwa nẹ owọ / wẹ / ghwie / rẹ: \n    Rọ vwẹro te / we / cha / vwe/rhẹ / rẹ."
       },
       {
         "number": 4,
-        "text": "Behold He / that kee/peth / Israel;\nShall/ nei/ther . slum/ber/ nor/ sleep."
+        "text": "Nighe Ọ/ rọ vwẹ/ro / t'Izrẹl; \n    Y'o/ma/rhọ / yẹ / vwe/rhẹ / rẹ."
       },
       {
         "number": 5,
-        "text": "The LORD/ is/ thy keeper;\nThe LORD is thy/shade/ up/on/ thy /right hand."
+        "text": "VWORI / ye'Ọ/sẹro wẹ;\n    Ọrovwohwo / ye'o/phie / wẹ /vw'o/bọ/rhe."
       },
       {
         "number": 6,
-        "text": "The sun shall not smite/ thee/ by/ day\nNor/ the---/moon by/ night."
+        "text": "Ọnre se mu we / vw' u/vo / rẹ; \n    Yẹ / me---/ra/vwen' a/so-o."
       },
       {
         "number": 7,
-        "text": "The LORD shall preserve/ thee/ from/ evil\nHe/ shall/ pre/serve thy / soul."
+        "text": "VWORI cha sẹro we / n'e/brabra\n    Ọ / cha / sẹ/ro' arhọ / wẹ;"
       },
       {
         "number": 8,
-        "text": "The LORD shall preserve thy going out, and/\nthy co/ming / in:\nFrom this time forth and/ even/for/e/ver/more."
+        "text": "Ọrovwohwo cha sẹro wẹ ru'o.ta/fe ru'u/we/vwin:\n    N'ọke nana yan/ra rhi/rin / bẹ/vwẹ/dẹ."
       }
     ],
     "category": ["Psalms"],
@@ -219,113 +228,113 @@
   },
   {
     "psalm_number": "136",
-    "title": "O GIVE THANKS UNTO THE LORD",
+    "title": "UNE 136",
     "subtitle": null,
-    "meter": "",
+    "meter": null,
     "stanzas": [
       {
         "number": 1,
-        "text": "O give thanks unto the LORD; for He is good:\nFor His mercy endureth for ever."
+        "text": "E vw'akpẹvwẹ k'Ọghẹnẹ, die / O /yo/ma: \n     Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 2,
-        "text": "O give thanks unto the God of gods:\nFor His mercy endureth for ever."
+        "text": "E vw'akpẹvwẹ k'Ọghẹ/nẹ'e/ghẹ/nẹ:\n     Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 3,
-        "text": "O give thanks to the Lord of lords:\nFor His mercy endureth for ever."
+        "text": "E kpẹvw'Ọrovwori / r'i/vwo/ri:\n     Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 4,
-        "text": "To Him who alone doeth great wonders:\nFor His mercy endureth for ever."
+        "text": "Vwọ k'Ọye'ọvo ro / ru'o/kp'i/gbunu:\n     Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 5,
-        "text": "To Him that by wisdom made the heavens:\nFor His mercy endureth for ever."
+        "text": "Vwọ Kẹ rọ vw'iroro / mẹ i/djuvwu:\n      Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 6,
-        "text": "To Him that stretched out the earth above the waters:\nFor His mercy endureth for ever."
+        "text": "Vwọ Kẹ rọ ri'akpọ na kpavwẹ/e/nu/ r'ame:      \n      Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 7,
-        "text": "To Him that made great lights:\nFor His mercy endureth for ever:"
+        "text": "K' Ọrọ m'u/kpẹ / ro/de:\n      Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 8,
-        "text": "The sun to rule by day:\nFor His mercy endureth for ever:"
+        "text": "R'ọren vwo / su / vw'u/vo:\n      Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 9,
-        "text": "The moon and stars to rule by night:\nFor His mercy endureth for ever:"
+        "text": "Meravwe v'isio / vwo / su'a/so:\n      Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 10,
-        "text": "To Him that smote Egypt in their firstborn:\nFor His mercy endureth for ever:"
+        "text": "Vwọ Kẹ ro hw'emọekpa/ko vw'I/jip/ti:\n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 11,
-        "text": "And brought out Israel from among them:\nFor His mercy endureth for ever:"
+        "text": "Ro si'emọ r'Izrẹl / n'ohri / r'a/ye:\n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 12,
-        "text": "With a strong hand, and with a stretched out arm:\nFor His mercy endureth for ever."
+        "text": "Vw'obọ gagan, kugb'obọ / rọ / riẹ / phia:\n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 13,
-        "text": "To Him which divided the Red Sea into parts:\nFor His mercy endureth for ever:"
+        "text": "Vwọ Kẹ rọ ghar'urhie'ọvwavware / vwi/y'ẹ/ko:\n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 14,
-        "text": "And made Israel to pass through the midst of it:\nFor His mercy endureth for ever:"
+        "text": "Rọ je nẹrh'Izrẹl wan vrẹ u/vwre / rọ/ye: \n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 15,
-        "text": "But overthrew Pharaoh and his host in the Red sea:\nFor His mercy endureth for ever."
+        "text": "Jo hwẹ Ferho v'usu rọe vw'ev'U/rhi'\n       Ọvwa/vwa/re:\n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 16,
-        "text": "To Him which led His people through the wilderness:\nFor His mercy endureth for ever."
+        "text": "Vwọ Kẹ ro suẹ iwho Rọye wa'e/vu / r'a/to:       \n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 17,
-        "text": "To Him which smote great kings:\nFor His mercy endureth for ever:"
+        "text": "K' Ọro hw'i/vie / ri/de:\n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 18,
-        "text": "And slew famous kings:\nFor His mercy endureth for ever:"
+        "text": "Ji hw'i/vie'i/ti/tẹ:\n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 19,
-        "text": "Sihon king of the Amorites:\nFor His mercy endureth for ever:"
+        "text": "Sihọn / o/vie rẹ / Amorhait:\n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 20,
-        "text": "And Og the king of Bashan:\nFor His mercy endureth for ever:"
+        "text": "Vi Ọg, o/vie / ri /Bashan:\n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 21,
-        "text": "And gave their land for an heritage:\nFor His mercy endureth for ever:"
+        "text": "Je rey'otọ ra/ye vwọ / ghar'u/ku:\n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 22,
-        "text": "Even an heritage unto Israel His servant:\nFor His mercy endureth for ever."
+        "text": "Je tobọ vwo ru'uku vwọ k'I/zrẹl o/di/bo Rọe:       \n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 23,
-        "text": "Who remembered us in our low estate:\nFor His mercy endureth for ever:"
+        "text": "Rọ karovwi'avwa/r'evu'ẹ/dia'o/kpotọ:     \n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 24,
-        "text": "And hath redeemed us from our enemies:\nFor His mercy endureth for ever."
+        "text": "Ji si'avware n'o/bọ'i/vwi/ghrẹ 'avware:\n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 25,
-        "text": "Who giveth food to all flesh:\nFor His mercy endureth for ever."
+        "text": "Rọ vw'emu k'i/hwo'e/jo/bi:\n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       },
       {
         "number": 26,
-        "text": "O give thanks unto the God of heaven:\nFor His mercy endureth for ever."
+        "text": "E vw'akpẹvwẹ k'Ọghẹ/nẹ / r'o/djuvwu:\n       Die n'a/roẹdọ / Rọe / erọ / bẹ/vwẹdẹ."
       }
     ],
     "category": ["Psalms"],
@@ -333,53 +342,53 @@
   },
   {
     "psalm_number": "TE DEUM",
-    "title": "PRAISE YE THE LORD",
+    "title": "TI DIUM",
     "subtitle": null,
-    "meter": "",
+    "meter": null,
     "stanzas": [
       {
         "number": 1,
-        "text": "PRAISE / ye / the / LORD: JEHOVAH/\nGOD / our KING. Praise His Begotten Son/\nJe/sus / Christ. Me/dia/tor / of / mankind."
+        "text": "JI/R'Ọ'O/VWO/HWO: J'OVAH'Ọ Ghẹ /nẹ'a/vware.\n      Jir'Ọmọ Rọe Ghare / Je/su / Krist: O/vwra/gba/ r'o/hwo'akpọ."
       },
       {
         "number": 2,
-        "text": "JEHOVAH / is a / great GOD: And a great/\nKING / above / all gods.\nIt is He who hath made / heaven / and / earth:\nand / all / good / things / there /in."
+        "text": "J'OVAH ye'Ọ/GHẸNẸ / ro/de: VIE rode / rọ /vr'e/ghẹ/ne'eje. \n      Ọye Ọ rọ mẹ O/djuvwu / v'a/kpọ: v'e/ mu'e/je'i/yo/vwi/rin."
       },
       {
         "number": 3,
-        "text": "God's / Kingdom / has come: where / there /is/\nhope / and / life.\nIn His Kingdom / of / right/eous/ness: those who\ntrust in Him, shall be blest / with / ever/last/ing\nlife."
+        "text": "Vie'Ọ/ghẹnẹ / rhe re: sa'ẹ / roe/phiọ / v'a/ rhọ'e/pha. \n      Vw'evu'Uvie r'ọ/fuan/fon / Rọ/ye: hwo re\n      vwẹroso'Ọ, cha ri'ere/re / r'arhọ /ri / bẹdẹ "
       },
       {
         "number": 4,
-        "text": "Thy Kingdom / O / LORD: is an / everlast/\ning / King/dom.\nAnd / Thy do/mi/nion: endureth throughout/\nall /ge/ne/ra/tion."
+        "text": "Vie Wẹ'ỌRO/VWO/HWO: Ọ ye / Uvie ro/ j' o/ba'e/vwo.\n      Vẹ / isue/su / Wẹ: ọ erọ bẹdẹ / vw'ọ/ ke / na'e/jo/bi."
       },
       {
         "number": 5,
-        "text": "We shall speak of the glory / of / Thy / Kingdom:\nand / talk / of / Thy--- / Power.\nAnd make known to the sons of men / Thy\nmighty / acts; and the glorious / Majes/ty / of/\nThy / Kingdom."
+        "text": "Ma cha ta kpavw'urinrin / rẹ / U/vie Wẹ: je / to/ta/ r'---Ẹ/gba Wẹ.\n      Ji dje phia k'emọ r'ihwo'akpọ/ ruo'igbu/nu / Wẹ:\n      kugbẹ urin/rin rẹ / Ọ/rho / r'U/vie Wẹ."
       },
       {
         "number": 6,
-        "text": "Thou art righteous / in all / Thy ways: and/\nholy / in / all / Thy / works.\nThou art night unto all / that call / on / Thee: in/\ntruth / and / right/eous/ness."
+        "text": "Wẹ ọvwata / djerhe / Wẹ'e / je: v'a/fonre / vw'i/ruo / Wẹ'e / je. \n      Wo siẹ kẹrẹ eje / e ri / se / We: vw' u/yo/ta / kugb'ẹ/fuọn."
       },
       {
         "number": 7,
-        "text": "Thou fulfilleth the desire / of them / that / fear\nThee: and heareth / their cry / and / will / save/\nthem.\nThou preserveth / them that / love / Thee: but\nall the wi/cked / will / Thou / destroy."
+        "text": "Wẹ ye yi ruẹ ọhọre r'i/hwo re / djo/shọ\n     Wẹ: ji ny'oviẹ / raye/ ji / si/vw'a/ye\n     Wọ sẹro re / re guọ/n'O/wẹ: j'iruimwemwu /yo / Wọ / cha /  guọghọ."
       },
       {
         "number": 8,
-        "text": "Jesus Christ has come / to judge / the / world;\nin equity / by His / Gos/pel / of / peace."
+        "text": "Jesu Krist rhi re / ri gu'a/kpọ / na: vw'ẹdjeguo'uyo/ta w'I/ye/si/ri / Rọe.  "
       },
       {
         "number": 9,
-        "text": "O LORD / the King / of / Salem: send Thy light/\nand / let / it / lead / me."
+        "text": "ROVWO/HWO O/vie'U/fuoma: j'ukpẹ Wẹ / rhe / ro / ri / su / vwe."
       },
       {
         "number": 10,
-        "text": "The end of all / things is / at / hand: be ye there-\nfore sober / and watch / un/to- / prayer. Above all\nthings, have fervent charity / amongst / your/selves:\nfor charity shall cover / the mul/ti/tude / of / sins."
+        "text": "Oba r'emu'e/je kẹ/ri/ re: gba rha vwẹro totọ / \n       wa rhẹ/rẹ / v'ẹ-/rhovwo.  Rọ ma kenu, we gbe \n       vw'okp'ẹguọnọ / vw'omo/ ma' o/vwa: die n'\n       ẹguọnọ che rhurhẹ / imwue/mwu / r'i/bue/bu."
       },
       {
         "number": 11,
-        "text": "Praise JEHOVAH in the beauty / of His / ho/li\nness: For in His Kingdom there / are a/bun/dant/\nBlessings.\nHail JEHOVAH and /Je/sus / Christ. Hail / them\nfor / e/ver / more."
+        "text": "Jiri JEHOVAH vu'erhuwu / r'ọfuan/fon/ Rọye:Die n'evu r'Uvie Rọe / Erhu/vwu'i/bue/bu'erọ\n       Yeri J'OVAH vi / Je/su / Krist, Ye/r'aye/ bẹ/vwẹ/dẹ."
       }
     ],
     "category": ["Psalms"],
@@ -387,45 +396,45 @@
   },
   {
     "psalm_number": "Drawn from 1st Chronicles 29:11-19",
-    "title": "THINE JEHOVAH IS THE GREATNESS",
+    "title": "R'Areyerọ nẹ Ọbe rẹ 1 Ikun r'Ivie 29:11-19",
     "subtitle": null,
-    "meter": "",
+    "meter": null,
     "stanzas": [
       {
         "number": 1,
-        "text": "THINE JEHOVAH / is / the / greatness: And / the\nPower / and / the / glory.\nAnd the Victory / and / the / Majesty. For all full-\nness in / heaven / and / earth / is /Thine."
+        "text": "OWẸ JEHO/VAH / yi / vw'Ọrho: Ku/gbẹ Ẹgba\n      / vwọ / b'u/rinrin.\n      V'Obọẹkparọ / ku/gb'Ọ/rho Rode. Die'orugba'eje\n      vw'o/djuvwu / v'a/kpọ / ọ / Wẹ."
       },
       {
         "number": 2,
-        "text": "Thine is the King/dom / O / LORD! And Thou\nart exalted / as / head / a/bove / all.\nBoth riches and ho/nour come / from / Thee.\nAnd Thou / reig/neth / o/ver / all."
+        "text": "Ọ Wẹ Uvie / na'Ọ'O/VWO/RI! Yẹ Owẹ me kpenu \n      / ki/r'O/su / vr'e/je.\n     T'efe v'ọghọ'obọ / Wẹ yi / nẹ / cha. J'Owẹ / yi / ro/ su'e/jo/bi."
       },
       {
         "number": 3,
-        "text": "Now therefore our God / we thank / Thee.\nAnd / praise / Thy / glo/rious / Name.\nBut who am I and / what is / my / people:\nThat we should be able to offer, so willingly/\naf/ter / this- / sort."
+        "text": "Ghẹnẹ' avware ma / kpẹvw'O/wẹ. Ji/r'O/dẹ'u/rin/rin / Wẹ.\n      K'ono y'omẹ v'a/mono / y'i/hwo mẹ; R'avware\n      sa vw'ẹga ro n'ẹwẹn, rhe vwọ Kẹ ki/r'o/ka/ na- /na."
       },
       {
         "number": 4,
-        "text": "For all things / come / from / Thee. And of\nThine own / have / we / gi/ven / thee.\nFor we are stran/gers be/fore / Thee: and so-\njourners / as / were / all / our / fathers."
+        "text": "Mu'eje bọ / Wẹ / nẹ  / cha. N'evu r'Ọwẹ / ye /\n       ma / da / kẹ / Wẹ. \n      Die ma'erharha / vw'oba/ro / Wẹ: Kir'e'ukane /\n      ki/r'e/sẹ/ r'a/vware."
       },
       {
         "number": 5,
-        "text": "Our days on the earth are / as / a / shadow:\nAnd there / is none / a/bi/ding. O LORD our\nGod, all this store that / we have / pre/pared;\nTo build Thee a house in Thine Holy Name,\ncometh out of Thine hand / and / is / all / Thine/\nown."
+        "text": "Dẹ r'avware vw'akpọ / họ/h' u/hoho: Yo vw'ọ / \n      rọ sa / dia / bẹ/dẹ-ẹ, Ghẹnẹ'avware; eghwa eje /\n      na. ma / vwọ / rhe;\n      Vwọ t'uwein kẹ Wẹ vw'Od'Ọfuanfon Wẹ, Obọ Wẹ \n      y'i nu rhe / e/je / na / j'e / Wẹ."
       },
       {
         "number": 6,
-        "text": "I know also my God that Thou / triest the/\nheart: And has plea/sure / in / up/right/ness.\nAs for me in the uprightness / of / my / heart:\nI have willingly / off/ered / all / these / things."
+        "text": "Me je riẹn'n Ọghẹnẹ mẹ Wẹ / re davw'ẹ/wẹn; \n      Wo vw'oma/vwe/rhe / kpa'ẹ/-fuan/fuọn.\n      Vwọ kẹvwẹ vwẹ ẹfuanfuọn rẹ /ẹ/wẹn /mẹ: \n      Me vw'ẹwẹn mẹ vw'e/kua/kua /na'e/je/ rhe"
       },
       {
         "number": 7,
-        "text": "Now have I / seen / with / joy: Thy people/\nwhich / are / pre/sent / here;\nTo offer willingly un/to / Thee: In the beau/\nty / of / ho/li/ness."
+        "text": "Me mrẹ vw'a/ghọ/ghọ / re: Ihwo Wẹ / ri / ko/k'e/ti/nẹ;\n      Rhe vw'okẹ ro n'ẹwẹn  vwọ / kẹ / Wẹ; Vw'evu\n      r'e/rhu/vwu / r'ọ/fuan/fon."
       },
       {
         "number": 8,
-        "text": "O LORD God of Abraham, Isaac, Israel and/\nof / our / fathers! Keep / this / for / e-/ver.\nIn the thoughts of the hearts / of / Thy / people:\nAnd prepare / their / hearts / un/to /Thee."
+        "text": "E Ọghẹnẹ r'Ebraham, Aizik, Izrẹl, vẹ / e/sẹ'a/\n      vware! Yọn/rọ / na / bẹ-/dẹ.\n      Vw'iroro r'evu'ẹwẹn / rẹ / i/hwo Wẹ:\n      Vwọ rhuẹr'ẹ/wẹn / rae / vwo / br'U/we."
       },
       {
         "number": 9,
-        "text": "Give unto Thy people a / per/fect / heart: To\nkeep Thy laws / and / Thy / tes/ti/monies.\nAnd to do / all / these / things. Blessed be Thou\nLORD GOD / for / e/ver / and / ever."
+        "text": "Kẹ ihwo Wẹ omamọ'ẹ/wẹn'e/si/ri: Vwọ yọnrẹ\n      i/rhi / vẹ /i/se/ri Wẹ. \n      Vwo ru'ena/na'e/jo/bi. Ebruphiọ k'ỌGHẸ/NẸ /\n      bẹ/dẹ / ri / bẹdẹ."
       }
     ],
     "category": ["Psalms"],
@@ -433,57 +442,57 @@
   },
   {
     "psalm_number": "Chant",
-    "title": "CHRIST THE BEGOTTEN SON",
-    "subtitle": "May be sung on Freedom Day",
-    "meter": "",
+    "title": "CHANT",
+    "subtitle": null,
+    "meter": null,
     "stanzas": [
       {
         "number": 1,
-        "text": "CHRIST the Begotten Son / of / the / LORD.\nRe/dee/mer / of / sin/ners."
+        "text": "Krist Ọmọ ghaghare / Ọ'O/VWO/HWO.\n      Ọ/rọ / t'i/rui/mwe/mwu."
       },
       {
         "number": 2,
-        "text": "Thy royal birth / bring/eth / peace: and / free/dom/\nto man/kind."
+        "text": "Evwiẹ r'uvie / ghw'u/fuo/ma: v'a/bọẹ/ va / rh'ọra/kpọ."
       },
       {
         "number": 3,
-        "text": "Thou art a LIGHT / to / lighten / the / gen/tiles:\nand the glory / of / thy / peo/ple / Israel."
+        "text": "Wẹ ye'URHUKPẸ / r'o/rẹmrẹ / k'e/gẹ/- djọ: vẹ urinrin / rẹ / i/hwo/ Wẹ / Izrẹl."
       },
       {
         "number": 4,
-        "text": "And givest light to them that / sit in darkness:\nand / in / the / shadow / of / death."
+        "text": "Rọ vw'urhukpẹ kẹ itu / re kedi' ebri: vw'e/vu /r'u/hoho / r'u/ghwu."
       },
       {
         "number": 5,
-        "text": "Thou guideth our feet into the / way / of / peace:\nand maketh those who / love / Thee / dwell / in / safety."
+        "text": "Wẹ yi su'awọ'avware vw'idje/rh'u/fuo/ma: \n      vwo ru'itu re guọ/n'O/wẹ /dia/vw'u/fuoma."
       },
       {
         "number": 6,
-        "text": "Thou art our / Ad/vo/cate; and / the horn / of/\nSal/va/tion."
+        "text": "Wẹ yẹ O/guẹ/djọ / vẹ; i/djo r'a/rhọ / r'a/vwa/re."
       },
       {
         "number": 7,
-        "text": "Thou art a won/derful / Counsellor: and a/\nMighty / Prince / of / Peace."
+        "text": "Wẹ yẹ Obru/che'Igbu/nu v'Ọmọ: r'Ovie / Ro/de/ r'U/fuo/ma."
       },
       {
         "number": 8,
-        "text": "Son of the Bless/ed / LORD: and / the--- / Word/\nof / Life."
+        "text": "MỌ Ọ'OVWOHWO / r'E/bru:phiọ / v'O---/ta /r'A/rhọ."
       },
       {
         "number": 9,
-        "text": "We were once as sheep / going / a/stray: but\nnow we have returned unto Thee, Shepherd/\nand / Bishop / of / our / souls."
+        "text": "Ma họh'igodẹ / ri ghwrẹ / jo/vwo: Yẹ enẹna me hirhe br'Uwe, Suigo/dẹ/ v'Osu'a/rhọ'a/vwa/re."
       },
       {
         "number": 10,
-        "text": "That we might live / un/to righteousness:\nThrough Thy blood / shed / on / tree / for / us."
+        "text": "R'avware vwọ / dia / vwẹ ẹfuanfuọn: \n      W'oma'ọba/ra / Wẹ / vw'e/n'u/rhe."
       },
       {
         "number": 11,
-        "text": "No sin was found / in / Thee. Neither / was\nguile / in / Thy /mouth."
+        "text": "A mr'umwemwu'o/ma/ Wẹ-ẹ: Yẹ ẹ/gua vwẹ /u/nu / Wẹ-ẹ."
       },
       {
         "number": 12,
-        "text": "But thou preacheth Truth / and / doeth/\nrighteousness: and those who believeth on Thee\nshall not perish but / have / ever/last/ing life."
+        "text": "Y'Uwo ghwoghw' Uyo/ta / vẹ i/ruesiri: Itu ri se \n      We gbuyota cha ghwọrọ-ọ ji ki / vw'a/rhọ ri /bẹ/vwẹ/dẹ."
       }
     ],
     "category": ["Psalms"],

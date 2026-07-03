@@ -23,11 +23,13 @@ const hymnData = {
   en: require('../../../../assets/data/hymns_en.json'),
   fr: require('../../../../assets/data/hymns_fr.json'),
   is: require('../../../../assets/data/hymns_is.json'),
+  ur: require('../../../../assets/data/hymns_ur.json'),
 };
 
 const psalmData = {
   en: require('../../../../assets/data/psalms_en.json'),
   fr: require('../../../../assets/data/psalms_fr.json'),
+  is: require('../../../../assets/data/psalms_is.json'),
   yo: require('../../../../assets/data/psalms_yo.json'),
   zh: require('../../../../assets/data/psalms_zh.json'),
   tw: require('../../../../assets/data/psalms_tw.json'),
