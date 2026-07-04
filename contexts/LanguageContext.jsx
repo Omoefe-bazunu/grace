@@ -420,6 +420,8 @@ const translations = {
     enterFullNamePlaceholder: 'Enter your full name',
     whatsappNumberLabel: 'WhatsApp Number',
     whatsappPlaceholder: 'e.g. 08012345678',
+    emailLabel: 'Email Address',
+    emailPlaceholder: 'e.g. yourname@email.com',
     yourQuestionLabel: 'Your Question',
     questionPlaceholder: 'What part of the material is confusing?',
     submitQuestion: 'Submit Question',
@@ -3431,6 +3433,9 @@ const translations = {
       'Ebe rẹ eyono vẹ emu rẹ eyono rẹ wu vwo rha mrẹ otọ rẹ emu.',
     homeCardTitleGiving: 'Igho rẹ Ihwe vẹ Inyare',
     homeCardSubtitleGiving: 'Bia ucho kẹ iruo rẹ GKS vwẹ akpọeje.',
+    homeCardTitleDirectory: 'Directory',
+    homeCardSubtitleDirectory:
+      'Find and connect with units and branches of the GKS near you.',
     homeCardTitleLive: 'Uruẹme rẹ Enuẹen',
     homeCardSubtitleLive: 'Nyo ẹga vẹ uruẹme rẹ gidi vwẹ oke rọye.',
 
@@ -3583,7 +3588,7 @@ const translations = {
     hymnSearchPlaceholder: 'Guọnọ vẹ lamba yẹrẹ odẹ',
     noHymnsFound: 'A mrẹ Ine rẹ Ayere yẹrẹ Zabura vuọvo-o.',
     tspPrefix: 'TSP',
-    psalmPrefix: 'Zabura',
+    psalmPrefix: 'Psalms',
 
     // Animations Screen
     watchNow: 'Nyo Ugbu na',

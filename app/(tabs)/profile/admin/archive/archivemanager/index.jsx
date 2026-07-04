@@ -22,11 +22,15 @@ import { apiClient } from '../../../../../../utils/api';
 import { Edit2, Trash2, FileText } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const TABS = ['Pictures', 'Videos', 'Documents'];
+const TABS = [
+  { key: 'archivePictures', label: 'Pictures', icon: '🖼️' },
+  { key: 'archiveVideos', label: 'Videos', icon: '🎬' },
+  { key: 'archiveDocuments', label: 'Documents', icon: '📄' },
+];
 
 export default function AdminArchiveManager() {
   const { colors } = useTheme();
-  const [activeTab, setActiveTab] = useState('Pictures');
+  const [activeTab, setActiveTab] = useState('archivePictures');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -82,11 +86,16 @@ export default function AdminArchiveManager() {
     fetchItems(true);
   }, [fetchItems]);
 
-  const filteredItems = items.filter((item) => {
-    if (activeTab === 'Pictures') return item.type === 'archivePictures';
-    if (activeTab === 'Videos') return item.type === 'archiveVideos';
-    return item.type === 'archiveDocuments';
-  });
+  const getTypeColor = (type) => {
+    if (type === 'archivePictures') return '#3B82F6';
+    if (type === 'archiveVideos') return '#EF4444';
+    return '#8B5CF6';
+  };
+
+  const getTabLabel = (key) =>
+    TABS.find((t) => t.key === key)?.label || 'items';
+
+  const filteredItems = items.filter((item) => item.type === activeTab);
 
   const handleDelete = (item) => {
     Alert.alert('Delete', 'Are you sure?', [
@@ -198,42 +207,57 @@ export default function AdminArchiveManager() {
     <SafeAreaWrapper>
       <TopNavigation title="Manage" showBackButton />
 
-      {/* Tabs */}
-      <View
+      {/* Tab Bar */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
         style={[
-          styles.tabRow,
-          {
-            backgroundColor: colors.background,
-            borderBottomColor: colors.border,
-          },
+          styles.tabBar,
+          { borderBottomColor: colors.textSecondary + '20' },
         ]}
+        contentContainerStyle={styles.tabBarContent}
       >
-        {TABS.map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            style={[
-              styles.tab,
-              activeTab === tab && {
-                borderBottomColor: colors.primary,
-                borderBottomWidth: 2,
-              },
-            ]}
-            onPress={() => setActiveTab(tab)}
-          >
-            <Text
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          const count = items.filter((i) => i.type === tab.key).length;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              onPress={() => setActiveTab(tab.key)}
               style={[
-                styles.tabText,
-                {
-                  color:
-                    activeTab === tab ? colors.primary : colors.textSecondary,
-                },
+                styles.tabButton,
+                isActive && { borderBottomColor: getTypeColor(tab.key) },
               ]}
             >
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+              <Text style={styles.tabIcon}>{tab.icon}</Text>
+              <Text
+                style={[
+                  styles.tabLabel,
+                  {
+                    color: isActive
+                      ? getTypeColor(tab.key)
+                      : colors.textSecondary,
+                  },
+                ]}
+              >
+                {tab.label}
+              </Text>
+              <View
+                style={[
+                  styles.tabCountBadge,
+                  {
+                    backgroundColor: isActive
+                      ? getTypeColor(tab.key)
+                      : colors.textSecondary + '30',
+                  },
+                ]}
+              >
+                <Text style={styles.tabCountText}>{count}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
 
       {loading ? (
         <ActivityIndicator style={{ flex: 1 }} color={colors.primary} />
@@ -255,7 +279,7 @@ export default function AdminArchiveManager() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={{ color: colors.textSecondary, fontSize: 15 }}>
-                No {activeTab.toLowerCase()} yet
+                No {getTabLabel(activeTab).toLowerCase()} yet
               </Text>
             </View>
           }
@@ -412,16 +436,29 @@ export default function AdminArchiveManager() {
 }
 
 const styles = StyleSheet.create({
-  tabRow: {
+  tabBar: { flexGrow: 0, borderBottomWidth: 1, marginVertical: 8 },
+  tabBarContent: { paddingHorizontal: 12, gap: 4 },
+  tabButton: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-  },
-  tab: {
-    flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderBottomWidth: 2,
+    paddingBottom: 8,
+    borderBottomColor: 'transparent',
   },
-  tabText: { fontSize: 14, fontWeight: '600' },
+  tabIcon: { fontSize: 14 },
+  tabLabel: { fontSize: 13, fontWeight: '600' },
+  tabCountBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  tabCountText: { fontSize: 11, fontWeight: '700', color: '#fff' },
   card: {
     borderRadius: 12,
     overflow: 'hidden',
@@ -452,12 +489,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
-  },
-  modalBtns: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-    marginBottom: Platform.OS === 'ios' ? 34 : 24,
   },
   modalInner: {
     padding: 20,

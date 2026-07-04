@@ -8,6 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, MessageSquare } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext'; // ✅ Added Language Hook
@@ -22,9 +23,11 @@ export default function QuizHelpScreen() {
   const { id, title } = useLocalSearchParams();
   const { colors } = useTheme();
   const { translations } = useLanguage(); // ✅ Access translations
+  const insets = useSafeAreaInsets();
 
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [question, setQuestion] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,6 +45,7 @@ export default function QuizHelpScreen() {
         quizId: id,
         name,
         number,
+        email,
         question: question.trim(),
         title: title,
       });
@@ -75,8 +79,12 @@ export default function QuizHelpScreen() {
         style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerStyle={styles.container}
+          contentContainerStyle={[
+            styles.container,
+            { paddingBottom: insets.bottom + 100 },
+          ]}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           <View
             style={[
@@ -116,6 +124,14 @@ export default function QuizHelpScreen() {
               keyboardType="phone-pad"
               placeholder={
                 translations.whatsappPlaceholder || 'e.g. 08012345678'
+              }
+            />
+            <Input
+              label={translations.emailLabel || 'Email Address'}
+              value={email}
+              onChangeText={setEmail}
+              placeholder={
+                translations.emailPlaceholder || 'e.g. yourname@email.com'
               }
             />
 

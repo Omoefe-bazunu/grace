@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  RefreshControl,
   Linking,
 } from 'react-native';
 import {
@@ -16,6 +17,8 @@ import {
   Trash2,
   CheckCircle,
   AlertCircle,
+  Phone,
+  Mail,
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
@@ -30,23 +33,30 @@ import { AppText } from '../../../../../components/ui/AppText';
 export default function AdminQuizHelpScreen() {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { colors } = useTheme();
 
   useEffect(() => {
     fetchQuestions();
   }, []);
 
-  const fetchQuestions = async () => {
+  const fetchQuestions = async (isRefresh = false) => {
     try {
-      setLoading(true);
+      if (!isRefresh) setLoading(true);
       const data = await getQuizHelpQuestions();
       setQuestions(data);
     } catch (error) {
       console.error('Fetch error:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchQuestions(true);
+  }, []);
 
   const handleResolve = async (id) => {
     try {
@@ -106,16 +116,37 @@ export default function AdminQuizHelpScreen() {
 
       {/* Student Info Bar */}
       <View style={styles.studentInfoBar}>
-        <View style={styles.studentNameContainer}>
+        <View style={styles.studentNameRow}>
           <User size={16} color={colors.textSecondary} />
           <AppText style={[styles.studentName, { color: colors.text }]}>
             {item.name || 'Anonymous'}
           </AppText>
         </View>
 
-        <TouchableOpacity>
-          <AppText>{item.number}</AppText>
-        </TouchableOpacity>
+        <View style={styles.contactRow}>
+          {item.number ? (
+            <TouchableOpacity style={styles.contactItem}>
+              <Phone size={13} color={colors.textSecondary} />
+              <AppText
+                style={[styles.contactText, { color: colors.textSecondary }]}
+                numberOfLines={1}
+              >
+                {item.number}
+              </AppText>
+            </TouchableOpacity>
+          ) : null}
+          {item.email ? (
+            <TouchableOpacity style={styles.contactItem}>
+              <Mail size={13} color={colors.textSecondary} />
+              <AppText
+                style={[styles.contactText, { color: colors.textSecondary }]}
+                numberOfLines={1}
+              >
+                {item.email}
+              </AppText>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
 
       <View style={styles.quizMeta}>
@@ -150,7 +181,7 @@ export default function AdminQuizHelpScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation showBackButton title="Quiz Support" />
+      <TopNavigation showBackButton />
       {loading ? (
         <ActivityIndicator style={{ marginTop: 50 }} color={colors.primary} />
       ) : (
@@ -159,6 +190,14 @@ export default function AdminQuizHelpScreen() {
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
+          }
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <AlertCircle size={48} color={colors.textSecondary} />
@@ -193,21 +232,30 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 10, fontWeight: '800' },
   date: { fontSize: 11, opacity: 0.6 },
   studentInfoBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.03)',
     padding: 10,
     borderRadius: 8,
     marginBottom: 10,
+    gap: 8,
   },
-  studentNameContainer: {
+  studentNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    flex: 1,
   },
   studentName: { fontSize: 15, fontWeight: '700' },
+  contactRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    maxWidth: '100%',
+  },
+  contactText: { fontSize: 10 },
   whatsappBtn: {
     flexDirection: 'row',
     alignItems: 'center',

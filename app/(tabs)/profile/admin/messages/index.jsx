@@ -151,7 +151,7 @@ export default function MessagesScreen() {
 
   return (
     <SafeAreaWrapper>
-      <TopNavigation title="Contact Messages" />
+      <TopNavigation showBackButton />
       {!loading && renderStats()}
 
       <FlatList

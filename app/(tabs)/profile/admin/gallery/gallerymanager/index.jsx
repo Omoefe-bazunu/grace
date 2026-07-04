@@ -46,11 +46,18 @@ const CATEGORIES = [
   'Junior Ministers',
 ];
 
+const TABS = [
+  { key: 'galleryMinisters', label: 'Ministers', icon: '👤' },
+  { key: 'galleryPictures', label: 'Pictures', icon: '🖼️' },
+  { key: 'galleryVideos', label: 'Videos', icon: '🎬' },
+];
+
 export default function AdminGalleryManager() {
   const { colors } = useTheme();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState('galleryMinisters');
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({});
@@ -98,6 +105,11 @@ export default function AdminGalleryManager() {
   useEffect(() => {
     fetchAll();
   }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchAll();
+  };
 
   const handleDelete = (item) => {
     Alert.alert('Delete', `Remove this ${getTypeLabel(item.type)}?`, [
@@ -154,6 +166,20 @@ export default function AdminGalleryManager() {
     return 'Minister';
   };
 
+  const getTypeIcon = (type) => {
+    if (type === 'galleryPictures') return ImageIcon;
+    if (type === 'galleryVideos') return Video;
+    return User;
+  };
+
+  const getTypeColor = (type) => {
+    if (type === 'galleryPictures') return '#3B82F6';
+    if (type === 'galleryVideos') return '#EF4444';
+    return '#8B5CF6';
+  };
+
+  const filteredItems = items.filter((item) => item.type === activeTab);
+
   if (loading)
     return (
       <SafeAreaWrapper>
@@ -167,37 +193,97 @@ export default function AdminGalleryManager() {
   return (
     <SafeAreaWrapper>
       <TopNavigation title="Manage" showBackButton />
+
+      {/* Tab Bar */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={[
+          styles.tabBar,
+          { borderBottomColor: colors.textSecondary + '20' },
+        ]}
+        contentContainerStyle={styles.tabBarContent}
+      >
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          const count = items.filter((i) => i.type === tab.key).length;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              onPress={() => setActiveTab(tab.key)}
+              style={[
+                styles.tabButton,
+                isActive && { borderBottomColor: getTypeColor(tab.key) },
+              ]}
+            >
+              <Text style={styles.tabIcon}>{tab.icon}</Text>
+              <Text
+                style={[
+                  styles.tabLabel,
+                  {
+                    color: isActive
+                      ? getTypeColor(tab.key)
+                      : colors.textSecondary,
+                  },
+                ]}
+              >
+                {tab.label}
+              </Text>
+              <View
+                style={[
+                  styles.tabCountBadge,
+                  {
+                    backgroundColor: isActive
+                      ? getTypeColor(tab.key)
+                      : colors.textSecondary + '30',
+                  },
+                ]}
+              >
+                <Text style={styles.tabCountText}>{count}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
       <ScrollView
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={fetchAll} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {items.map((item) => (
-          <View
-            key={item.id}
-            style={[styles.card, { backgroundColor: colors.card }]}
-          >
-            <Image source={{ uri: item.url }} style={styles.cardImage} />
-            <View style={styles.cardBody}>
-              <View>
-                <Text style={[styles.itemTitle, { color: colors.text }]}>
-                  {item.displayTitle}
-                </Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-                  {getTypeLabel(item.type)}
-                </Text>
-              </View>
-              <View style={styles.actions}>
-                <TouchableOpacity onPress={() => openEditModal(item)}>
-                  <Edit2 size={20} color={colors.primary} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDelete(item)}>
-                  <Trash2 size={20} color="#EF4444" />
-                </TouchableOpacity>
+        {filteredItems.length === 0 ? (
+          <Text style={[styles.empty, { color: colors.textSecondary }]}>
+            No {getTypeLabel(activeTab).toLowerCase()}s available
+          </Text>
+        ) : (
+          filteredItems.map((item) => (
+            <View
+              key={item.id}
+              style={[styles.card, { backgroundColor: colors.card }]}
+            >
+              <Image source={{ uri: item.url }} style={styles.cardImage} />
+              <View style={styles.cardBody}>
+                <View>
+                  <Text style={[styles.itemTitle, { color: colors.text }]}>
+                    {item.displayTitle}
+                  </Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+                    {getTypeLabel(item.type)}
+                  </Text>
+                </View>
+                <View style={styles.actions}>
+                  <TouchableOpacity onPress={() => openEditModal(item)}>
+                    <Edit2 size={20} color={colors.primary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDelete(item)}>
+                    <Trash2 size={20} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
-          </View>
-        ))}
+          ))
+        )}
+        <View style={styles.bottomSpacer} />
       </ScrollView>
 
       <Modal visible={modalVisible} animationType="slide" transparent>
@@ -351,6 +437,30 @@ export default function AdminGalleryManager() {
 
 const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  tabBar: { flexGrow: 0, borderBottomWidth: 1, marginVertical: 8 },
+  tabBarContent: { paddingHorizontal: 12, gap: 4 },
+  tabButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderBottomWidth: 2,
+    paddingBottom: 8,
+    borderBottomColor: 'transparent',
+  },
+  tabIcon: { fontSize: 14 },
+  tabLabel: { fontSize: 13, fontWeight: '600' },
+  tabCountBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  tabCountText: { fontSize: 11, fontWeight: '700', color: '#fff' },
+  empty: { textAlign: 'center', marginTop: 40, fontSize: 15 },
   card: { margin: 15, borderRadius: 12, overflow: 'hidden', elevation: 3 },
   cardImage: { width: '100%', height: 180 },
   cardBody: {
@@ -361,6 +471,7 @@ const styles = StyleSheet.create({
   },
   itemTitle: { fontSize: 16, fontWeight: 'bold' },
   actions: { flexDirection: 'row', gap: 20 },
+  bottomSpacer: { height: 40 },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
