@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   distanceText: { fontSize: 11, fontWeight: '600' },
-  branchTitle: { fontSize: 17, fontWeight: 'bold' },
+  branchTitle: { fontSize: 17, fontWeight: 'bold', textTransform: 'uppercase' },
   navCircle: {
     width: 38,
     height: 38,
