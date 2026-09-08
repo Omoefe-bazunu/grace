@@ -318,7 +318,7 @@ export default function DailyGuideScreen() {
                     <AppText
                       style={[styles.sectionLabel, { color: colors.primary }]}
                     >
-                      COMMENTARY
+                      COMMENT
                     </AppText>
                     {renderParagraphs(
                       currentDevotional.comment,

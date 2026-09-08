@@ -56,7 +56,7 @@ const SERMON_CATEGORIES = [
   "GKS President's Feast Message",
   "GKS President's Freedom Day Message",
   "GKS President's Youth Assembly Message",
-  'Sermon Summaries',
+  // 'Sermon Summaries',
 ];
 
 const ProgressBar = ({ progress, status }) => {

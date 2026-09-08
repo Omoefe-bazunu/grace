@@ -57,14 +57,14 @@ export default function AdminDashboardScreen() {
       icon: <PlayCircle size={32} color="#1E3A8A" />,
       onPress: () => router.push('/(tabs)/profile/admin/upload/sermonVideo'),
     },
-    {
-      id: 'upload-daily-devotional',
-      title: 'Daily Devotional',
-      description: 'Add daily devotional guide',
-      icon: <BookOpen size={32} color="#1E3A8A" />,
-      onPress: () =>
-        router.push('/(tabs)/profile/admin/upload/dailyDevotional'),
-    },
+    // {
+    //   id: 'upload-daily-devotional',
+    //   title: 'Daily Devotional',
+    //   description: 'Add daily devotional guide',
+    //   icon: <BookOpen size={32} color="#1E3A8A" />,
+    //   onPress: () =>
+    //     router.push('/(tabs)/profile/admin/upload/dailyDevotional'),
+    // },
     {
       id: 'upload-song',
       title: 'Upload Song',
@@ -131,13 +131,13 @@ export default function AdminDashboardScreen() {
       icon: <FileText size={32} color="#7C3AED" />,
       onPress: () => router.push('/(tabs)/profile/admin/contentmanager'),
     },
-    {
-      id: 'manage-live-streams',
-      title: 'Live Streams',
-      description: 'Manage live streaming services',
-      icon: <Podcast size={32} color="#1E3A8A" />,
-      onPress: () => router.push('/(tabs)/profile/admin/livestreammanager'),
-    },
+    // {
+    //   id: 'manage-live-streams',
+    //   title: 'Live Streams',
+    //   description: 'Manage live streaming services',
+    //   icon: <Podcast size={32} color="#1E3A8A" />,
+    //   onPress: () => router.push('/(tabs)/profile/admin/livestreammanager'),
+    // },
 
     {
       id: 'gallery-management',

@@ -19,12 +19,12 @@ import { useLanguage } from '@/contexts/LanguageContext';
 // --- Local Image Imports ---
 import logoscreen from '../../assets/images/LOGO.png';
 import cloudBG from '../../assets/images/CLOUD.png';
-import sermonBG from '../../assets/images/sermononboard.png';
-import micIcon from '../../assets/images/MIC.png';
-import micBG from '../../assets/images/MICBG.png';
-import musicIcon from '../../assets/images/MUSIC.png';
-import moreBG from '../../assets/images/MOREBG.png';
-import moreIcon from '../../assets/images/MORE.png';
+// import sermonBG from '../../assets/images/sermononboard.png';
+// import micIcon from '../../assets/images/MIC.png';
+// import micBG from '../../assets/images/MICBG.png';
+// import musicIcon from '../../assets/images/MUSIC.png';
+// import moreBG from '../../assets/images/MOREBG.png';
+// import moreIcon from '../../assets/images/MORE.png';
 // import seromnBG2 from '../../assets/images/sermononboard.png';
 
 const { width, height } = Dimensions.get('window');
@@ -46,33 +46,33 @@ export default function OnboardingScreen() {
       bgImage: cloudBG,
       imageSrc: logoscreen,
     },
-    {
-      id: '2',
-      subtitle: translations.onboardingSubtitle2,
-      title: translations.onboardingTitle2,
-      description: translations.onboardingDesc2,
-      colors: ['#388338', '#1a421a'],
-      bgImage: sermonBG,
-      imageSrc: micIcon,
-    },
-    {
-      id: '3',
-      subtitle: translations.onboardingSubtitle3,
-      title: translations.onboardingTitle3,
-      description: translations.onboardingDesc3,
-      colors: ['#e7713d', '#a64d25'],
-      bgImage: micBG,
-      imageSrc: musicIcon,
-    },
-    {
-      id: '4',
-      subtitle: translations.onboardingSubtitle4,
-      title: translations.onboardingTitle4,
-      description: translations.onboardingDesc4,
-      colors: ['#400eb6', '#09228f'],
-      bgImage: moreBG,
-      imageSrc: moreIcon,
-    },
+    // {
+    //   id: '2',
+    //   subtitle: translations.onboardingSubtitle2,
+    //   title: translations.onboardingTitle2,
+    //   description: translations.onboardingDesc2,
+    //   colors: ['#388338', '#1a421a'],
+    //   bgImage: sermonBG,
+    //   imageSrc: micIcon,
+    // },
+    // {
+    //   id: '3',
+    //   subtitle: translations.onboardingSubtitle3,
+    //   title: translations.onboardingTitle3,
+    //   description: translations.onboardingDesc3,
+    //   colors: ['#e7713d', '#a64d25'],
+    //   bgImage: micBG,
+    //   imageSrc: musicIcon,
+    // },
+    // {
+    //   id: '4',
+    //   subtitle: translations.onboardingSubtitle4,
+    //   title: translations.onboardingTitle4,
+    //   description: translations.onboardingDesc4,
+    //   colors: ['#400eb6', '#09228f'],
+    //   bgImage: moreBG,
+    //   imageSrc: moreIcon,
+    // },
   ];
 
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
@@ -106,15 +106,15 @@ export default function OnboardingScreen() {
     }
   };
 
-  const handleSkip = async () => {
-    try {
-      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-      router.replace('/(tabs)/home');
-    } catch (error) {
-      console.error('Failed to skip onboarding:', error);
-      router.replace('/(tabs)/home');
-    }
-  };
+  // const handleSkip = async () => {
+  //   try {
+  //     await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+  //     router.replace('/(tabs)/home');
+  //   } catch (error) {
+  //     console.error('Failed to skip onboarding:', error);
+  //     router.replace('/(tabs)/home');
+  //   }
+  // };
 
   const renderSlide = ({ item, index }) => {
     const inputRange = [
@@ -185,13 +185,13 @@ export default function OnboardingScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
+      {/* <TouchableOpacity
         onPress={handleSkip}
         style={styles.skipButton}
         activeOpacity={0.7}
       >
         <Text style={styles.skipText}>{translations.skip || 'Skip'}</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       <FlatList
         ref={flatListRef}
